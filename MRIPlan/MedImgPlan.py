@@ -1,28 +1,34 @@
 import os
+import json
 import unittest
 import logging
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 import socket
-
+from UtilCalculations import utilPosePlan
+from UtilCalculations import mat2quat
+from UtilSlicerFuncs import setTransform
 
 #
 # Connection
 #
 
-class MRIPlanConnection():
+class MedImgPlanConnection():
   """
-  Connection class for the MRIPlan module
+  Connection class for the MedImgPlan module
   """
 
   def __init__(self):
 
     # port init
-    self._sock_ip_receive = "localhost"
-    self._sock_ip_send = "localhost"
-    self._sock_receive_port = 8059
-    self._sock_send_port = 8057
+    with open("Config.json") as f:
+      configData = json.load(f)
+    
+    self._sock_ip_receive = configData["IP_RECEIVE_MEDIMG"]
+    self._sock_ip_send = configData["IP_SEND_MEDIMG"]
+    self._sock_receive_port = configData["PORT_RECEIVE_MEDIMG"]
+    self._sock_send_port = configData["PORT_SEND_MEDIMG"]
 
     self._sock_receive = None
     self._sock_send = None
@@ -40,24 +46,24 @@ class MRIPlanConnection():
       self._sock_send.close()
 
 #
-# MRIPlan
+# MedImgPlan
 #
 
-class MRIPlan(ScriptedLoadableModule):
+class MedImgPlan(ScriptedLoadableModule):
   """Uses ScriptedLoadableModule base class, available at:
   https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
   """
 
   def __init__(self, parent):
     ScriptedLoadableModule.__init__(self, parent)
-    self.parent.title = "MRI Plan" 
+    self.parent.title = "MedImg Plan" 
     self.parent.categories = ["RoTMS"] 
     self.parent.dependencies = []  # TODO: add here list of module names that this module requires
     self.parent.contributors = ["Yihao Liu (Johns Hopkins University)"] 
     # TODO: update with short description of the module and a link to online module documentation
     self.parent.helpText = """
 This is an example of scripted loadable module bundled in an extension.
-See more information in <a href="https://github.com/organization/projectname#MRIPlan">module documentation</a>.
+See more information in <a href="https:">module documentation</a>.
 """
     # TODO: replace with organization, grant and thanks
     self.parent.acknowledgementText = """
@@ -76,10 +82,10 @@ def appStartUpPostAction():
   return
 
 #
-# MRIPlanWidget
+# MedImgPlanWidget
 #
 
-class MRIPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
+class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
   """Uses ScriptedLoadableModuleWidget base class, available at:
   https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
   """
@@ -102,7 +108,7 @@ class MRIPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     # Load widget from .ui file (created by Qt Designer).
     # Additional widgets can be instantiated manually and added to self.layout.
-    uiWidget = slicer.util.loadUI(self.resourcePath('UI/MRIPlan.ui'))
+    uiWidget = slicer.util.loadUI(self.resourcePath('UI/MedImgPlan.ui'))
     self.layout.addWidget(uiWidget)
     self.ui = slicer.util.childWidgetVariables(uiWidget)
 
@@ -113,7 +119,7 @@ class MRIPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     # Create logic class. Logic implements all computations that should be possible to run
     # in batch mode, without a graphical user interface.
-    self.logic = MRIPlanLogic()
+    self.logic = MedImgPlanLogic()
 
     # Connections
 
@@ -129,7 +135,7 @@ class MRIPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # Buttons
     self.ui.pushPlanFiducials.connect('clicked(bool)', self.onPushPlanFiducials)
     self.ui.pushDigitize.connect('clicked(bool)', self.onPushDigitize)
-    self.ui.pushRegistration.connect('clicked(bool)', self.onPushRegistration)
+    self.ui.pushRegister.connect('clicked(bool)', self.onPushRegistration)
     self.ui.pushUsePreviousRegistration.connect('clicked(bool)', self.onPushUsePreviousRegistration)
     self.ui.pushCoilPosePlan.connect('clicked(bool)', self.onPushCoilPosePlan)
 
@@ -231,9 +237,9 @@ class MRIPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       self.ui.pushDigitize.toolTip = "Start digitizing"
       self.ui.pushDigitize.enabled = True
     else:
-      self.ui.applyButton.toolTip = "Select fiducial markups node first"
+      self.ui.pushPlanFiducials.toolTip = "Select fiducial markups node first"
       self.ui.pushPlanFiducials.enabled = False
-      self.ui.applyButton.toolTip = "Select fiducial markups node first"
+      self.ui.pushDigitize.toolTip = "Select fiducial markups node first"
       self.ui.pushDigitize.enabled = False
 
     if self._parameterNode.GetNodeReference("CoilPoseMarkups"):
@@ -326,10 +332,10 @@ class MRIPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
 
 #
-# MRIPlanLogic
+# MedImgPlanLogic
 #
 
-class MRIPlanLogic(ScriptedLoadableModuleLogic):
+class MedImgPlanLogic(ScriptedLoadableModuleLogic):
   """This class should implement all the actual
   computation done by your module.  The interface
   should be such that other python code can import
@@ -344,7 +350,7 @@ class MRIPlanLogic(ScriptedLoadableModuleLogic):
     Called when the logic class is instantiated. Can be used for initializing member variables.
     """
     ScriptedLoadableModuleLogic.__init__(self)
-    self._connections = MRIPlanConnection()
+    self._connections = MedImgPlanConnection()
     self._connections.setup()
 
   def setDefaultParameters(self, parameterNode):
@@ -366,26 +372,27 @@ class MRIPlanLogic(ScriptedLoadableModuleLogic):
     if numOfFid < 3:
       raise ValueError("Input landmarks are less than 3")
 
-    self.utlSendFiducials(-1)
+    self.utilSendFiducials(-1)
 
-  def utlSendFiducials(self, curIdx):
+  def utilSendFiducials(self, curIdx):
     """
-    Utility function to recurrantly send fiducials(landmarks on MRI)
+    Utility function to recurrantly send fiducials (landmarks on medical image)
     """
+
     inputMarkupsNode = self._parameterNode.GetNodeReference("FiducialsMarkups")
     numOfFid = inputMarkupsNode.GetNumberOfFiducials()
     if curIdx != -1:
       ras = [0,0,0]
       inputMarkupsNode.GetNthFiducialPosition(curIdx,ras)
       # curIdx is -1, send the current fiducial
-      msg = b"mri_fid_pnt" + \
+      msg = b"img_fid_pnt" + \
         b"_" + str(curIdx).zfill(2).encode('UTF-8') + \
         b"_" + "{:.3f}".format(ras[0]).zfill(10).encode('UTF-8') + \
         b"_" + "{:.3f}".format(ras[1]).zfill(10).encode('UTF-8') + \
         b"_" + "{:.3f}".format(ras[2]).zfill(10).encode('UTF-8')
     else:
       # curIdx is -1, send the number of fiducials
-      msg = b"mri_fid_num" + \
+      msg = b"img_fid_num" + \
         b"_" + str(numOfFid).zfill(2).encode('UTF-8')
 
     self._connections._sock_send.sendto( \
@@ -398,9 +405,12 @@ class MRIPlanLogic(ScriptedLoadableModuleLogic):
     else:
       if curIdx < numOfFid-1:
         curIdx = curIdx+1
-        self.utlSendFiducials(curIdx)
+        self.utilSendFiducials(curIdx)
 
   def processPushCoilPosePlan(self, inputMarkupsNode):
+    """
+    Push botton callback function. Plan the pose of the contact point.
+    """
 
     if not inputMarkupsNode:
       raise ValueError("Input markup is invalid")
@@ -417,7 +427,48 @@ class MRIPlanLogic(ScriptedLoadableModuleLogic):
     inputMarkupsNode.GetNthFiducialPosition(3,c)
     inputMarkupsNode.GetNthFiducialPosition(0,p)
 
-    quat = self.logic.contactPosePlaneProcess(a,b,c,p)
+    mat = utilPosePlan(a,b,c,p)
+    quat = mat2quat(mat)
+
+    if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
+      transformNode = slicer.vtkMRMLTransformNode()
+      slicer.mrmlScene.AddNode(transformNode)
+      self._parameterNode.SetNodeReferenceID("TargetPoseTransform", transformNode.GetID())
+
+    if not self._parameterNode.GetNodeReference("TargetPoseIndicator"):
+      with open("Config.json") as f:
+        configData = json.load(f)
+      inputModel = slicer.util.loadModel(configData["POSE_INDICATOR_MODEL"])
+      self._parameterNode.SetNodeReferenceID("TargetPoseIndicator", inputModel.GetID())
+
+    transformMatrix = vtk.vtkMatrix4x4()
+    setTransform(mat, p, transformMatrix)
+
+    targetPoseTransform = self._parameterNode.GetNodeReference("TargetPoseTransform")
+    targetPoseIndicator = self._parameterNode.GetNodeReference("TargetPoseIndicator")
+
+    targetPoseTransform.SetMatrixTransformToParent(transformMatrix)
+    targetPoseIndicator.SetAndObserveTransformNodeID(targetPoseTransform.GetID())
+
+    slicer.app.processEvents()
+
+    
+
+
+
+
+
+
+    
+    
+
+
+
+
+
+
+
+
 
     
 
