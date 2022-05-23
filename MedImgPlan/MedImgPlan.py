@@ -1,3 +1,27 @@
+"""
+MIT License
+
+Copyright (c) 2022 Yihao Liu
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 import os
 import json
 import unittest
@@ -6,9 +30,14 @@ import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 import socket
-from UtilCalculations import utilPosePlan
-from UtilCalculations import mat2quat
-from UtilSlicerFuncs import setTransform
+from MedImgPlanLib import UtilCalculations
+from MedImgPlanLib import UtilSlicerFuncs
+from MedImgPlanLib import UtilFormat
+
+"""
+Check CommandsConfig.json to get UDP messages.
+Check Config.json to get program settings.
+"""
 
 #
 # Connection
@@ -19,10 +48,10 @@ class MedImgPlanConnection():
   Connection class for the MedImgPlan module
   """
 
-  def __init__(self):
+  def __init__(self,configPath):
 
     # port init
-    with open("Config.json") as f:
+    with open(configPath+"Config.json") as f:
       configData = json.load(f)
     
     self._sock_ip_receive = configData["IP_RECEIVE_MEDIMG"]
@@ -119,7 +148,7 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     # Create logic class. Logic implements all computations that should be possible to run
     # in batch mode, without a graphical user interface.
-    self.logic = MedImgPlanLogic()
+    self.logic = MedImgPlanLogic(self.resourcePath('Configs/'))
 
     # Connections
 
@@ -269,66 +298,23 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self._parameterNode.EndModify(wasModified)
 
   def onPushPlanFiducials(self):
-
-    try:
-      self.logic.processPushPlanFiducials(self.ui.markupsRegistration.currentNode())
-
-    except Exception as e:
-      slicer.util.errorDisplay("Failed to send in results: "+str(e))
-      import traceback
-      traceback.print_exc()
+    self.logic.processPushPlanFiducials(self.ui.markupsRegistration.currentNode())
 
   def onPushDigitize(self):
-    try:
-      msg = b"start_autodigitzat"
-      self.logic._connections._sock_send.sendto(msg, \
-        (self.logic._connections._sock_ip_send, self.logic._connections._sock_send_port))
-      try:
-        self._connections._sock_receive.recvfrom(512)
-      except socket.error:
-        raise RuntimeError("timedout.")
-    except Exception as e:
-      slicer.util.errorDisplay("Failed to send in command: "+str(e))
-      import traceback
-      traceback.print_exc()
+    msg = self.logic._commandsData["START_AUTO_DIGITIZE"]
+    self.logic.utilSendCommand(msg)
 
   def onPushRegistration(self):
-    try:
-      msg = b"start_registration"
-      self.logic._connections._sock_send.sendto(msg, \
-        (self.logic._connections._sock_ip_send, self.logic._connections._sock_send_port))
-      try:
-        self._connections._sock_receive.recvfrom(512)
-      except socket.error:
-        raise RuntimeError("timedout.")
-    except Exception as e:
-      slicer.util.errorDisplay("Failed to send in command: "+str(e))
-      import traceback
-      traceback.print_exc()
+    msg = self.logic._commandsData["START_REGISTRATION"]
+    self.logic.utilSendCommand(msg)
 
   def onPushUsePreviousRegistration(self):
-    try:
-      msg = b"start_useprevregis"
-      self.logic._connections._sock_send.sendto(msg, \
-        (self.logic._connections._sock_ip_send, self.logic._connections._sock_send_port))
-      try:
-        self._connections._sock_receive.recvfrom(512)
-      except socket.error:
-        raise RuntimeError("timedout.")
-    except Exception as e:
-      slicer.util.errorDisplay("Failed to send in command: "+str(e))
-      import traceback
-      traceback.print_exc()
+    msg = self.logic._commandsData["USE_PREV_REGISTRATION"]
+    self.logic.utilSendCommand(msg)
 
   def onPushCoilPosePlan(self):
-    
-    try:
-      self.logic.processPushCoilPosePlan(self.ui.markupsCoilPosePlan.currentNode())
+    self.logic.processPushCoilPosePlan(self.ui.markupsCoilPosePlan.currentNode())
 
-    except Exception as e:
-      slicer.util.errorDisplay("Failed to send in results: "+str(e))
-      import traceback
-      traceback.print_exc()
 
 
 #
@@ -345,13 +331,17 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
   https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
   """
 
-  def __init__(self):
+  def __init__(self,configPath):
     """
     Called when the logic class is instantiated. Can be used for initializing member variables.
     """
     ScriptedLoadableModuleLogic.__init__(self)
-    self._connections = MedImgPlanConnection()
+    self._configPath = configPath
+    self._connections = MedImgPlanConnection(configPath)
     self._connections.setup()
+    
+    with open(self._configPath+"CommandsConfig.json") as f:
+      self._commandsData = (json.load(f))["MegImgCmd"]
 
   def setDefaultParameters(self, parameterNode):
     """
@@ -363,50 +353,12 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     """
     Send out the markups for registration 
     """
-
     if not inputMarkupsNode:
       raise ValueError("Input markup is invalid")
-
-    numOfFid = inputMarkupsNode.GetNumberOfFiducials()
-
-    if numOfFid < 3:
+    if inputMarkupsNode.GetNumberOfFiducials() < 3:
       raise ValueError("Input landmarks are less than 3")
-
     self.utilSendFiducials(-1)
-
-  def utilSendFiducials(self, curIdx):
-    """
-    Utility function to recurrantly send fiducials (landmarks on medical image)
-    """
-
-    inputMarkupsNode = self._parameterNode.GetNodeReference("FiducialsMarkups")
-    numOfFid = inputMarkupsNode.GetNumberOfFiducials()
-    if curIdx != -1:
-      ras = [0,0,0]
-      inputMarkupsNode.GetNthFiducialPosition(curIdx,ras)
-      # curIdx is -1, send the current fiducial
-      msg = b"img_fid_pnt" + \
-        b"_" + str(curIdx).zfill(2).encode('UTF-8') + \
-        b"_" + "{:.3f}".format(ras[0]).zfill(10).encode('UTF-8') + \
-        b"_" + "{:.3f}".format(ras[1]).zfill(10).encode('UTF-8') + \
-        b"_" + "{:.3f}".format(ras[2]).zfill(10).encode('UTF-8')
-    else:
-      # curIdx is -1, send the number of fiducials
-      msg = b"img_fid_num" + \
-        b"_" + str(numOfFid).zfill(2).encode('UTF-8')
-
-    self._connections._sock_send.sendto( \
-      msg, (self._connections._sock_ip_send, self._connections._sock_send_port) )
-    
-    try:
-      self._connections._sock_receive.recvfrom(512)
-    except socket.error:
-      raise RuntimeError("Sending landmarks timedout.")
-    else:
-      if curIdx < numOfFid-1:
-        curIdx = curIdx+1
-        self.utilSendFiducials(curIdx)
-
+  
   def processPushCoilPosePlan(self, inputMarkupsNode):
     """
     Push botton callback function. Plan the pose of the contact point.
@@ -428,7 +380,6 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     inputMarkupsNode.GetNthFiducialPosition(0,p)
 
     mat = utilPosePlan(a,b,c,p)
-    quat = mat2quat(mat)
 
     if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
       transformNode = slicer.vtkMRMLTransformNode()
@@ -436,7 +387,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       self._parameterNode.SetNodeReferenceID("TargetPoseTransform", transformNode.GetID())
 
     if not self._parameterNode.GetNodeReference("TargetPoseIndicator"):
-      with open("Config.json") as f:
+      with open(self._configPath+"Config.json") as f:
         configData = json.load(f)
       inputModel = slicer.util.loadModel(configData["POSE_INDICATOR_MODEL"])
       self._parameterNode.SetNodeReferenceID("TargetPoseIndicator", inputModel.GetID())
@@ -452,7 +403,65 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
 
     slicer.app.processEvents()
 
+    quat = mat2quat(mat)
+
+    msg = self._commandsData["TARGET_POSE_ORIENTATION"] + \
+      "_" + utilNumStrFormat(quat[0]) + \
+      "_" + utilNumStrFormat(quat[1]) + \
+      "_" + utilNumStrFormat(quat[2]) + \
+      "_" + utilNumStrFormat(quat[3])
+
+    self.utilSendCommand(msg)
+
+    msg = self._commandsData["TARGET_POSE_TRANSLATION"] + \
+      "_" + utilNumStrFormat(p[0]/1000,7) + \
+      "_" + utilNumStrFormat(p[1]/1000,7) + \
+      "_" + utilNumStrFormat(p[2]/1000,7)
+
+  def utilSendCommand(self, msg, errorMsg="Failed to send command ", res=False):
+    if len(msg) > 150:
+      raise RuntimeError("Command contains too many characters.")
+    try:
+      self._connections._sock_send.sendto( \
+        msg.encode('UTF-8'), (self._connections._sock_ip_send, self._connections._sock_send_port) )
+      try:
+        data = self._connections._sock_receive.recvfrom(512)
+      except socket.error:
+        raise RuntimeError("Command response timedout")
+    except Exception as e:
+      slicer.util.errorDisplay(errorMsg+str(e))
+      import traceback
+      traceback.print_exc()
+    if res:
+      return data
+
+  def utilSendFiducials(self, curIdx):
+    """
+    Utility function to recurrantly send fiducials (landmarks on medical image)
+    """
+    inputMarkupsNode = self._parameterNode.GetNodeReference("FiducialsMarkups")
+    numOfFid = inputMarkupsNode.GetNumberOfFiducials()
+
+    if curIdx != -1:
+      ras = [0,0,0]
+      inputMarkupsNode.GetNthFiducialPosition(curIdx,ras)
+      # curIdx is -1, send the current fiducial
+      # Send in SI units (meter/second/...)
+      msg = self._commandsData["CURRENT_FIDUCIAL_ON_IMG"] + \
+        "_" + str(curIdx).zfill(2) + \
+        "_" + utilNumStrFormat(ras[0]/1000,7) + \
+        "_" + utilNumStrFormat(ras[1]/1000,7) + \
+        "_" + utilNumStrFormat(ras[2]/1000,7)
+    else:
+      # curIdx is -1, send the number of fiducials
+      msg = self._commandsData["NUM_OF_FIDUCIAL_ON_IMG"] + \
+        "_" + str(numOfFid).zfill(2)
     
+    self.utilSendCommand(msg)
+
+    if curIdx < numOfFid-1:
+      curIdx = curIdx+1
+      self.utilSendFiducials(curIdx)
 
 
 

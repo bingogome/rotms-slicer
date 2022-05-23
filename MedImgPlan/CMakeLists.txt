@@ -4,6 +4,10 @@ set(MODULE_NAME MedImgPlan)
 #-----------------------------------------------------------------------------
 set(MODULE_PYTHON_SCRIPTS
   ${MODULE_NAME}.py
+  ${MODULE_NAME}Lib/__init__
+  ${MODULE_NAME}Lib/UtilCalculations
+  ${MODULE_NAME}Lib/UtilFormat
+  ${MODULE_NAME}Lib/UtilSlicerFuncs
   )
 
 set(MODULE_PYTHON_RESOURCES
