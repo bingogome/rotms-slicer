@@ -1,27 +1,3 @@
-"""
-MIT License
-
-Copyright (c) 2022 Yihao Liu
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-"""
-
 import os
 import unittest
 import logging
@@ -30,24 +6,24 @@ from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
 #
-# RobotControl
+# TargetVisualization
 #
 
-class RobotControl(ScriptedLoadableModule):
+class TargetVisualization(ScriptedLoadableModule):
   """Uses ScriptedLoadableModule base class, available at:
   https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
   """
 
   def __init__(self, parent):
     ScriptedLoadableModule.__init__(self, parent)
-    self.parent.title = "Robot Control"  
-    self.parent.categories = ["RoTMS"]  
+    self.parent.title = "TargetVisualization"  # TODO: make this more human readable by adding spaces
+    self.parent.categories = ["Examples"]  # TODO: set categories (folders where the module shows up in the module selector)
     self.parent.dependencies = []  # TODO: add here list of module names that this module requires
-    self.parent.contributors = ["Yihao Liu (Johns Hopkins University)"] 
+    self.parent.contributors = ["John Doe (AnyWare Corp.)"]  # TODO: replace with "Firstname Lastname (Organization)"
     # TODO: update with short description of the module and a link to online module documentation
     self.parent.helpText = """
 This is an example of scripted loadable module bundled in an extension.
-See more information in <a href="https://">module documentation</a>.
+See more information in <a href="https://github.com/organization/projectname#TargetVisualization">module documentation</a>.
 """
     # TODO: replace with organization, grant and thanks
     self.parent.acknowledgementText = """
@@ -56,16 +32,62 @@ and Steve Pieper, Isomics, Inc. and was partially funded by NIH grant 3P41RR0132
 """
 
     # Additional initialization step after application startup is complete
-    slicer.app.connect("startupCompleted()", appStartUpPostAction)
-
-def appStartUpPostAction():
-  return
+    slicer.app.connect("startupCompleted()", registerSampleData)
 
 #
-# RobotControlWidget
+# Register sample data sets in Sample Data module
 #
 
-class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
+def registerSampleData():
+  """
+  Add data sets to Sample Data module.
+  """
+  # It is always recommended to provide sample data for users to make it easy to try the module,
+  # but if no sample data is available then this method (and associated startupCompeted signal connection) can be removed.
+
+  import SampleData
+  iconsPath = os.path.join(os.path.dirname(__file__), 'Resources/Icons')
+
+  # To ensure that the source code repository remains small (can be downloaded and installed quickly)
+  # it is recommended to store data sets that are larger than a few MB in a Github release.
+
+  # TargetVisualization1
+  SampleData.SampleDataLogic.registerCustomSampleDataSource(
+    # Category and sample name displayed in Sample Data module
+    category='TargetVisualization',
+    sampleName='TargetVisualization1',
+    # Thumbnail should have size of approximately 260x280 pixels and stored in Resources/Icons folder.
+    # It can be created by Screen Capture module, "Capture all views" option enabled, "Number of images" set to "Single".
+    thumbnailFileName=os.path.join(iconsPath, 'TargetVisualization1.png'),
+    # Download URL and target file name
+    uris="https://github.com/Slicer/SlicerTestingData/releases/download/SHA256/998cb522173839c78657f4bc0ea907cea09fd04e44601f17c82ea27927937b95",
+    fileNames='TargetVisualization1.nrrd',
+    # Checksum to ensure file integrity. Can be computed by this command:
+    #  import hashlib; print(hashlib.sha256(open(filename, "rb").read()).hexdigest())
+    checksums = 'SHA256:998cb522173839c78657f4bc0ea907cea09fd04e44601f17c82ea27927937b95',
+    # This node name will be used when the data set is loaded
+    nodeNames='TargetVisualization1'
+  )
+
+  # TargetVisualization2
+  SampleData.SampleDataLogic.registerCustomSampleDataSource(
+    # Category and sample name displayed in Sample Data module
+    category='TargetVisualization',
+    sampleName='TargetVisualization2',
+    thumbnailFileName=os.path.join(iconsPath, 'TargetVisualization2.png'),
+    # Download URL and target file name
+    uris="https://github.com/Slicer/SlicerTestingData/releases/download/SHA256/1a64f3f422eb3d1c9b093d1a18da354b13bcf307907c66317e2463ee530b7a97",
+    fileNames='TargetVisualization2.nrrd',
+    checksums = 'SHA256:1a64f3f422eb3d1c9b093d1a18da354b13bcf307907c66317e2463ee530b7a97',
+    # This node name will be used when the data set is loaded
+    nodeNames='TargetVisualization2'
+  )
+
+#
+# TargetVisualizationWidget
+#
+
+class TargetVisualizationWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
   """Uses ScriptedLoadableModuleWidget base class, available at:
   https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
   """
@@ -88,7 +110,7 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     # Load widget from .ui file (created by Qt Designer).
     # Additional widgets can be instantiated manually and added to self.layout.
-    uiWidget = slicer.util.loadUI(self.resourcePath('UI/RobotControl.ui'))
+    uiWidget = slicer.util.loadUI(self.resourcePath('UI/TargetVisualization.ui'))
     self.layout.addWidget(uiWidget)
     self.ui = slicer.util.childWidgetVariables(uiWidget)
 
@@ -99,7 +121,7 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     # Create logic class. Logic implements all computations that should be possible to run
     # in batch mode, without a graphical user interface.
-    self.logic = RobotControlLogic()
+    self.logic = TargetVisualizationLogic()
 
     # Connections
 
@@ -264,10 +286,10 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
 
 #
-# RobotControlLogic
+# TargetVisualizationLogic
 #
 
-class RobotControlLogic(ScriptedLoadableModuleLogic):
+class TargetVisualizationLogic(ScriptedLoadableModuleLogic):
   """This class should implement all the actual
   computation done by your module.  The interface
   should be such that other python code can import
@@ -325,10 +347,10 @@ class RobotControlLogic(ScriptedLoadableModuleLogic):
     logging.info('Processing completed in {0:.2f} seconds'.format(stopTime-startTime))
 
 #
-# RobotControlTest
+# TargetVisualizationTest
 #
 
-class RobotControlTest(ScriptedLoadableModuleTest):
+class TargetVisualizationTest(ScriptedLoadableModuleTest):
   """
   This is the test case for your scripted module.
   Uses ScriptedLoadableModuleTest base class, available at:
@@ -344,9 +366,9 @@ class RobotControlTest(ScriptedLoadableModuleTest):
     """Run as few or as many tests as needed here.
     """
     self.setUp()
-    self.test_RobotControl1()
+    self.test_TargetVisualization1()
 
-  def test_RobotControl1(self):
+  def test_TargetVisualization1(self):
     """ Ideally you should have several levels of tests.  At the lowest level
     tests should exercise the functionality of the logic with different inputs
     (both valid and invalid).  At higher levels your tests should emulate the
@@ -364,7 +386,7 @@ class RobotControlTest(ScriptedLoadableModuleTest):
 
     import SampleData
     registerSampleData()
-    inputVolume = SampleData.downloadSample('RobotControl1')
+    inputVolume = SampleData.downloadSample('TargetVisualization1')
     self.delayDisplay('Loaded test data set')
 
     inputScalarRange = inputVolume.GetImageData().GetScalarRange()
@@ -376,7 +398,7 @@ class RobotControlTest(ScriptedLoadableModuleTest):
 
     # Test the module logic
 
-    logic = RobotControlLogic()
+    logic = TargetVisualizationLogic()
 
     # Test algorithm with non-inverted threshold
     logic.process(inputVolume, outputVolume, threshold, True)

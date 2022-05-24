@@ -21,6 +21,7 @@ include(${Slicer_USE_FILE})
 # Extension modules
 add_subdirectory(RobotControl)
 add_subdirectory(MRIPlan)
+add_subdirectory(TargetVisualization)
 ## NEXT_MODULE
 
 #-----------------------------------------------------------------------------

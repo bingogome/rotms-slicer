@@ -85,7 +85,7 @@ class MedImgPlan(ScriptedLoadableModule):
 
   def __init__(self, parent):
     ScriptedLoadableModule.__init__(self, parent)
-    self.parent.title = "MedImg Plan" 
+    self.parent.title = "Medical Image Planning" 
     self.parent.categories = ["RoTMS"] 
     self.parent.dependencies = []  # TODO: add here list of module names that this module requires
     self.parent.contributors = ["Yihao Liu (Johns Hopkins University)"] 
@@ -102,10 +102,6 @@ and Steve Pieper, Isomics, Inc. and was partially funded by NIH grant 3P41RR0132
 
     # Additional initialization step after application startup is complete
     slicer.app.connect("startupCompleted()", appStartUpPostAction)
-
-#
-# Register sample data sets in Sample Data module
-#
 
 def appStartUpPostAction():
   return
@@ -159,14 +155,14 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
     # (in the selected parameter node).
     self.ui.markupsRegistration.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
-    self.ui.markupsCoilPosePlan.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+    self.ui.markupsToolPosePlan.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
 
     # Buttons
     self.ui.pushPlanFiducials.connect('clicked(bool)', self.onPushPlanFiducials)
     self.ui.pushDigitize.connect('clicked(bool)', self.onPushDigitize)
     self.ui.pushRegister.connect('clicked(bool)', self.onPushRegistration)
     self.ui.pushUsePreviousRegistration.connect('clicked(bool)', self.onPushUsePreviousRegistration)
-    self.ui.pushCoilPosePlan.connect('clicked(bool)', self.onPushCoilPosePlan)
+    self.ui.pushToolPosePlan.connect('clicked(bool)', self.onPushToolPosePlan)
 
     # Make sure parameter node is initialized (needed for module reload)
     self.initializeParameterNode()
@@ -257,7 +253,7 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     # Update node selectors and sliders
     self.ui.markupsRegistration.setCurrentNode(self._parameterNode.GetNodeReference("FiducialsMarkups"))
-    self.ui.markupsCoilPosePlan.setCurrentNode(self._parameterNode.GetNodeReference("CoilPoseMarkups"))
+    self.ui.markupsToolPosePlan.setCurrentNode(self._parameterNode.GetNodeReference("ToolPoseMarkups"))
     
     # Update buttons states and tooltips
     if self._parameterNode.GetNodeReference("FiducialsMarkups"):
@@ -271,8 +267,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       self.ui.pushDigitize.toolTip = "Select fiducial markups node first"
       self.ui.pushDigitize.enabled = False
 
-    if self._parameterNode.GetNodeReference("CoilPoseMarkups"):
-      self.ui.pushPlanFiducials.toolTip = "Feed in coil pose"
+    if self._parameterNode.GetNodeReference("ToolPoseMarkups"):
+      self.ui.pushPlanFiducials.toolTip = "Feed in tool pose"
       self.ui.pushPlanFiducials.enabled = True
     else:
       self.ui.pushPlanFiducials.toolTip = "Select fiducial markups node"
@@ -293,7 +289,7 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     wasModified = self._parameterNode.StartModify()  # Modify all properties in a single batch
 
     self._parameterNode.SetNodeReferenceID("FiducialsMarkups", self.ui.markupsRegistration.currentNodeID)
-    self._parameterNode.SetNodeReferenceID("CoilPoseMarkups", self.ui.markupsCoilPosePlan.currentNodeID)
+    self._parameterNode.SetNodeReferenceID("ToolPoseMarkups", self.ui.markupsToolPosePlan.currentNodeID)
 
     self._parameterNode.EndModify(wasModified)
 
@@ -312,8 +308,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     msg = self.logic._commandsData["USE_PREV_REGISTRATION"]
     self.logic.utilSendCommand(msg)
 
-  def onPushCoilPosePlan(self):
-    self.logic.processPushCoilPosePlan(self.ui.markupsCoilPosePlan.currentNode())
+  def onPushToolPosePlan(self):
+    self.logic.processPushToolPosePlan(self.ui.markupsToolPosePlan.currentNode())
 
 
 
@@ -359,7 +355,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       raise ValueError("Input landmarks are less than 3")
     self.utilSendFiducials(-1)
   
-  def processPushCoilPosePlan(self, inputMarkupsNode):
+  def processPushToolPosePlan(self, inputMarkupsNode):
     """
     Push botton callback function. Plan the pose of the contact point.
     """

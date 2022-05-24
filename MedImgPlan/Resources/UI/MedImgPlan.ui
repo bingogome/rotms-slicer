@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>406</width>
+    <width>361</width>
     <height>781</height>
    </rect>
   </property>
@@ -62,37 +62,37 @@
     </widget>
    </item>
    <item>
-    <widget class="ctkCollapsibleButton" name="collapCoilPosePlan">
+    <widget class="ctkCollapsibleButton" name="collapToolPosePlan">
      <property name="text">
-      <string>Coil Pose Plan</string>
+      <string>Tool Pose Plan</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="3" column="0">
-       <widget class="qSlicerSimpleMarkupsWidget" name="markupsCoilPosePlan"/>
+       <widget class="qSlicerSimpleMarkupsWidget" name="markupsToolPosePlan"/>
       </item>
       <item row="1" column="0">
-       <widget class="QLabel" name="labelCoilPosePlan2">
+       <widget class="QLabel" name="labelToolPosePlan2">
         <property name="text">
          <string>2. Put 3 points (counterclockwise) as the contact plane;</string>
         </property>
        </widget>
       </item>
       <item row="2" column="0">
-       <widget class="QLabel" name="labelCoilPosePlan3">
+       <widget class="QLabel" name="labelToolPosePlan3">
         <property name="text">
-         <string>3. The last of the 3 points should be the tail direction of the coil</string>
+         <string>3. The last of the 3 points should be the tail direction of a tool</string>
         </property>
        </widget>
       </item>
       <item row="0" column="0">
-       <widget class="QLabel" name="labelCoilPosePlan1">
+       <widget class="QLabel" name="labelToolPosePlan1">
         <property name="text">
          <string>1. Put 1 point as the contact point center;</string>
         </property>
        </widget>
       </item>
       <item row="4" column="0">
-       <widget class="QPushButton" name="pushCoilPosePlan">
+       <widget class="QPushButton" name="pushToolPosePlan">
         <property name="text">
          <string>Plan Coil Pose</string>
         </property>
@@ -162,7 +162,7 @@
   <connection>
    <sender>MedImgPlan</sender>
    <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
-   <receiver>markupsCoilPosePlan</receiver>
+   <receiver>markupsToolPosePlan</receiver>
    <slot>setMRMLScene(vtkMRMLScene*)</slot>
    <hints>
     <hint type="sourcelabel">
