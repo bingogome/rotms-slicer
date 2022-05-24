@@ -1,7 +1,7 @@
 # rotms-slicer
 A slicer extension for Robotic-TMS (Ro-TMS) paradigm.
 ![alt text](https://github.com/bingogome/documents/blob/main/rotms-slicer/rotms-ui.png)
-
+![alt text](https://github.com/bingogome/documents/blob/main/rotms-slicer/rotms-visual.png)
 # MedImgPlan
 A slicer script module for medical image planning. 
 
