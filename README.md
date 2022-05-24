@@ -26,3 +26,15 @@ A slicer script module for medical image planning.
 
 # RobotControl
 A slicer script module for robot controlling commands. 
+
+## Configuration
+- Please see RobotControl/Resources/Configs/Config.json for more details.
+
+## Commands from Slicer
+- Note:
+  - Please see RobotControl/Resources/Configs/CommandsConfig.json for more details.
+  - This is the commands that will be sent from 3D slicer to the distant side.
+  - The unit of the numbers sent out in the commands are in ROS convention
+  - The commands should not exceed 150 chars (receiving side buffer)
+
+# TargetVisualization
