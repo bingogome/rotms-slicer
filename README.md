@@ -9,10 +9,20 @@ A slicer script module for medical image planning.
 - Please see MedImgPlan/Resources/Configs/Config.json for more details.
 
 ## Commands from Slicer
-- Please see MedImgPlan/Resources/Configs/CommandsConfig.json for more details.
-- This is the commands that will be sent from 3D slicer to the distant side.
-- The unit of the numbers sent out in the commands are in ROS convention
-- The commands should not exceed 150 chars (receiving side buffer)
+- Note:
+  - Please see MedImgPlan/Resources/Configs/CommandsConfig.json for more details.
+  - This is the commands that will be sent from 3D slicer to the distant side.
+  - The unit of the numbers sent out in the commands are in ROS convention
+  - The commands should not exceed 150 chars (receiving side buffer)
+- Commands encoding:
+  - "START_AUTO_DIGITIZE": "start_autodigitzat",
+  - "START_REGISTRATION": "start_registration",
+  - "USE_PREV_REGISTRATION": "start_useprevregis",
+  - "CURRENT_FIDUCIAL_ON_IMG": "img_fid_pnt",
+  - "NUM_OF_FIDUCIAL_ON_IMG": "img_fid_num",
+  - "TARGET_POSE_ORIENTATION": "target_rot",
+  - "TARGET_POSE_TRANSLATION": "target_tsl"
+}
 
 # RobotControl
 A slicer script module for robot controlling commands. 
