@@ -30,6 +30,41 @@ from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
 #
+# Connection
+#
+
+class RobotControlConnection():
+  """
+  Connection class for the MedImgPlan module
+  """
+
+  def __init__(self,configPath):
+
+    # port init
+    with open(configPath+"Config.json") as f:
+      configData = json.load(f)
+    
+    self._sock_ip_receive = configData["IP_RECEIVE_RobotControl"]
+    self._sock_ip_send = configData["IP_SEND_RobotControl"]
+    self._sock_receive_port = configData["PORT_RECEIVE_RobotControl"]
+    self._sock_send_port = configData["PORT_SEND_RobotControl"]
+
+    self._sock_receive = None
+    self._sock_send = None
+  
+  def setup(self):
+    self._sock_receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    self._sock_send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    self._sock_receive.bind((self._sock_ip_receive, self._sock_receive_port))
+    self._sock_receive.settimeout(0.5)
+    
+  def clear(self):
+    if self._sock_receive:
+      self._sock_receive.close()
+    if self._sock_send:
+      self._sock_send.close()
+
+#
 # RobotControl
 #
 
@@ -99,7 +134,7 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     # Create logic class. Logic implements all computations that should be possible to run
     # in batch mode, without a graphical user interface.
-    self.logic = RobotControlLogic()
+    self.logic = RobotControlLogic(self.resourcePath('Configs/'))
 
     # Connections
 
@@ -109,14 +144,8 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
     # (in the selected parameter node).
-    self.ui.inputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
-    self.ui.outputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
-    self.ui.imageThresholdSliderWidget.connect("valueChanged(double)", self.updateParameterNodeFromGUI)
-    self.ui.invertOutputCheckBox.connect("toggled(bool)", self.updateParameterNodeFromGUI)
-    self.ui.invertedOutputSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
-
+   
     # Buttons
-    self.ui.applyButton.connect('clicked(bool)', self.onApplyButton)
 
     # Make sure parameter node is initialized (needed for module reload)
     self.initializeParameterNode()
@@ -126,6 +155,7 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     Called when the application closes and the module widget is destroyed.
     """
     self.removeObservers()
+    self.logic._connections.clear()
 
   def enter(self):
     """
@@ -166,10 +196,10 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.setParameterNode(self.logic.getParameterNode())
 
     # Select default input nodes if nothing is selected yet to save a few clicks for the user
-    if not self._parameterNode.GetNodeReference("InputVolume"):
-      firstVolumeNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLScalarVolumeNode")
-      if firstVolumeNode:
-        self._parameterNode.SetNodeReferenceID("InputVolume", firstVolumeNode.GetID())
+    # if not self._parameterNode.GetNodeReference("InputVolume"):
+    #   firstVolumeNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLScalarVolumeNode")
+    #   if firstVolumeNode:
+    #     self._parameterNode.SetNodeReferenceID("InputVolume", firstVolumeNode.GetID())
 
   def setParameterNode(self, inputParameterNode):
     """
