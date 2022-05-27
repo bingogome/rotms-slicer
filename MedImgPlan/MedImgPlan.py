@@ -24,12 +24,12 @@ SOFTWARE.
 
 import os
 import json
-import unittest
 import logging
+import socket
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
-import socket
+
 from MedImgPlanLib import UtilCalculations
 from MedImgPlanLib import UtilSlicerFuncs
 from MedImgPlanLib import UtilFormat

@@ -22,6 +22,7 @@ include(${Slicer_USE_FILE})
 add_subdirectory(RobotControl)
 add_subdirectory(MRIPlan)
 add_subdirectory(TargetVisualization)
+add_subdirectory(SlicerTestExample)
 ## NEXT_MODULE
 
 #-----------------------------------------------------------------------------

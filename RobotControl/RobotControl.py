@@ -23,8 +23,9 @@ SOFTWARE.
 """
 
 import os
-import unittest
+import json
 import logging
+import socket
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
@@ -144,8 +145,24 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
     # (in the selected parameter node).
-   
+    self.ui.sliderRotation.connect("valueChanged(double)", self.updateParameterNodeFromGUI)
+    self.ui.sliderTranslation.connect("valueChanged(double)", self.updateParameterNodeFromGUI)
+    self.ui.checkBoxSafe.connect("toggled(bool)", self.updateParameterNodeFromGUI)
+
     # Buttons
+    self.ui.pushGetJntAngs.connect('clicked(bool)', self.onPushGetJntAngs)
+    self.ui.pushGetEFFPose.connect('clicked(bool)', self.onPushGetEFFPose)
+    self.ui.pushExecute.connect('clicked(bool)', self.onPushExecute)
+    self.ui.pushConfirm.connect('clicked(bool)', self.onPushConfirm)
+    self.ui.pushBackward.connect('clicked(bool)', self.onPushBackward)
+    self.ui.pushCloser.connect('clicked(bool)', self.onPushCloser)
+    self.ui.pushFarther.connect('clicked(bool)', self.onPushFarther)
+    self.ui.pushForward.connect('clicked(bool)', self.onPushForward)
+    self.ui.pushLeft.connect('clicked(bool)', self.onPushLeft)
+    self.ui.pushPitch.connect('clicked(bool)', self.onPushPitch)
+    self.ui.pushRight.connect('clicked(bool)', self.onPushRight)
+    self.ui.pushRoll.connect('clicked(bool)', self.onPushRoll)
+    self.ui.pushYaw.connect('clicked(bool)', self.onPushYaw)
 
     # Make sure parameter node is initialized (needed for module reload)
     self.initializeParameterNode()
@@ -195,12 +212,6 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     self.setParameterNode(self.logic.getParameterNode())
 
-    # Select default input nodes if nothing is selected yet to save a few clicks for the user
-    # if not self._parameterNode.GetNodeReference("InputVolume"):
-    #   firstVolumeNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLScalarVolumeNode")
-    #   if firstVolumeNode:
-    #     self._parameterNode.SetNodeReferenceID("InputVolume", firstVolumeNode.GetID())
-
   def setParameterNode(self, inputParameterNode):
     """
     Set and observe parameter node.
@@ -235,19 +246,57 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self._updatingGUIFromParameterNode = True
 
     # Update node selectors and sliders
-    self.ui.inputSelector.setCurrentNode(self._parameterNode.GetNodeReference("InputVolume"))
-    self.ui.outputSelector.setCurrentNode(self._parameterNode.GetNodeReference("OutputVolume"))
-    self.ui.invertedOutputSelector.setCurrentNode(self._parameterNode.GetNodeReference("OutputVolumeInverse"))
-    self.ui.imageThresholdSliderWidget.value = float(self._parameterNode.GetParameter("Threshold"))
-    self.ui.invertOutputCheckBox.checked = (self._parameterNode.GetParameter("Invert") == "true")
+    self.ui.sliderRotation.value = float(self._parameterNode.GetParameter("RotationAdjustmentValue"))
+    self.ui.sliderTranslation.value = float(self._parameterNode.GetParameter("TranslationAdjustmentValue"))
+    self.ui.checkBoxSafe.checked = (self._parameterNode.GetParameter("SafeCheck") == "true")
 
     # Update buttons states and tooltips
-    if self._parameterNode.GetNodeReference("InputVolume") and self._parameterNode.GetNodeReference("OutputVolume"):
-      self.ui.applyButton.toolTip = "Compute output volume"
-      self.ui.applyButton.enabled = True
+    if self._parameterNode.GetParameter("SafeCheck"):
+      self.ui.pushExecute.toolTip = "Push button to move robot to an offset location"
+      self.ui.pushExecute.enabled = True
+      self.ui.pushConfirm.toolTip = "Push button to move robot to planned location"
+      self.ui.pushConfirm.enabled = True
+      self.ui.pushBackward.toolTip = "Move tool backwards"
+      self.ui.pushBackward.enabled = True
+      self.ui.pushCloser.toolTip = "Move tool closer"
+      self.ui.pushCloser.enabled = True
+      self.ui.pushFarther.toolTip = "Move tool farther"
+      self.ui.pushFarther.enabled = True
+      self.ui.pushForward.toolTip = "Move tool forwards"
+      self.ui.pushForward.enabled = True
+      self.ui.pushLeft.toolTip = "Move tool left"
+      self.ui.pushLeft.enabled = True
+      self.ui.pushPitch.toolTip = "Pitch tool"
+      self.ui.pushPitch.enabled = True
+      self.ui.pushRight.toolTip = "Move tool right"
+      self.ui.pushRight.enabled = True
+      self.ui.pushRoll.toolTip = "Roll tool"
+      self.ui.pushRoll.enabled = True
+      self.ui.pushYaw.toolTip = "Yaw tool"
+      self.ui.pushYaw
     else:
-      self.ui.applyButton.toolTip = "Select input and output volume nodes"
-      self.ui.applyButton.enabled = False
+      self.ui.pushExecute.toolTip = "Safety not checked"
+      self.ui.pushExecute.enabled = False
+      self.ui.pushConfirm.toolTip = "Safety not checked"
+      self.ui.pushConfirm.enabled = False
+      self.ui.pushBackward.toolTip = "Safety not checked"
+      self.ui.pushBackward.enabled = False
+      self.ui.pushCloser.toolTip = "Safety not checked"
+      self.ui.pushCloser.enabled = False
+      self.ui.pushFarther.toolTip = "Safety not checked"
+      self.ui.pushFarther.enabled = False
+      self.ui.pushForward.toolTip = "Safety not checked"
+      self.ui.pushForward.enabled = False
+      self.ui.pushLeft.toolTip = "Safety not checked"
+      self.ui.pushLeft.enabled = False
+      self.ui.pushPitch.toolTip = "Safety not checked"
+      self.ui.pushPitch.enabled = False
+      self.ui.pushRight.toolTip = "Safety not checked"
+      self.ui.pushRight.enabled = False
+      self.ui.pushRoll.toolTip = "Safety not checked"
+      self.ui.pushRoll.enabled = False
+      self.ui.pushYaw.toolTip = "Safety not checked"
+      self.ui.pushYaw.enabled = False
 
     # All the GUI updates are done
     self._updatingGUIFromParameterNode = False
@@ -263,35 +312,54 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     wasModified = self._parameterNode.StartModify()  # Modify all properties in a single batch
 
-    self._parameterNode.SetNodeReferenceID("InputVolume", self.ui.inputSelector.currentNodeID)
-    self._parameterNode.SetNodeReferenceID("OutputVolume", self.ui.outputSelector.currentNodeID)
-    self._parameterNode.SetParameter("Threshold", str(self.ui.imageThresholdSliderWidget.value))
-    self._parameterNode.SetParameter("Invert", "true" if self.ui.invertOutputCheckBox.checked else "false")
-    self._parameterNode.SetNodeReferenceID("OutputVolumeInverse", self.ui.invertedOutputSelector.currentNodeID)
+    self._parameterNode.SetParameter("RotationAdjustmentValue", str(self.ui.sliderRotation.value))
+    self._parameterNode.SetParameter("TranslationAdjustmentValue", str(self.ui.sliderTranslation.value))
+    self._parameterNode.SetParameter("SafeCheck", "true" if self.ui.checkBoxSafe.checked else "false")
 
     self._parameterNode.EndModify(wasModified)
 
-  def onApplyButton(self):
-    """
-    Run processing when user clicks "Apply" button.
-    """
-    try:
+  def onPushGetJntAngs(self):
+    msg = self.logic._commandsData["GET_JNT_ANGS"]
+    self.logic.utilSendCommand(msg)
 
-      # Compute output
-      self.logic.process(self.ui.inputSelector.currentNode(), self.ui.outputSelector.currentNode(),
-        self.ui.imageThresholdSliderWidget.value, self.ui.invertOutputCheckBox.checked)
+  def onPushGetEFFPose(self):
+    msg = self.logic._commandsData["GET_EFF_POSE"]
+    self.logic.utilSendCommand(msg)
 
-      # Compute inverted output (if needed)
-      if self.ui.invertedOutputSelector.currentNode():
-        # If additional output volume is selected then result with inverted threshold is written there
-        self.logic.process(self.ui.inputSelector.currentNode(), self.ui.invertedOutputSelector.currentNode(),
-          self.ui.imageThresholdSliderWidget.value, not self.ui.invertOutputCheckBox.checked, showResult=False)
+  def onPushExecute(self):
+    msg = self.logic._commandsData["EXECUTE_MOTION"]
+    self.logic.utilSendCommand(msg)
 
-    except Exception as e:
-      slicer.util.errorDisplay("Failed to compute results: "+str(e))
-      import traceback
-      traceback.print_exc()
+  def onPushConfirm(self):
+    msg = self.logic._commandsData["EXECUTE_MOVE_CONFIRM"]
+    self.logic.utilSendCommand(msg)
 
+  def onPushBackward(self):
+    self.logic.utilManualAdjust("backward")
+
+  def onPushCloser(self):
+    self.logic.utilManualAdjust("closer")
+
+  def onPushFarther(self):
+    self.logic.utilManualAdjust("farther")
+
+  def onPushForward(self):
+    self.logic.utilManualAdjust("forward")
+
+  def onPushLeft(self):
+    self.logic.utilManualAdjust("left")
+
+  def onPushPitch(self):
+    self.logic.utilManualAdjust("pitch")
+
+  def onPushRight(self):
+    self.logic.utilManualAdjust("right")
+
+  def onPushRoll(self):
+    self.logic.utilManualAdjust("roll")
+
+  def onPushYaw(self):
+    self.logic.utilManualAdjust("yaw")
 
 #
 # RobotControlLogic
@@ -307,11 +375,14 @@ class RobotControlLogic(ScriptedLoadableModuleLogic):
   https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
   """
 
-  def __init__(self):
+  def __init__(self,configPath):
     """
     Called when the logic class is instantiated. Can be used for initializing member variables.
     """
     ScriptedLoadableModuleLogic.__init__(self)
+    self._configPath = configPath
+    self._connections = RobotControlConnection(configPath)
+    self._connections.setup()
 
   def setDefaultParameters(self, parameterNode):
     """
@@ -321,103 +392,3 @@ class RobotControlLogic(ScriptedLoadableModuleLogic):
       parameterNode.SetParameter("Threshold", "100.0")
     if not parameterNode.GetParameter("Invert"):
       parameterNode.SetParameter("Invert", "false")
-
-  def process(self, inputVolume, outputVolume, imageThreshold, invert=False, showResult=True):
-    """
-    Run the processing algorithm.
-    Can be used without GUI widget.
-    :param inputVolume: volume to be thresholded
-    :param outputVolume: thresholding result
-    :param imageThreshold: values above/below this threshold will be set to 0
-    :param invert: if True then values above the threshold will be set to 0, otherwise values below are set to 0
-    :param showResult: show output volume in slice viewers
-    """
-
-    if not inputVolume or not outputVolume:
-      raise ValueError("Input or output volume is invalid")
-
-    import time
-    startTime = time.time()
-    logging.info('Processing started')
-
-    # Compute the thresholded output volume using the "Threshold Scalar Volume" CLI module
-    cliParams = {
-      'InputVolume': inputVolume.GetID(),
-      'OutputVolume': outputVolume.GetID(),
-      'ThresholdValue' : imageThreshold,
-      'ThresholdType' : 'Above' if invert else 'Below'
-      }
-    cliNode = slicer.cli.run(slicer.modules.thresholdscalarvolume, None, cliParams, wait_for_completion=True, update_display=showResult)
-    # We don't need the CLI module node anymore, remove it to not clutter the scene with it
-    slicer.mrmlScene.RemoveNode(cliNode)
-
-    stopTime = time.time()
-    logging.info('Processing completed in {0:.2f} seconds'.format(stopTime-startTime))
-
-#
-# RobotControlTest
-#
-
-class RobotControlTest(ScriptedLoadableModuleTest):
-  """
-  This is the test case for your scripted module.
-  Uses ScriptedLoadableModuleTest base class, available at:
-  https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
-  """
-
-  def setUp(self):
-    """ Do whatever is needed to reset the state - typically a scene clear will be enough.
-    """
-    slicer.mrmlScene.Clear()
-
-  def runTest(self):
-    """Run as few or as many tests as needed here.
-    """
-    self.setUp()
-    self.test_RobotControl1()
-
-  def test_RobotControl1(self):
-    """ Ideally you should have several levels of tests.  At the lowest level
-    tests should exercise the functionality of the logic with different inputs
-    (both valid and invalid).  At higher levels your tests should emulate the
-    way the user would interact with your code and confirm that it still works
-    the way you intended.
-    One of the most important features of the tests is that it should alert other
-    developers when their changes will have an impact on the behavior of your
-    module.  For example, if a developer removes a feature that you depend on,
-    your test should break so they know that the feature is needed.
-    """
-
-    self.delayDisplay("Starting the test")
-
-    # Get/create input data
-
-    import SampleData
-    registerSampleData()
-    inputVolume = SampleData.downloadSample('RobotControl1')
-    self.delayDisplay('Loaded test data set')
-
-    inputScalarRange = inputVolume.GetImageData().GetScalarRange()
-    self.assertEqual(inputScalarRange[0], 0)
-    self.assertEqual(inputScalarRange[1], 695)
-
-    outputVolume = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLScalarVolumeNode")
-    threshold = 100
-
-    # Test the module logic
-
-    logic = RobotControlLogic()
-
-    # Test algorithm with non-inverted threshold
-    logic.process(inputVolume, outputVolume, threshold, True)
-    outputScalarRange = outputVolume.GetImageData().GetScalarRange()
-    self.assertEqual(outputScalarRange[0], inputScalarRange[0])
-    self.assertEqual(outputScalarRange[1], threshold)
-
-    # Test algorithm with inverted threshold
-    logic.process(inputVolume, outputVolume, threshold, False)
-    outputScalarRange = outputVolume.GetImageData().GetScalarRange()
-    self.assertEqual(outputScalarRange[0], inputScalarRange[0])
-    self.assertEqual(outputScalarRange[1], inputScalarRange[1])
-
-    self.delayDisplay('Test passed')
