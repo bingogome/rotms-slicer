@@ -6,27 +6,27 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>279</width>
+    <width>342</width>
     <height>620</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QPushButton" name="pushButton">
+    <widget class="QPushButton" name="pushStartTargetViz">
      <property name="text">
       <string>Start Target Visualization</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="pushButton_2">
+    <widget class="QPushButton" name="pushStopTargetViz">
      <property name="text">
       <string>Stop Target Visualization</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="qMRMLNodeComboBox" name="MRMLNodeComboBox"/>
+    <widget class="qMRMLNodeComboBox" name="selectorModel"/>
    </item>
    <item>
     <widget class="qMRMLModelDisplayNodeWidget" name="EMSegmentInputChannelListWidget"/>
