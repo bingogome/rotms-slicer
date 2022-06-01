@@ -343,7 +343,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     """
     Initialize parameter node with default settings.
     """
-    self._parameterNode = parameterNode
+    return
 
   def processPushPlanFiducials(self, inputMarkupsNode):
     """

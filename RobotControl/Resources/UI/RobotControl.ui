@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>279</width>
-    <height>539</height>
+    <height>643</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
@@ -150,6 +150,22 @@
        <widget class="QLabel" name="labelRotation">
         <property name="text">
          <string>Rotation Increment (degree)</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="ctkCollapsibleButton" name="collapPostMotion">
+     <property name="text">
+      <string>Post Motion Procedure</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="0">
+       <widget class="QPushButton" name="pushEnd">
+        <property name="text">
+         <string>Back to Offset End Session</string>
         </property>
        </widget>
       </item>

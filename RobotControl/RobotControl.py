@@ -163,6 +163,7 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.pushRight.connect('clicked(bool)', self.onPushRight)
     self.ui.pushRoll.connect('clicked(bool)', self.onPushRoll)
     self.ui.pushYaw.connect('clicked(bool)', self.onPushYaw)
+    self.ui.pushEnd.connect('clicked(bool)', self.onPushEnd)
 
     # Make sure parameter node is initialized (needed for module reload)
     self.initializeParameterNode()
@@ -360,6 +361,10 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
   def onPushYaw(self):
     self.logic.utilManualAdjust("yaw")
+
+  def onPushEnd(self):
+    msg = self.logic._commandsData["END_SESSION"]
+    self.logic.utilSendCommand(msg)
 
 #
 # RobotControlLogic
