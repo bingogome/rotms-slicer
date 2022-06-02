@@ -8,6 +8,7 @@ set(MODULE_PYTHON_SCRIPTS
   ${MODULE_NAME}Lib/UtilCalculations
   ${MODULE_NAME}Lib/UtilFormat
   ${MODULE_NAME}Lib/UtilSlicerFuncs
+  ${MODULE_NAME}Lib/UtilConnections
   )
 
 set(MODULE_PYTHON_RESOURCES

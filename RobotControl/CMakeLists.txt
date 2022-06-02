@@ -6,6 +6,7 @@ set(MODULE_PYTHON_SCRIPTS
   ${MODULE_NAME}.py
   ${MODULE_NAME}Lib/__init__
   ${MODULE_NAME}Lib/UtilFormat
+  ${MODULE_NAME}Lib/UtilConnections
   )
 
 set(MODULE_PYTHON_RESOURCES

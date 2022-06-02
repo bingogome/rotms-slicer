@@ -25,54 +25,20 @@ SOFTWARE.
 import os
 import json
 import logging
-import socket
+
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
-from MedImgPlanLib import UtilCalculations
-from MedImgPlanLib import UtilSlicerFuncs
-from MedImgPlanLib import UtilFormat
+from MedImgPlanLib import UtilConnections
+from MedImgPlanLib.UtilFormat import utilNumStrFormat
+from MedImgPlanLib.UtilCalculations import mat2quat, utilPosePlan
+from MedImgPlanLib.UtilSlicerFuncs import setTransform
 
 """
 Check CommandsConfig.json to get UDP messages.
 Check Config.json to get program settings.
 """
-
-#
-# Connection
-#
-
-class MedImgPlanConnection():
-  """
-  Connection class for the MedImgPlan module
-  """
-
-  def __init__(self,configPath):
-
-    # port init
-    with open(configPath+"Config.json") as f:
-      configData = json.load(f)
-    
-    self._sock_ip_receive = configData["IP_RECEIVE_MEDIMG"]
-    self._sock_ip_send = configData["IP_SEND_MEDIMG"]
-    self._sock_receive_port = configData["PORT_RECEIVE_MEDIMG"]
-    self._sock_send_port = configData["PORT_SEND_MEDIMG"]
-
-    self._sock_receive = None
-    self._sock_send = None
-  
-  def setup(self):
-    self._sock_receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    self._sock_send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    self._sock_receive.bind((self._sock_ip_receive, self._sock_receive_port))
-    self._sock_receive.settimeout(0.5)
-    
-  def clear(self):
-    if self._sock_receive:
-      self._sock_receive.close()
-    if self._sock_send:
-      self._sock_send.close()
 
 #
 # MedImgPlan
@@ -298,15 +264,15 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
   def onPushDigitize(self):
     msg = self.logic._commandsData["START_AUTO_DIGITIZE"]
-    self.logic.utilSendCommand(msg)
+    self.logic._connections.utilSendCommand(msg)
 
   def onPushRegistration(self):
     msg = self.logic._commandsData["START_REGISTRATION"]
-    self.logic.utilSendCommand(msg)
+    self.logic._connections.utilSendCommand(msg)
 
   def onPushUsePreviousRegistration(self):
     msg = self.logic._commandsData["USE_PREV_REGISTRATION"]
-    self.logic.utilSendCommand(msg)
+    self.logic._connections.utilSendCommand(msg)
 
   def onPushToolPosePlan(self):
     self.logic.processPushToolPosePlan(self.ui.markupsToolPosePlan.currentNode())
@@ -333,7 +299,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     """
     ScriptedLoadableModuleLogic.__init__(self)
     self._configPath = configPath
-    self._connections = MedImgPlanConnection(configPath)
+    self._connections = UtilConnections(configPath,"MEDIMG")
     self._connections.setup()
     
     with open(self._configPath+"CommandsConfig.json") as f:
@@ -407,29 +373,12 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       "_" + utilNumStrFormat(quat[2]) + \
       "_" + utilNumStrFormat(quat[3])
 
-    self.utilSendCommand(msg)
+    self._connections.utilSendCommand(msg)
 
     msg = self._commandsData["TARGET_POSE_TRANSLATION"] + \
       "_" + utilNumStrFormat(p[0]/1000,7) + \
       "_" + utilNumStrFormat(p[1]/1000,7) + \
       "_" + utilNumStrFormat(p[2]/1000,7)
-
-  def utilSendCommand(self, msg, errorMsg="Failed to send command ", res=False):
-    if len(msg) > 150:
-      raise RuntimeError("Command contains too many characters.")
-    try:
-      self._connections._sock_send.sendto( \
-        msg.encode('UTF-8'), (self._connections._sock_ip_send, self._connections._sock_send_port) )
-      try:
-        data = self._connections._sock_receive.recvfrom(512)
-      except socket.error:
-        raise RuntimeError("Command response timedout")
-    except Exception as e:
-      slicer.util.errorDisplay(errorMsg+str(e))
-      import traceback
-      traceback.print_exc()
-    if res:
-      return data
 
   def utilSendFiducials(self, curIdx):
     """
@@ -453,7 +402,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       msg = self._commandsData["NUM_OF_FIDUCIAL_ON_IMG"] + \
         "_" + str(numOfFid).zfill(2)
     
-    self.utilSendCommand(msg)
+    self._connections.utilSendCommand(msg)
 
     if curIdx < numOfFid-1:
       curIdx = curIdx+1

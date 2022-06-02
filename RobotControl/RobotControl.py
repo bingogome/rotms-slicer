@@ -25,48 +25,12 @@ SOFTWARE.
 import os
 import json
 import logging
-import socket
-from RobotControl.RobotControlLib.UtilFormat import utilNumStrFormat
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
-from RobotControlLib import UtilFormat
-
-#
-# Connection
-#
-
-class RobotControlConnection():
-  """
-  Connection class for the RobotControl module
-  """
-
-  def __init__(self,configPath):
-
-    # port init
-    with open(configPath+"Config.json") as f:
-      configData = json.load(f)
-    
-    self._sock_ip_receive = configData["IP_RECEIVE_RobotControl"]
-    self._sock_ip_send = configData["IP_SEND_RobotControl"]
-    self._sock_receive_port = configData["PORT_RECEIVE_RobotControl"]
-    self._sock_send_port = configData["PORT_SEND_RobotControl"]
-
-    self._sock_receive = None
-    self._sock_send = None
-  
-  def setup(self):
-    self._sock_receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    self._sock_send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    self._sock_receive.bind((self._sock_ip_receive, self._sock_receive_port))
-    self._sock_receive.settimeout(0.5)
-    
-  def clear(self):
-    if self._sock_receive:
-      self._sock_receive.close()
-    if self._sock_send:
-      self._sock_send.close()
+from RobotControlLib import UtilConnections
+from RobotControlLib.UtilFormat import utilNumStrFormat
 
 #
 # RobotControl
@@ -277,7 +241,7 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       self.ui.pushRoll.toolTip = "Roll tool"
       self.ui.pushRoll.enabled = True
       self.ui.pushYaw.toolTip = "Yaw tool"
-      self.ui.pushYaw
+      self.ui.pushYaw.enabled = True
     else:
       self.ui.pushExecute.toolTip = "Safety not checked"
       self.ui.pushExecute.enabled = False
@@ -324,19 +288,19 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
   def onPushGetJntAngs(self):
     msg = self.logic._commandsData["GET_JNT_ANGS"]
-    self.logic.utilSendCommand(msg)
+    self.logic._connections.utilSendCommand(msg)
 
   def onPushGetEFFPose(self):
     msg = self.logic._commandsData["GET_EFF_POSE"]
-    self.logic.utilSendCommand(msg)
+    self.logic._connections.utilSendCommand(msg)
 
   def onPushExecute(self):
     msg = self.logic._commandsData["EXECUTE_MOTION"]
-    self.logic.utilSendCommand(msg)
+    self.logic._connections.utilSendCommand(msg)
 
   def onPushConfirm(self):
     msg = self.logic._commandsData["EXECUTE_MOVE_CONFIRM"]
-    self.logic.utilSendCommand(msg)
+    self.logic._connections.utilSendCommand(msg)
 
   def onPushBackward(self):
     self.logic.utilManualAdjust("backward", \
@@ -376,7 +340,7 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
   def onPushEnd(self):
     msg = self.logic._commandsData["END_SESSION"]
-    self.logic.utilSendCommand(msg)
+    self.logic._connections.utilSendCommand(msg)
 
 #
 # RobotControlLogic
@@ -398,7 +362,7 @@ class RobotControlLogic(ScriptedLoadableModuleLogic):
     """
     ScriptedLoadableModuleLogic.__init__(self)
     self._configPath = configPath
-    self._connections = RobotControlConnection(configPath)
+    self._connections = UtilConnections(configPath,"RobotControl")
     self._connections.setup()
 
     with open(self._configPath+"CommandsConfig.json") as f:
@@ -415,48 +379,31 @@ class RobotControlLogic(ScriptedLoadableModuleLogic):
     if not parameterNode.GetParameter("SafeCheck"):
       parameterNode.SetParameter("SafeCheck", "false")
 
-  def utilSendCommand(self, msg, errorMsg="Failed to send command ", res=False):
-    if len(msg) > 150:
-      raise RuntimeError("Command contains too many characters.")
-    try:
-      self._connections._sock_send.sendto( \
-        msg.encode('UTF-8'), (self._connections._sock_ip_send, self._connections._sock_send_port) )
-      try:
-        data = self._connections._sock_receive.recvfrom(512)
-      except socket.error:
-        raise RuntimeError("Command response timedout")
-    except Exception as e:
-      slicer.util.errorDisplay(errorMsg+str(e))
-      import traceback
-      traceback.print_exc()
-    if res:
-      return data
-
   def utilManualAdjust(self, cmdstr, value):
     if cmdstr == "backward":
-      self.utilSendCommand( \
+      self._connections.utilSendCommand( \
         self._commandsData["MAN_ADJUST_BACKWARD"] + "_" + utilNumStrFormat(value))
     if cmdstr == "closer":
-      self.utilSendCommand( \
+      self._connections.utilSendCommand( \
         self._commandsData["MAN_ADJUST_CLOSER"] + "_" + utilNumStrFormat(value))
     if cmdstr == "farther":
-      self.utilSendCommand( \
+      self._connections.utilSendCommand( \
         self._commandsData["MAN_ADJUST_FARTHER"] + "_" + utilNumStrFormat(value))
     if cmdstr == "forward":
-      self.utilSendCommand( \
+      self._connections.utilSendCommand( \
         self._commandsData["MAN_ADJUST_FORWARD"] + "_" + utilNumStrFormat(value))
     if cmdstr == "left":
-      self.utilSendCommand( \
+      self._connections.utilSendCommand( \
         self._commandsData["MAN_ADJUST_LEFT"] + "_" + utilNumStrFormat(value))
     if cmdstr == "pitch":
-      self.utilSendCommand( \
+      self._connections.utilSendCommand( \
         self._commandsData["MAN_ADJUST_PITCH"] + "_" + utilNumStrFormat(value))
     if cmdstr == "right":
-      self.utilSendCommand( \
+      self._connections.utilSendCommand( \
         self._commandsData["MAN_ADJUST_RIGHT"] + "_" + utilNumStrFormat(value))
     if cmdstr == "roll":
-      self.utilSendCommand( \
+      self._connections.utilSendCommand( \
         self._commandsData["MAN_ADJUST_ROLL"] + "_" + utilNumStrFormat(value))
     if cmdstr == "yaw":
-      self.utilSendCommand( \
+      self._connections.utilSendCommand( \
         self._commandsData["MAN_ADJUST_YAW"] + "_" + utilNumStrFormat(value))
