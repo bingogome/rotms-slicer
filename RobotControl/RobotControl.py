@@ -26,9 +26,12 @@ import os
 import json
 import logging
 import socket
+from RobotControl.RobotControlLib.UtilFormat import utilNumStrFormat
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
+
+from RobotControlLib import UtilFormat
 
 #
 # Connection
@@ -36,7 +39,7 @@ from slicer.util import VTKObservationMixin
 
 class RobotControlConnection():
   """
-  Connection class for the MedImgPlan module
+  Connection class for the RobotControl module
   """
 
   def __init__(self,configPath):
@@ -336,31 +339,40 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.logic.utilSendCommand(msg)
 
   def onPushBackward(self):
-    self.logic.utilManualAdjust("backward")
+    self.logic.utilManualAdjust("backward", \
+      float(self._parameterNode.GetParameter("TranslationAdjustmentValue")))
 
   def onPushCloser(self):
-    self.logic.utilManualAdjust("closer")
+    self.logic.utilManualAdjust("closer", \
+      float(self._parameterNode.GetParameter("TranslationAdjustmentValue")))
 
   def onPushFarther(self):
-    self.logic.utilManualAdjust("farther")
+    self.logic.utilManualAdjust("farther", \
+      float(self._parameterNode.GetParameter("TranslationAdjustmentValue")))
 
   def onPushForward(self):
-    self.logic.utilManualAdjust("forward")
+    self.logic.utilManualAdjust("forward", \
+      float(self._parameterNode.GetParameter("TranslationAdjustmentValue")))
 
   def onPushLeft(self):
-    self.logic.utilManualAdjust("left")
+    self.logic.utilManualAdjust("left", \
+      float(self._parameterNode.GetParameter("TranslationAdjustmentValue")))
 
   def onPushPitch(self):
-    self.logic.utilManualAdjust("pitch")
+    self.logic.utilManualAdjust("pitch", \
+      float(self._parameterNode.GetParameter("RotationAdjustmentValue")))
 
   def onPushRight(self):
-    self.logic.utilManualAdjust("right")
+    self.logic.utilManualAdjust("right", \
+      float(self._parameterNode.GetParameter("TranslationAdjustmentValue")))
 
   def onPushRoll(self):
-    self.logic.utilManualAdjust("roll")
+    self.logic.utilManualAdjust("roll", \
+      float(self._parameterNode.GetParameter("RotationAdjustmentValue")))
 
   def onPushYaw(self):
-    self.logic.utilManualAdjust("yaw")
+    self.logic.utilManualAdjust("yaw", \
+      float(self._parameterNode.GetParameter("RotationAdjustmentValue")))
 
   def onPushEnd(self):
     msg = self.logic._commandsData["END_SESSION"]
@@ -389,11 +401,62 @@ class RobotControlLogic(ScriptedLoadableModuleLogic):
     self._connections = RobotControlConnection(configPath)
     self._connections.setup()
 
+    with open(self._configPath+"CommandsConfig.json") as f:
+      self._commandsData = (json.load(f))["RobCtrlCmd"]
+
   def setDefaultParameters(self, parameterNode):
     """
     Initialize parameter node with default settings.
     """
-    if not parameterNode.GetParameter("Threshold"):
-      parameterNode.SetParameter("Threshold", "100.0")
-    if not parameterNode.GetParameter("Invert"):
-      parameterNode.SetParameter("Invert", "false")
+    if not parameterNode.GetParameter("RotationAdjustmentValue"):
+      parameterNode.SetParameter("RotationAdjustmentValue", "1.0") # default 1 degree adjustment
+    if not parameterNode.GetParameter("TranslationAdjustmentValue"):
+      parameterNode.SetParameter("TranslationAdjustmentValue", "5.0") # default 5 mm adjustment
+    if not parameterNode.GetParameter("SafeCheck"):
+      parameterNode.SetParameter("SafeCheck", "false")
+
+  def utilSendCommand(self, msg, errorMsg="Failed to send command ", res=False):
+    if len(msg) > 150:
+      raise RuntimeError("Command contains too many characters.")
+    try:
+      self._connections._sock_send.sendto( \
+        msg.encode('UTF-8'), (self._connections._sock_ip_send, self._connections._sock_send_port) )
+      try:
+        data = self._connections._sock_receive.recvfrom(512)
+      except socket.error:
+        raise RuntimeError("Command response timedout")
+    except Exception as e:
+      slicer.util.errorDisplay(errorMsg+str(e))
+      import traceback
+      traceback.print_exc()
+    if res:
+      return data
+
+  def utilManualAdjust(self, cmdstr, value):
+    if cmdstr == "backward":
+      self.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_BACKWARD"] + "_" + utilNumStrFormat(value))
+    if cmdstr == "closer":
+      self.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_CLOSER"] + "_" + utilNumStrFormat(value))
+    if cmdstr == "farther":
+      self.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_FARTHER"] + "_" + utilNumStrFormat(value))
+    if cmdstr == "forward":
+      self.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_FORWARD"] + "_" + utilNumStrFormat(value))
+    if cmdstr == "left":
+      self.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_LEFT"] + "_" + utilNumStrFormat(value))
+    if cmdstr == "pitch":
+      self.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_PITCH"] + "_" + utilNumStrFormat(value))
+    if cmdstr == "right":
+      self.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_RIGHT"] + "_" + utilNumStrFormat(value))
+    if cmdstr == "roll":
+      self.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_ROLL"] + "_" + utilNumStrFormat(value))
+    if cmdstr == "yaw":
+      self.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_YAW"] + "_" + utilNumStrFormat(value))
