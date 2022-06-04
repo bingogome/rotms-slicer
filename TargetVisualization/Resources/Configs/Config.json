@@ -1,0 +1,7 @@
+{
+    "IP_RECEIVE_TARGETVIZ": "localhost",
+    "IP_SEND_TARGETVIZ": "localhost",
+    "PORT_RECEIVE_TARGETVIZ": 8069,
+    "PORT_SEND_TARGETVIZ": 8077,
+    "POSE_INDICATOR_MODEL": "toolpose.STL"
+}

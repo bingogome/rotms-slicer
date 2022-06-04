@@ -25,45 +25,12 @@ SOFTWARE.
 import os
 import json
 import logging
-import socket
+
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
-#
-# Connection
-#
-
-class TargetVisualizationConnection():
-  """
-  Connection class for the TargetVisualization module
-  """
-
-  def __init__(self,configPath):
-
-    # port init
-    with open(configPath+"Config.json") as f:
-      configData = json.load(f)
-    
-    self._sock_ip_receive = configData["IP_RECEIVE_TARGETVIZ"]
-    self._sock_ip_send = configData["IP_SEND_TARGETVIZ"]
-    self._sock_receive_port = configData["PORT_RECEIVE_TARGETVIZ"]
-    self._sock_send_port = configData["PORT_SEND_TARGETVIZ"]
-
-    self._sock_receive = None
-    self._sock_send = None
-  
-  def setup(self):
-    self._sock_receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    self._sock_send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    self._sock_receive.bind((self._sock_ip_receive, self._sock_receive_port))
-    self._sock_receive.settimeout(0.5)
-    
-  def clear(self):
-    if self._sock_receive:
-      self._sock_receive.close()
-    if self._sock_send:
-      self._sock_send.close()
+from TargetVisualizationLib import UtilConnections
 
 #
 # TargetVisualization
@@ -317,7 +284,7 @@ class TargetVisualizationLogic(ScriptedLoadableModuleLogic):
     """
     ScriptedLoadableModuleLogic.__init__(self)
     self._configPath = configPath
-    self._connections = TargetVisualizationConnection(configPath)
+    self._connections = UtilConnections(configPath, "TARGETVIZ")
     self._connections.setup()
 
     with open(self._configPath+"CommandsConfig.json") as f:

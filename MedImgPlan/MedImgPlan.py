@@ -351,7 +351,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     if not self._parameterNode.GetNodeReference("TargetPoseIndicator"):
       with open(self._configPath+"Config.json") as f:
         configData = json.load(f)
-      inputModel = slicer.util.loadModel(configData["POSE_INDICATOR_MODEL"])
+      inputModel = slicer.util.loadModel(self._configPath+configData["POSE_INDICATOR_MODEL"])
       self._parameterNode.SetNodeReferenceID("TargetPoseIndicator", inputModel.GetID())
 
     transformMatrix = vtk.vtkMatrix4x4()
