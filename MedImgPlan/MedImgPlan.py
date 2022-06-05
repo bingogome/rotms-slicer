@@ -30,7 +30,7 @@ import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
-from MedImgPlanLib import UtilConnections
+from MedImgPlanLib.UtilConnections import UtilConnections
 from MedImgPlanLib.UtilFormat import utilNumStrFormat
 from MedImgPlanLib.UtilCalculations import mat2quat, utilPosePlan
 from MedImgPlanLib.UtilSlicerFuncs import setTransform

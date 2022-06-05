@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2022 Yihao Liu, Johns Hopkins University
+Copyright (c) 2022 Yihao Liu
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-def utilNumStrFormat(n, decimal=5, zerofill=10):
-    """
-    Format numbers into string at decimal and fill with zero
-    """
-    return ("{:."+str(decimal)+"f}").format(n).zfill(zerofill)
+def setTransform(rotm, p, T):
+    T.SetElement(0,0,rotm[0][0])
+    T.SetElement(0,1,rotm[0][1])
+    T.SetElement(0,2,rotm[0][2])
+    T.SetElement(1,0,rotm[1][0])
+    T.SetElement(1,1,rotm[1][1])
+    T.SetElement(1,2,rotm[1][2])
+    T.SetElement(2,0,rotm[2][0])
+    T.SetElement(2,1,rotm[2][1])
+    T.SetElement(2,2,rotm[2][2])
+    T.SetElement(0,3,p[0])
+    T.SetElement(1,3,p[1])
+    T.SetElement(2,3,p[2])

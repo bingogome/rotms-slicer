@@ -29,7 +29,7 @@ import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
-from RobotControlLib import UtilConnections
+from RobotControlLib.UtilConnections import UtilConnections
 from RobotControlLib.UtilFormat import utilNumStrFormat
 
 #
@@ -219,7 +219,7 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.checkBoxSafe.checked = (self._parameterNode.GetParameter("SafeCheck") == "true")
 
     # Update buttons states and tooltips
-    if self._parameterNode.GetParameter("SafeCheck"):
+    if self._parameterNode.GetParameter("SafeCheck") == "true":
       self.ui.pushExecute.toolTip = "Push button to move robot to an offset location"
       self.ui.pushExecute.enabled = True
       self.ui.pushConfirm.toolTip = "Push button to move robot to planned location"

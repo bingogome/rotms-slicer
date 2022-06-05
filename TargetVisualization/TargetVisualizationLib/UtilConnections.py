@@ -1,3 +1,27 @@
+"""
+MIT License
+
+Copyright (c) 2022 Yihao Liu, Johns Hopkins University
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
 #
 # Connection
 #
@@ -16,12 +40,12 @@ class UtilConnections():
 
     # port init
     with open(configPath+"Config.json") as f:
-      configData = json.load(f)
+      self._configData = json.load(f)
     
-    self._sock_ip_receive = configData["IP_RECEIVE_"+modulesufx]
-    self._sock_ip_send = configData["IP_SEND_"+modulesufx]
-    self._sock_receive_port = configData["PORT_RECEIVE_"+modulesufx]
-    self._sock_send_port = configData["PORT_SEND_"+modulesufx]
+    self._sock_ip_receive = self._configData["IP_RECEIVE_"+modulesufx]
+    self._sock_ip_send = self._configData["IP_SEND_"+modulesufx]
+    self._sock_port_receive = self._configData["PORT_RECEIVE_"+modulesufx]
+    self._sock_port_send = self._configData["PORT_SEND_"+modulesufx]
 
     self._sock_receive = None
     self._sock_send = None
@@ -29,7 +53,7 @@ class UtilConnections():
   def setup(self):
     self._sock_receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     self._sock_send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    self._sock_receive.bind((self._sock_ip_receive, self._sock_receive_port))
+    self._sock_receive.bind((self._sock_ip_receive, self._sock_port_receive))
     self._sock_receive.settimeout(0.5)
     
   def clear(self):
@@ -43,9 +67,9 @@ class UtilConnections():
       raise RuntimeError("Command contains too many characters.")
     try:
       self._sock_send.sendto( \
-        msg.encode('UTF-8'), (self._sock_ip_send, self._sock_send_port) )
+        msg.encode('UTF-8'), (self._sock_ip_send, self._sock_port_send) )
       try:
-        data = self._sock_receive.recvfrom(512)
+        data = self._sock_receive.recvfrom(256)
       except socket.error:
         raise RuntimeError("Command response timedout")
     except Exception as e:
