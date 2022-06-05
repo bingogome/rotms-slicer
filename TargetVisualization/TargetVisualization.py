@@ -33,6 +33,7 @@ from slicer.util import VTKObservationMixin
 from TargetVisualizationLib.UtilConnections import UtilConnections
 from TargetVisualizationLib.UtilSlicerFuncs import setTransform
 from TargetVisualizationLib.UtilConnectionsWtNnBlcRcv import UtilConnectionsWtNnBlcRcv
+from TargetVisualizationLib.UtilCalculations import quat2mat
 
 #
 # TargetVisualization
@@ -316,15 +317,26 @@ class TargetVizConnections(UtilConnectionsWtNnBlcRcv):
       self._transformMatrixCurrentPose = vtk.vtkMatrix4x4()
 
   def handleReceivedData(self):
+    """
+    Override the parent class function
+    """
     mat, p = self.utilMsgParse()
     self.utilPoseMsgCallback(mat, p)
   
   def utilMsgParse(self):
     """
     Msg format: "__msg_pose_0000.00000_0000.00000_0000.00000_0000.00000_0000.00000_0000.00000_0000.00000"
+        x, y, z, qx, qy, qz, qw
+        in mm
     """
     data = self._data_buff
-
+    msg = data[11:]
+    num_str = msg.split("_")
+    num = []
+    for i in num_str:
+      num.append(float(i))
+    p = num[0:3]
+    mat = quat2mat(num[3:])
     return mat, p
 
   def utilPoseMsgCallback(self, mat, p):  

@@ -62,7 +62,9 @@ class UtilConnectionsWtNnBlcRcv(UtilConnections):
             self._sock_receive_nnblc.close()
 
     def handleReceivedData(self):
-        # Will need to be overriden
+        """
+        Will need to be overriden
+        """
         return
 
     def receiveTimerCallBack(self):
