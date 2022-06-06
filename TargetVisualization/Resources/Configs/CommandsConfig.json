@@ -5,5 +5,7 @@
     
     "TargetVizCmd":
     {
+        "START_VISUALIZE": "start_visualize",
+        "STOP_VISUALIZE": "stop_visualize"
     }
 }

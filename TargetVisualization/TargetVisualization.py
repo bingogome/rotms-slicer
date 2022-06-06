@@ -233,10 +233,14 @@ class TargetVisualizationWidget(ScriptedLoadableModuleWidget, VTKObservationMixi
 
   def onPushStartTargetViz(self):
     self._parameterNode.SetParameter("Visualizing", "true")
+    msg = self.logic._commandsData["START_VISUALIZE"]
+    self.logic._connections.utilSendCommand(msg)
     self.logic.processStartTargetViz()
 
   def onPushStopTargetViz(self):
     self._parameterNode.SetParameter("Visualizing", "false")
+    msg = self.logic._commandsData["STOP_VISUALIZE"]
+    self.logic._connections.utilSendCommand(msg)
     self.logic.processStopTargetViz()
 
 
