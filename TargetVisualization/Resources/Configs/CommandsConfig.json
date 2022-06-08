@@ -6,7 +6,7 @@
     
     "TargetVizCmd":
     {
-        "START_VISUALIZE": "start_visualizex",
-        "STOP_VISUALIZE": "stop_visualizexx"
+        "VISUALIZE_START": "start_visualizex",
+        "VISUALIZE_STOP": "stop_visualizexx"
     }
 }

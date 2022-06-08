@@ -10,7 +10,7 @@
         "GET_EFF_POSE": "get_eff_posexxxx",
         "EXECUTE_MOTION": "execute_motionxx",
         "EXECUTE_MOVE_CONFIRM": "execute_confirmx",
-        "END_SESSION": "end_sessionxxxxx",
+        "SESSION_END": "end_sessionxxxxx",
         "MAN_ADJUST_BACKWARD": "adjust_backxxxxx",
         "MAN_ADJUST_CLOSER": "adjust_closexxxx",
         "MAN_ADJUST_FARTHER": "adjust_awayxxxxx",
