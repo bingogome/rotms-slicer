@@ -65,6 +65,29 @@
     </widget>
    </item>
    <item>
+    <widget class="ctkCollapsibleButton" name="collapReposition">
+     <property name="text">
+      <string>Reposition</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <item row="0" column="0">
+       <widget class="QPushButton" name="pushReOffset">
+        <property name="text">
+         <string>Move Back to Offset</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="pushReInit">
+        <property name="text">
+         <string>Move Back to Initial</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <widget class="ctkCollapsibleButton" name="collapManual">
      <property name="text">
       <string>Manual Adjustment</string>
