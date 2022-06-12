@@ -117,10 +117,18 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.checkBoxSafe.connect("toggled(bool)", self.updateParameterNodeFromGUI)
 
     # Buttons
+
+    self.ui.pushSessionEnd.connect('clicked(bool)', self.onPushSessionEnd)
+
     self.ui.pushGetJntAngs.connect('clicked(bool)', self.onPushGetJntAngs)
     self.ui.pushGetEFFPose.connect('clicked(bool)', self.onPushGetEFFPose)
+
     self.ui.pushExecute.connect('clicked(bool)', self.onPushExecute)
     self.ui.pushConfirm.connect('clicked(bool)', self.onPushConfirm)
+    self.ui.pushEndAndBack.connect('clicked(bool)', self.onPushEndAndBack)
+    self.ui.pushReInit.connect('clicked(bool)', self.onPushReInit)
+    self.ui.pushReOffset.connect('clicked(bool)', self.onPushReOffset)
+
     self.ui.pushBackward.connect('clicked(bool)', self.onPushBackward)
     self.ui.pushCloser.connect('clicked(bool)', self.onPushCloser)
     self.ui.pushFarther.connect('clicked(bool)', self.onPushFarther)
@@ -130,7 +138,6 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.pushRight.connect('clicked(bool)', self.onPushRight)
     self.ui.pushRoll.connect('clicked(bool)', self.onPushRoll)
     self.ui.pushYaw.connect('clicked(bool)', self.onPushYaw)
-    self.ui.pushEnd.connect('clicked(bool)', self.onPushEnd)
 
     # Make sure parameter node is initialized (needed for module reload)
     self.initializeParameterNode()
@@ -286,6 +293,10 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     self._parameterNode.EndModify(wasModified)
 
+  def onPushSessionEnd(self):
+    msg = self.logic._commandsData["SESSION_END"]
+    self.logic._connections.utilSendCommand(msg)
+
   def onPushGetJntAngs(self):
     msg = self.logic._commandsData["GET_JNT_ANGS"]
     self.logic._connections.utilSendCommand(msg)
@@ -300,6 +311,18 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
   def onPushConfirm(self):
     msg = self.logic._commandsData["EXECUTE_MOVE_CONFIRM"]
+    self.logic._connections.utilSendCommand(msg)
+
+  def onPushEndAndBack(self):
+    msg = self.logic._commandsData["EXECUTE_ENDBACK"]
+    self.logic._connections.utilSendCommand(msg)
+
+  def onPushReInit(self):
+    msg = self.logic._commandsData["EXECUTE_BACKINIT"]
+    self.logic._connections.utilSendCommand(msg)
+  
+  def onPushReOffset(self):
+    msg = self.logic._commandsData["EXECUTE_BACKOFFSET"]
     self.logic._connections.utilSendCommand(msg)
 
   def onPushBackward(self):
@@ -337,10 +360,6 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
   def onPushYaw(self):
     self.logic.utilManualAdjust("yaw", \
       float(self._parameterNode.GetParameter("RotationAdjustmentValue")))
-
-  def onPushEnd(self):
-    msg = self.logic._commandsData["END_SESSION"]
-    self.logic._connections.utilSendCommand(msg)
 
 #
 # RobotControlLogic

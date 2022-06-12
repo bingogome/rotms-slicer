@@ -7,10 +7,26 @@
     <x>0</x>
     <y>0</y>
     <width>279</width>
-    <height>643</height>
+    <height>835</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="ctkCollapsibleButton" name="collapSession">
+     <property name="text">
+      <string>Session State</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_6">
+      <item row="0" column="1">
+       <widget class="QPushButton" name="pushSessionEnd">
+        <property name="text">
+         <string>Clear Plan Info and End Session</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
    <item>
     <widget class="ctkCollapsibleButton" name="collapSafeSwitch">
      <property name="text">
@@ -186,7 +202,7 @@
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
       <item row="0" column="0">
-       <widget class="QPushButton" name="pushEnd">
+       <widget class="QPushButton" name="pushEndAndBack">
         <property name="text">
          <string>Back to Offset End Session</string>
         </property>
