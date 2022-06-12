@@ -3,5 +3,6 @@
     "IP_SEND_MEDIMG": "localhost",
     "PORT_RECEIVE_MEDIMG": 8059,
     "PORT_SEND_MEDIMG": 8057,
-    "POSE_INDICATOR_MODEL": "toolpose.STL"
+    "POSE_INDICATOR_MODEL": "toolpose.STL",
+    "EOM_MEDIMG": ";"
 }

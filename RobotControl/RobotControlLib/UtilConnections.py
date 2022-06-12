@@ -46,6 +46,7 @@ class UtilConnections():
     self._sock_ip_send = configData["IP_SEND_"+modulesufx]
     self._sock_receive_port = configData["PORT_RECEIVE_"+modulesufx]
     self._sock_send_port = configData["PORT_SEND_"+modulesufx]
+    self._eom = configData["EOM_"+modulesufx]
 
     self._sock_receive = None
     self._sock_send = None
@@ -63,6 +64,7 @@ class UtilConnections():
       self._sock_send.close()
       
   def utilSendCommand(self, msg, errorMsg="Failed to send command ", res=False):
+    msg = msg + self._eom
     if len(msg) > 150:
       raise RuntimeError("Command contains too many characters.")
     try:
