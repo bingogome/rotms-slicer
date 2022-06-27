@@ -120,7 +120,6 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
     # (in the selected parameter node).
-    # Note: currentNodeChanged(vtkMRMLNode*) was used from the example provided
     self.ui.markupsRegistration.connect("markupsNodeChanged()", self.updateParameterNodeFromGUI) 
     self.ui.markupsToolPosePlan.connect("markupsNodeChanged()", self.updateParameterNodeFromGUI)
 
@@ -249,7 +248,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     This method is called when the user makes any change in the GUI.
     The changes are saved into the parameter node (so that they are restored when the scene is saved and loaded).
     """
-    print("updated gui")
+    # print("updated gui")
+
     if self._parameterNode is None or self._updatingGUIFromParameterNode:
       return
 
@@ -257,8 +257,12 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     if self.ui.markupsRegistration.currentNode():
       self._parameterNode.SetNodeReferenceID("FiducialsMarkups", self.ui.markupsRegistration.currentNode().GetID())
+    else:
+      self._parameterNode.SetNodeReferenceID("FiducialsMarkups", None)
     if self.ui.markupsToolPosePlan.currentNode():
       self._parameterNode.SetNodeReferenceID("ToolPoseMarkups", self.ui.markupsToolPosePlan.currentNode().GetID())
+    else:
+      self._parameterNode.SetNodeReferenceID("ToolPoseMarkups", None)
 
     self._parameterNode.EndModify(wasModified)
 
