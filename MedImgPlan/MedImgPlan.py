@@ -124,7 +124,7 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.markupsToolPosePlan.connect("markupsNodeChanged()", self.updateParameterNodeFromGUI)
 
     # Buttons
-    self.ui.pushPlanFiducials.connect('clicked(bool)', self.onPushPlanFiducials)
+    self.ui.pushPlanLandmarks.connect('clicked(bool)', self.onPushPlanLandmarks)
     self.ui.pushDigitize.connect('clicked(bool)', self.onPushDigitize)
     self.ui.pushRegister.connect('clicked(bool)', self.onPushRegistration)
     self.ui.pushUsePreviousRegistration.connect('clicked(bool)', self.onPushUsePreviousRegistration)
@@ -179,10 +179,10 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.setParameterNode(self.logic.getParameterNode())
 
     # Select default input nodes if nothing is selected yet to save a few clicks for the user
-    if not self._parameterNode.GetNodeReference("FiducialsMarkups"):
+    if not self._parameterNode.GetNodeReference("LandmarksMarkups"):
       firstMarkupsNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLMarkupsNode")
       if firstMarkupsNode:
-        self._parameterNode.SetNodeReferenceID("FiducialsMarkups", firstMarkupsNode.GetID())
+        self._parameterNode.SetNodeReferenceID("LandmarksMarkups", firstMarkupsNode.GetID())
 
   def setParameterNode(self, inputParameterNode):
     """
@@ -218,26 +218,26 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self._updatingGUIFromParameterNode = True
 
     # Update node selectors and sliders
-    self.ui.markupsRegistration.setCurrentNode(self._parameterNode.GetNodeReference("FiducialsMarkups"))
+    self.ui.markupsRegistration.setCurrentNode(self._parameterNode.GetNodeReference("LandmarksMarkups"))
     self.ui.markupsToolPosePlan.setCurrentNode(self._parameterNode.GetNodeReference("ToolPoseMarkups"))
     
     # Update buttons states and tooltips
-    if self._parameterNode.GetNodeReference("FiducialsMarkups"):
-      self.ui.pushPlanFiducials.toolTip = "Feed in all the fiducials"
-      self.ui.pushPlanFiducials.enabled = True
+    if self._parameterNode.GetNodeReference("LandmarksMarkups"):
+      self.ui.pushPlanLandmarks.toolTip = "Feed in all the landmarks"
+      self.ui.pushPlanLandmarks.enabled = True
       self.ui.pushDigitize.toolTip = "Start digitizing"
       self.ui.pushDigitize.enabled = True
     else:
-      self.ui.pushPlanFiducials.toolTip = "Select fiducial markups node first"
-      self.ui.pushPlanFiducials.enabled = False
-      self.ui.pushDigitize.toolTip = "Select fiducial markups node first"
+      self.ui.pushPlanLandmarks.toolTip = "Select landmark markups node first"
+      self.ui.pushPlanLandmarks.enabled = False
+      self.ui.pushDigitize.toolTip = "Select landmark markups node first"
       self.ui.pushDigitize.enabled = False
 
     if self._parameterNode.GetNodeReference("ToolPoseMarkups"):
       self.ui.pushToolPosePlan.toolTip = "Feed in tool pose"
       self.ui.pushToolPosePlan.enabled = True
     else:
-      self.ui.pushToolPosePlan.toolTip = "Select fiducial markups node"
+      self.ui.pushToolPosePlan.toolTip = "Select landmark markups node"
       self.ui.pushToolPosePlan.enabled = False
 
     # All the GUI updates are done
@@ -256,9 +256,9 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     wasModified = self._parameterNode.StartModify()  # Modify all properties in a single batch
 
     if self.ui.markupsRegistration.currentNode():
-      self._parameterNode.SetNodeReferenceID("FiducialsMarkups", self.ui.markupsRegistration.currentNode().GetID())
+      self._parameterNode.SetNodeReferenceID("LandmarksMarkups", self.ui.markupsRegistration.currentNode().GetID())
     else:
-      self._parameterNode.SetNodeReferenceID("FiducialsMarkups", None)
+      self._parameterNode.SetNodeReferenceID("LandmarksMarkups", None)
     if self.ui.markupsToolPosePlan.currentNode():
       self._parameterNode.SetNodeReferenceID("ToolPoseMarkups", self.ui.markupsToolPosePlan.currentNode().GetID())
     else:
@@ -266,9 +266,9 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     self._parameterNode.EndModify(wasModified)
 
-  def onPushPlanFiducials(self):
+  def onPushPlanLandmarks(self):
     self.updateParameterNodeFromGUI()
-    self.logic.processPushPlanFiducials(self._parameterNode.GetNodeReference("FiducialsMarkups"))
+    self.logic.processPushPlanLandmarks(self._parameterNode.GetNodeReference("LandmarksMarkups"))
 
   def onPushDigitize(self):
     self.updateParameterNodeFromGUI()
@@ -324,7 +324,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     """
     return
 
-  def processPushPlanFiducials(self, inputMarkupsNode):
+  def processPushPlanLandmarks(self, inputMarkupsNode):
     """
     Send out the markups for registration 
     """
@@ -332,7 +332,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       raise ValueError("Input markup is invalid")
     if inputMarkupsNode.GetNumberOfFiducials() < 3:
       raise ValueError("Input landmarks are less than 3")
-    self.utilSendFiducials(-1)
+    self.utilSendLandmarks(-1)
   
   def processPushToolPosePlan(self, inputMarkupsNode):
     """
@@ -343,7 +343,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       raise ValueError("Input markup is invalid")
 
     if inputMarkupsNode.GetNumberOfFiducials() != 4:
-      raise ValueError("Input fiducials are not 4")
+      raise ValueError("Input landmarks are not 4")
 
     a = [0,0,0]
     b = [0,0,0]
@@ -393,28 +393,28 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       "_" + utilNumStrFormat(p[1]/1000,10) + \
       "_" + utilNumStrFormat(p[2]/1000,10)
 
-  def utilSendFiducials(self, curIdx):
+  def utilSendLandmarks(self, curIdx):
     """
-    Utility function to recurrantly send fiducials (landmarks on medical image)
+    Utility function to recurrantly send landmarks (landmarks on medical image)
     """
-    inputMarkupsNode = self._parameterNode.GetNodeReference("FiducialsMarkups")
+    inputMarkupsNode = self._parameterNode.GetNodeReference("LandmarksMarkups")
     numOfFid = inputMarkupsNode.GetNumberOfFiducials()
     
     if curIdx == numOfFid:
-      msg = self._commandsData["FIDUCIAL_LAST_RECEIVED"]
+      msg = self._commandsData["LANDMARK_LAST_RECEIVED"]
     elif curIdx != -1:
       ras = [0,0,0]
       inputMarkupsNode.GetNthFiducialPosition(curIdx,ras)
-      # curIdx is -1, send the current fiducial
+      # curIdx is -1, send the current landmark
       # Send in SI units (meter/second/...)
-      msg = self._commandsData["FIDUCIAL_CURRENT_ON_IMG"] + \
+      msg = self._commandsData["LANDMARK_CURRENT_ON_IMG"] + \
         "_" + str(curIdx).zfill(2) + \
         "_" + utilNumStrFormat(ras[0]/1000,10) + \
         "_" + utilNumStrFormat(ras[1]/1000,10) + \
         "_" + utilNumStrFormat(ras[2]/1000,10)
     else:
-      # curIdx is -1, send the number of fiducials
-      msg = self._commandsData["FIDUCIAL_NUM_OF_ON_IMG"] + \
+      # curIdx is -1, send the number of landmarks
+      msg = self._commandsData["LANDMARK_NUM_OF_ON_IMG"] + \
         "_" + str(numOfFid).zfill(2)
     
     print(msg)
@@ -423,7 +423,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
 
     if curIdx <= numOfFid-1:
       curIdx = curIdx+1
-      self.utilSendFiducials(curIdx)
+      self.utilSendLandmarks(curIdx)
 
 
 

@@ -21,16 +21,16 @@
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="2" column="0">
-       <widget class="QPushButton" name="pushPlanFiducials">
+       <widget class="QPushButton" name="pushPlanLandmarks">
         <property name="text">
-         <string>All Fiducials Planned</string>
+         <string>All Landmarks Planned</string>
         </property>
        </widget>
       </item>
       <item row="0" column="0">
        <widget class="QLabel" name="labelRegistration">
         <property name="text">
-         <string>Collect at least 3 fiducials.</string>
+         <string>Collect at least 3 landmarks.</string>
         </property>
        </widget>
       </item>
