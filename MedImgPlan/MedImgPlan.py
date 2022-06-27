@@ -120,8 +120,9 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
     # (in the selected parameter node).
-    self.ui.markupsRegistration.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
-    self.ui.markupsToolPosePlan.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+    # Note: currentNodeChanged(vtkMRMLNode*) was used from the example provided
+    self.ui.markupsRegistration.connect("markupsNodeChanged()", self.updateParameterNodeFromGUI) 
+    self.ui.markupsToolPosePlan.connect("markupsNodeChanged()", self.updateParameterNodeFromGUI)
 
     # Buttons
     self.ui.pushPlanFiducials.connect('clicked(bool)', self.onPushPlanFiducials)
@@ -248,33 +249,40 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     This method is called when the user makes any change in the GUI.
     The changes are saved into the parameter node (so that they are restored when the scene is saved and loaded).
     """
-
+    print("updated gui")
     if self._parameterNode is None or self._updatingGUIFromParameterNode:
       return
 
     wasModified = self._parameterNode.StartModify()  # Modify all properties in a single batch
 
-    self._parameterNode.SetNodeReferenceID("FiducialsMarkups", self.ui.markupsRegistration.currentNodeID)
-    self._parameterNode.SetNodeReferenceID("ToolPoseMarkups", self.ui.markupsToolPosePlan.currentNodeID)
+    if self.ui.markupsRegistration.currentNode():
+      self._parameterNode.SetNodeReferenceID("FiducialsMarkups", self.ui.markupsRegistration.currentNode().GetID())
+    if self.ui.markupsToolPosePlan.currentNode():
+      self._parameterNode.SetNodeReferenceID("ToolPoseMarkups", self.ui.markupsToolPosePlan.currentNode().GetID())
 
     self._parameterNode.EndModify(wasModified)
 
   def onPushPlanFiducials(self):
-    self.logic.processPushPlanFiducials(self.ui.markupsRegistration.currentNode())
+    self.updateParameterNodeFromGUI()
+    self.logic.processPushPlanFiducials(self._parameterNode.GetNodeReference("FiducialsMarkups"))
 
   def onPushDigitize(self):
+    self.updateParameterNodeFromGUI()
     msg = self.logic._commandsData["START_AUTO_DIGITIZE"]
     self.logic._connections.utilSendCommand(msg)
 
   def onPushRegistration(self):
+    self.updateParameterNodeFromGUI()
     msg = self.logic._commandsData["START_REGISTRATION"]
     self.logic._connections.utilSendCommand(msg)
 
   def onPushUsePreviousRegistration(self):
+    self.updateParameterNodeFromGUI()
     msg = self.logic._commandsData["START_USE_PREV_REGISTRATION"]
     self.logic._connections.utilSendCommand(msg)
 
   def onPushToolPosePlan(self):
+    self.updateParameterNodeFromGUI()
     self.logic.processPushToolPosePlan(self.ui.markupsToolPosePlan.currentNode())
 
 

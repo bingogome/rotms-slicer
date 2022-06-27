@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>361</width>
+    <width>408</width>
     <height>781</height>
    </rect>
   </property>
@@ -49,7 +49,15 @@
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="qSlicerSimpleMarkupsWidget" name="markupsRegistration"/>
+       <widget class="qSlicerSimpleMarkupsWidget" name="markupsRegistration">
+        <property name="defaultNodeColor">
+         <color>
+          <red>0</red>
+          <green>255</green>
+          <blue>0</blue>
+         </color>
+        </property>
+       </widget>
       </item>
       <item row="4" column="0">
        <widget class="QPushButton" name="pushRegister">
