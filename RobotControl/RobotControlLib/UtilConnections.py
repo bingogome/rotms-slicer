@@ -65,7 +65,7 @@ class UtilConnections():
       
   def utilSendCommand(self, msg, errorMsg="Failed to send command ", res=False):
     msg = msg + self._eom
-    if len(msg) > 150:
+    if len(msg) > 256:
       raise RuntimeError("Command contains too many characters.")
     try:
       self._sock_send.sendto( \

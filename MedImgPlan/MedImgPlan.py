@@ -234,11 +234,11 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       self.ui.pushDigitize.enabled = False
 
     if self._parameterNode.GetNodeReference("ToolPoseMarkups"):
-      self.ui.pushPlanFiducials.toolTip = "Feed in tool pose"
-      self.ui.pushPlanFiducials.enabled = True
+      self.ui.pushToolPosePlan.toolTip = "Feed in tool pose"
+      self.ui.pushToolPosePlan.enabled = True
     else:
-      self.ui.pushPlanFiducials.toolTip = "Select fiducial markups node"
-      self.ui.pushPlanFiducials.enabled = False
+      self.ui.pushToolPosePlan.toolTip = "Select fiducial markups node"
+      self.ui.pushToolPosePlan.enabled = False
 
     # All the GUI updates are done
     self._updatingGUIFromParameterNode = False
@@ -271,7 +271,7 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.logic._connections.utilSendCommand(msg)
 
   def onPushUsePreviousRegistration(self):
-    msg = self.logic._commandsData["USE_PREV_REGISTRATION"]
+    msg = self.logic._commandsData["START_USE_PREV_REGISTRATION"]
     self.logic._connections.utilSendCommand(msg)
 
   def onPushToolPosePlan(self):
@@ -301,6 +301,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     self._configPath = configPath
     self._connections = UtilConnections(configPath,"MEDIMG")
     self._connections.setup()
+    self._parameterNode = self.getParameterNode()
     
     with open(self._configPath+"CommandsConfig.json") as f:
       self._commandsData = (json.load(f))["MegImgCmd"]
@@ -376,9 +377,9 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     self._connections.utilSendCommand(msg)
 
     msg = self._commandsData["TARGET_POSE_TRANSLATION"] + \
-      "_" + utilNumStrFormat(p[0]/1000,7) + \
-      "_" + utilNumStrFormat(p[1]/1000,7) + \
-      "_" + utilNumStrFormat(p[2]/1000,7)
+      "_" + utilNumStrFormat(p[0]/1000,10) + \
+      "_" + utilNumStrFormat(p[1]/1000,10) + \
+      "_" + utilNumStrFormat(p[2]/1000,10)
 
   def utilSendFiducials(self, curIdx):
     """
@@ -386,25 +387,29 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     """
     inputMarkupsNode = self._parameterNode.GetNodeReference("FiducialsMarkups")
     numOfFid = inputMarkupsNode.GetNumberOfFiducials()
-
-    if curIdx != -1:
+    
+    if curIdx == numOfFid:
+      msg = self._commandsData["FIDUCIAL_LAST_RECEIVED"]
+    elif curIdx != -1:
       ras = [0,0,0]
       inputMarkupsNode.GetNthFiducialPosition(curIdx,ras)
       # curIdx is -1, send the current fiducial
       # Send in SI units (meter/second/...)
-      msg = self._commandsData["CURRENT_FIDUCIAL_ON_IMG"] + \
+      msg = self._commandsData["FIDUCIAL_CURRENT_ON_IMG"] + \
         "_" + str(curIdx).zfill(2) + \
-        "_" + utilNumStrFormat(ras[0]/1000,7) + \
-        "_" + utilNumStrFormat(ras[1]/1000,7) + \
-        "_" + utilNumStrFormat(ras[2]/1000,7)
+        "_" + utilNumStrFormat(ras[0]/1000,10) + \
+        "_" + utilNumStrFormat(ras[1]/1000,10) + \
+        "_" + utilNumStrFormat(ras[2]/1000,10)
     else:
       # curIdx is -1, send the number of fiducials
-      msg = self._commandsData["NUM_OF_FIDUCIAL_ON_IMG"] + \
+      msg = self._commandsData["FIDUCIAL_NUM_OF_ON_IMG"] + \
         "_" + str(numOfFid).zfill(2)
+    
+    print(msg)
     
     self._connections.utilSendCommand(msg)
 
-    if curIdx < numOfFid-1:
+    if curIdx <= numOfFid-1:
       curIdx = curIdx+1
       self.utilSendFiducials(curIdx)
 

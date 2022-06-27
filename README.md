@@ -13,7 +13,7 @@ A slicer script module for medical image planning.
   - Please see MedImgPlan/Resources/Configs/CommandsConfig.json for more details.
   - This is the commands that will be sent from 3D slicer to the distant side.
   - The unit of the numbers sent out in the commands are in ROS convention
-  - The commands should not exceed 150 chars (receiving side buffer)
+  - The commands should not exceed 256 chars (receiving side buffer)
 - Commands encoding:
   - "START_AUTO_DIGITIZE": "start_autodigitzat",
   - "START_REGISTRATION": "start_registration",
@@ -35,6 +35,6 @@ A slicer script module for robot controlling commands.
   - Please see RobotControl/Resources/Configs/CommandsConfig.json for more details.
   - This is the commands that will be sent from 3D slicer to the distant side.
   - The unit of the numbers sent out in the commands are in ROS convention
-  - The commands should not exceed 150 chars (receiving side buffer)
+  - The commands should not exceed 256 chars (receiving side buffer)
 
 # TargetVisualization
