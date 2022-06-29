@@ -121,7 +121,9 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
     # (in the selected parameter node).
     self.ui.markupsRegistration.connect("markupsNodeChanged()", self.updateParameterNodeFromGUI) 
+    self.ui.markupsRegistration.markupsPlaceWidget().setPlaceModePersistency(True)
     self.ui.markupsToolPosePlan.connect("markupsNodeChanged()", self.updateParameterNodeFromGUI)
+    self.ui.markupsToolPosePlan.markupsPlaceWidget().setPlaceModePersistency(True)
 
     # Buttons
     self.ui.pushPlanLandmarks.connect('clicked(bool)', self.onPushPlanLandmarks)
