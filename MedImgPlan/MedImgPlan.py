@@ -383,17 +383,19 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     quat = mat2quat(mat)
 
     msg = self._commandsData["TARGET_POSE_ORIENTATION"] + \
-      "_" + utilNumStrFormat(quat[0]) + \
-      "_" + utilNumStrFormat(quat[1]) + \
-      "_" + utilNumStrFormat(quat[2]) + \
-      "_" + utilNumStrFormat(quat[3])
+      "_" + utilNumStrFormat(quat[0],15,17) + \
+      "_" + utilNumStrFormat(quat[1],15,17) + \
+      "_" + utilNumStrFormat(quat[2],15,17) + \
+      "_" + utilNumStrFormat(quat[3],15,17)
 
     self._connections.utilSendCommand(msg)
 
     msg = self._commandsData["TARGET_POSE_TRANSLATION"] + \
-      "_" + utilNumStrFormat(p[0]/1000,10) + \
-      "_" + utilNumStrFormat(p[1]/1000,10) + \
-      "_" + utilNumStrFormat(p[2]/1000,10)
+      "_" + utilNumStrFormat(p[0]/1000,15,17) + \
+      "_" + utilNumStrFormat(p[1]/1000,15,17) + \
+      "_" + utilNumStrFormat(p[2]/1000,15,17)
+
+    self._connections.utilSendCommand(msg)
 
   def utilSendLandmarks(self, curIdx):
     """
@@ -411,9 +413,9 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       # Send in SI units (meter/second/...)
       msg = self._commandsData["LANDMARK_CURRENT_ON_IMG"] + \
         "_" + str(curIdx).zfill(2) + \
-        "_" + utilNumStrFormat(ras[0]/1000,10) + \
-        "_" + utilNumStrFormat(ras[1]/1000,10) + \
-        "_" + utilNumStrFormat(ras[2]/1000,10)
+        "_" + utilNumStrFormat(ras[0]/1000,15,17) + \
+        "_" + utilNumStrFormat(ras[1]/1000,15,17) + \
+        "_" + utilNumStrFormat(ras[2]/1000,15,17)
     else:
       # curIdx is -1, send the number of landmarks
       msg = self._commandsData["LANDMARK_NUM_OF_ON_IMG"] + \
