@@ -119,6 +119,8 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # Buttons
 
     self.ui.pushSessionEnd.connect('clicked(bool)', self.onPushSessionEnd)
+    self.ui.pushConnectRob.connect('clicked(bool)', self.onPushConnectRob)
+    self.ui.pushDisconnectRob.connect('clicked(bool)', self.onPushDisconnectRob)
 
     self.ui.pushGetJntAngs.connect('clicked(bool)', self.onPushGetJntAngs)
     self.ui.pushGetEFFPose.connect('clicked(bool)', self.onPushGetEFFPose)
@@ -295,6 +297,14 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
   def onPushSessionEnd(self):
     msg = self.logic._commandsData["SESSION_END"]
+    self.logic._connections.utilSendCommand(msg)
+
+  def onPushConnectRob(self):
+    msg = self.logic._commandsData["ROB_CONN_ON"]
+    self.logic._connections.utilSendCommand(msg)
+
+  def onPushDisconnectRob(self):
+    msg = self.logic._commandsData["ROB_CONN_OFF"]
     self.logic._connections.utilSendCommand(msg)
 
   def onPushGetJntAngs(self):

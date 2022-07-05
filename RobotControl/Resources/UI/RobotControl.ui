@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>279</width>
+    <width>289</width>
     <height>835</height>
    </rect>
   </property>
@@ -17,10 +17,24 @@
       <string>Session State</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_6">
+      <item row="1" column="1">
+       <widget class="QPushButton" name="pushConnectRob">
+        <property name="text">
+         <string>Connect Robot</string>
+        </property>
+       </widget>
+      </item>
       <item row="0" column="1">
        <widget class="QPushButton" name="pushSessionEnd">
         <property name="text">
          <string>Clear Plan Info and End Session</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QPushButton" name="pushDisconnectRob">
+        <property name="text">
+         <string>Disconnect Robot</string>
         </property>
        </widget>
       </item>
