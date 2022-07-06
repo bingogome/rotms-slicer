@@ -406,7 +406,7 @@ class RobotControlLogic(ScriptedLoadableModuleLogic):
     Initialize parameter node with default settings.
     """
     if not parameterNode.GetParameter("RotationAdjustmentValue"):
-      parameterNode.SetParameter("RotationAdjustmentValue", "1.0") # default 1 degree adjustment
+      parameterNode.SetParameter("RotationAdjustmentValue", "0.5") # default 0.5 degree adjustment
     if not parameterNode.GetParameter("TranslationAdjustmentValue"):
       parameterNode.SetParameter("TranslationAdjustmentValue", "5.0") # default 5 mm adjustment
     if not parameterNode.GetParameter("SafeCheck"):
