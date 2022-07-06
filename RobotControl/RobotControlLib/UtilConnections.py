@@ -80,3 +80,10 @@ class UtilConnections():
       traceback.print_exc()
     if res:
       return data
+  
+  def receiveMsg(self):
+    try:
+      data = self._sock_receive.recvfrom(256)
+    except socket.error:
+      raise RuntimeError("Command response timedout")
+    return data[0].decode('UTF-8')

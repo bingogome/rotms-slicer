@@ -310,10 +310,14 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
   def onPushGetJntAngs(self):
     msg = self.logic._commandsData["GET_JNT_ANGS"]
     self.logic._connections.utilSendCommand(msg)
+    data = self.logic._connections.receiveMsg()
+    print(data)
 
   def onPushGetEFFPose(self):
     msg = self.logic._commandsData["GET_EFF_POSE"]
     self.logic._connections.utilSendCommand(msg)
+    data = self.logic._connections.receiveMsg()
+    print(data)
 
   def onPushExecute(self):
     msg = self.logic._commandsData["EXECUTE_MOTION"]
