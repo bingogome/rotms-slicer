@@ -292,6 +292,8 @@ class TargetVisualizationLogic(ScriptedLoadableModuleLogic):
       inputModel = slicer.util.loadModel(self._configPath+configData["POSE_INDICATOR_MODEL"])
       self._parameterNode.SetNodeReferenceID("CurrentPoseIndicator", inputModel.GetID())
     
+    self._connections._parameterNode = self._parameterNode
+
     # TODO: make sure this works (observer may not be constant, if failed, put the following to utilPoseMsgCallback)
     currentPoseTransform = self._parameterNode.GetNodeReference("CurrentPoseTransform")
     currentPoseIndicator = self._parameterNode.GetNodeReference("CurrentPoseIndicator")
@@ -333,7 +335,7 @@ class TargetVizConnections(UtilConnectionsWtNnBlcRcv):
         x, y, z, qx, qy, qz, qw
         in mm
     """
-    data = self._data_buff
+    data = self._data_buff.decode("UTF-8")
     msg = data[11:]
     num_str = msg.split("_")
     num = []
@@ -349,5 +351,6 @@ class TargetVizConnections(UtilConnectionsWtNnBlcRcv):
     """
     
     setTransform(mat, p, self._transformMatrixCurrentPose)
+    self._parameterNode.GetNodeReference("CurrentPoseTransform").SetMatrixTransformToParent(self._transformMatrixCurrentPose)
 
     slicer.app.processEvents()
