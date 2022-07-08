@@ -106,7 +106,6 @@ class TargetVisualizationWidget(ScriptedLoadableModuleWidget, VTKObservationMixi
     # Create logic class. Logic implements all computations that should be possible to run
     # in batch mode, without a graphical user interface.
     self.logic = TargetVisualizationLogic(self.resourcePath('Configs/'))
-    self.logic._parameterNode = self._parameterNode
 
     # Connections
 
@@ -232,16 +231,16 @@ class TargetVisualizationWidget(ScriptedLoadableModuleWidget, VTKObservationMixi
     self._parameterNode.EndModify(wasModified)
 
   def onPushStartTargetViz(self):
-    self._parameterNode.SetParameter("Visualizing", "true")
     msg = self.logic._commandsData["VISUALIZE_START"]
     self.logic._connections.utilSendCommand(msg)
     self.logic.processStartTargetViz()
-
+    self._parameterNode.SetParameter("Visualizing", "true")
+    
   def onPushStopTargetViz(self):
-    self._parameterNode.SetParameter("Visualizing", "false")
     msg = self.logic._commandsData["VISUALIZE_STOP"]
     self.logic._connections.utilSendCommand(msg)
     self.logic.processStopTargetViz()
+    self._parameterNode.SetParameter("Visualizing", "false")
 
 
 #
@@ -266,7 +265,6 @@ class TargetVisualizationLogic(ScriptedLoadableModuleLogic):
     self._configPath = configPath
     self._connections = TargetVizConnections(configPath, "TARGETVIZ")
     self._connections.setup()
-    self._parameterNode = None
 
     with open(self._configPath+"CommandsConfig.json") as f:
       self._commandsData = (json.load(f))["TargetVizCmd"]
@@ -282,6 +280,7 @@ class TargetVisualizationLogic(ScriptedLoadableModuleLogic):
     """
     Called when click the start target viz button
     """
+    self._parameterNode = self.getParameterNode()
     if not self._parameterNode.GetNodeReference("CurrentPoseTransform"):
       transformNode = slicer.vtkMRMLTransformNode()
       slicer.mrmlScene.AddNode(transformNode)
@@ -314,6 +313,7 @@ class TargetVizConnections(UtilConnectionsWtNnBlcRcv):
 
   def __init__(self, configPath, modulesufx):
     super().__init__(configPath, modulesufx)
+    self._transformMatrixCurrentPose = None
   
   def setup(self):
     super().setup()

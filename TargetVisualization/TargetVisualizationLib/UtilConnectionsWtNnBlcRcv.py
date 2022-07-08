@@ -73,6 +73,6 @@ class UtilConnectionsWtNnBlcRcv(UtilConnections):
                 # self._data_buff = self._sock_receive_nnblc.recvfrom(256)
                 self._data_buff = self._sock_receive_nnblc.recv(256)
                 self.handleReceivedData()
-                qt.QTimer.singleShot(1, self.runningSockets)
+                qt.QTimer.singleShot(1, self.receiveTimerCallBack)
             except:
-                qt.QTimer.singleShot(1, self.runningSockets)
+                qt.QTimer.singleShot(1, self.receiveTimerCallBack)
