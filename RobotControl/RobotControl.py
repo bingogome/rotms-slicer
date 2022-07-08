@@ -118,7 +118,7 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     # Buttons
 
-    self.ui.pushSessionEnd.connect('clicked(bool)', self.onPushSessionEnd)
+    self.ui.pushSessionReinit.connect('clicked(bool)', self.onPushSessionReinit)
     self.ui.pushConnectRob.connect('clicked(bool)', self.onPushConnectRob)
     self.ui.pushDisconnectRob.connect('clicked(bool)', self.onPushDisconnectRob)
 
@@ -295,8 +295,8 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     self._parameterNode.EndModify(wasModified)
 
-  def onPushSessionEnd(self):
-    msg = self.logic._commandsData["SESSION_END"]
+  def onPushSessionReinit(self):
+    msg = self.logic._commandsData["SESSION_REINIT"]
     self.logic._connections.utilSendCommand(msg)
 
   def onPushConnectRob(self):
