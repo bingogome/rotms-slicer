@@ -78,6 +78,7 @@ class UtilConnections():
       slicer.util.errorDisplay(errorMsg+str(e))
       import traceback
       traceback.print_exc()
+      raise
     if res:
       return data
   

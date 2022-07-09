@@ -46,6 +46,9 @@
      <property name="text">
       <string>Safety Switch</string>
      </property>
+     <property name="collapsed">
+      <bool>true</bool>
+     </property>
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="0" column="0">
        <widget class="QCheckBox" name="checkBoxSafe">
@@ -61,6 +64,9 @@
     <widget class="ctkCollapsibleButton" name="collapRobotMotion">
      <property name="text">
       <string>Robot Motion</string>
+     </property>
+     <property name="collapsed">
+      <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="0">
@@ -99,6 +105,9 @@
      <property name="text">
       <string>Reposition</string>
      </property>
+     <property name="collapsed">
+      <bool>true</bool>
+     </property>
      <layout class="QGridLayout" name="gridLayout_5">
       <item row="0" column="0">
        <widget class="QPushButton" name="pushReOffset">
@@ -121,6 +130,9 @@
     <widget class="ctkCollapsibleButton" name="collapManual">
      <property name="text">
       <string>Manual Adjustment</string>
+     </property>
+     <property name="collapsed">
+      <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
       <item row="5" column="1">
@@ -230,6 +242,9 @@
     <widget class="ctkCollapsibleButton" name="collapPostMotion">
      <property name="text">
       <string>Post Motion Procedure</string>
+     </property>
+     <property name="collapsed">
+      <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
       <item row="0" column="0">

@@ -19,6 +19,9 @@
      <property name="text">
       <string>Registration</string>
      </property>
+     <property name="collapsed">
+      <bool>true</bool>
+     </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="2" column="0">
        <widget class="QPushButton" name="pushPlanLandmarks">
@@ -73,6 +76,9 @@
     <widget class="ctkCollapsibleButton" name="collapToolPosePlan">
      <property name="text">
       <string>Tool Pose Plan</string>
+     </property>
+     <property name="collapsed">
+      <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="3" column="0">
