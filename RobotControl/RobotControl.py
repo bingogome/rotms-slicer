@@ -124,6 +124,7 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     self.ui.pushGetJntAngs.connect('clicked(bool)', self.onPushGetJntAngs)
     self.ui.pushGetEFFPose.connect('clicked(bool)', self.onPushGetEFFPose)
+    self.ui.pushGetJntSetInit.connect('clicked(bool)', self.onPushGetJntSetInit)
 
     self.ui.pushExecute.connect('clicked(bool)', self.onPushExecute)
     self.ui.pushConfirm.connect('clicked(bool)', self.onPushConfirm)
@@ -315,6 +316,12 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
   def onPushGetEFFPose(self):
     msg = self.logic._commandsData["GET_EFF_POSE"]
+    self.logic._connections.utilSendCommand(msg)
+    data = self.logic._connections.receiveMsg()
+    print(data)
+
+  def onPushGetJntSetInit(self):
+    msg = self.logic._commandsData["GET_JNT_ANGS_TOINIT"]
     self.logic._connections.utilSendCommand(msg)
     data = self.logic._connections.receiveMsg()
     print(data)

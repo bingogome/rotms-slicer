@@ -69,31 +69,38 @@
       <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
-       <widget class="QPushButton" name="pushGetJntAngs">
-        <property name="text">
-         <string>Get Joint Angles</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0" colspan="2">
+      <item row="2" column="0" colspan="2">
        <widget class="QPushButton" name="pushExecute">
         <property name="text">
          <string>Execute Motion To Offset</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
+      <item row="1" column="0">
+       <widget class="QPushButton" name="pushGetJntAngs">
+        <property name="text">
+         <string>Get Joint Angles</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0" colspan="2">
+       <widget class="QPushButton" name="pushConfirm">
+        <property name="text">
+         <string>Confirm and Bring Closer</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
        <widget class="QPushButton" name="pushGetEFFPose">
         <property name="text">
          <string>Get End Pose</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="0" colspan="2">
-       <widget class="QPushButton" name="pushConfirm">
+      <item row="0" column="0" colspan="2">
+       <widget class="QPushButton" name="pushGetJntSetInit">
         <property name="text">
-         <string>Confirm and Bring Closer</string>
+         <string>Get Joints and Set as Init</string>
         </property>
        </widget>
       </item>
