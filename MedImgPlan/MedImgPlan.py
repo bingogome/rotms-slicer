@@ -229,11 +229,15 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       self.ui.pushPlanLandmarks.enabled = True
       self.ui.pushDigitize.toolTip = "Start digitizing"
       self.ui.pushDigitize.enabled = True
+      self.ui.pushRegister.toolTip = "Register"
+      self.ui.pushRegister.enabled = True
     else:
       self.ui.pushPlanLandmarks.toolTip = "Select landmark markups node first"
       self.ui.pushPlanLandmarks.enabled = False
       self.ui.pushDigitize.toolTip = "Select landmark markups node first"
       self.ui.pushDigitize.enabled = False
+      self.ui.pushRegister.toolTip = "Select landmark markups node first"
+      self.ui.pushRegister.enabled = False
 
     if self._parameterNode.GetNodeReference("ToolPoseMarkups"):
       self.ui.pushToolPosePlan.toolTip = "Feed in tool pose"
