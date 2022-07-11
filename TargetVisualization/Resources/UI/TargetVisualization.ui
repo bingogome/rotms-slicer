@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>342</width>
+    <width>395</width>
     <height>620</height>
    </rect>
   </property>
@@ -26,12 +26,6 @@
     </widget>
    </item>
    <item>
-    <widget class="qMRMLNodeComboBox" name="selectorModel"/>
-   </item>
-   <item>
-    <widget class="qMRMLModelDisplayNodeWidget" name="EMSegmentInputChannelListWidget"/>
-   </item>
-   <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -48,20 +42,10 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>qMRMLNodeComboBox</class>
-   <extends>QWidget</extends>
-   <header>qMRMLNodeComboBox.h</header>
-  </customwidget>
-  <customwidget>
    <class>qMRMLWidget</class>
    <extends>QWidget</extends>
    <header>qMRMLWidget.h</header>
    <container>1</container>
-  </customwidget>
-  <customwidget>
-   <class>qMRMLModelDisplayNodeWidget</class>
-   <extends>qMRMLWidget</extends>
-   <header>qMRMLModelDisplayNodeWidget.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
