@@ -285,11 +285,17 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.updateParameterNodeFromGUI()
     msg = self.logic._commandsData["START_REGISTRATION"]
     self.logic._connections.utilSendCommand(msg)
+    data = self.logic._connections.receiveMsg()
+    print("Registration residual: " + str(data) + "mm")
+    slicer.util.infoDisplay("Registration residual: " + str(data) + "mm")
 
   def onPushUsePreviousRegistration(self):
     self.updateParameterNodeFromGUI()
     msg = self.logic._commandsData["START_USE_PREV_REGISTRATION"]
     self.logic._connections.utilSendCommand(msg)
+    data = self.logic._connections.receiveMsg()
+    print("Registration residual: " + str(data) + "mm")
+    slicer.util.infoDisplay("Registration residual: " + str(data) + "mm")
 
   def onPushToolPosePlan(self):
     self.updateParameterNodeFromGUI()
