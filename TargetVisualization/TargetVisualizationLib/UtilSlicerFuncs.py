@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import math
 
 def setTransform(rotm, p, T):
     T.SetElement(0,0,rotm[0][0])
@@ -35,3 +36,19 @@ def setTransform(rotm, p, T):
     T.SetElement(0,3,p[0])
     T.SetElement(1,3,p[1])
     T.SetElement(2,3,p[2])
+
+def setColorByDistance( \
+    currentPoseIndicator, targetTransform, curTransform):
+
+    dist = \
+        targetTransform.GetElement(0, 3) * curTransform.GetElement(0, 3) + \
+        targetTransform.GetElement(1, 3) * curTransform.GetElement(1, 3) + \
+        targetTransform.GetElement(2, 3) * curTransform.GetElement(2, 3)
+    dist = math.sqrt(dist)
+
+    finetune_thresh = 10.0 # mm
+
+    indx = (finetune_thresh - dist) / finetune_thresh \
+        if finetune_thresh >= dist else 0.0
+
+    currentPoseIndicator.SetColor(1.0-indx, indx, 0)

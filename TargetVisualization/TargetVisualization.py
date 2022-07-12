@@ -32,6 +32,7 @@ from slicer.util import VTKObservationMixin
 
 from TargetVisualizationLib.UtilConnections import UtilConnections
 from TargetVisualizationLib.UtilSlicerFuncs import setTransform
+from TargetVisualizationLib.UtilSlicerFuncs import setColorByDistance
 from TargetVisualizationLib.UtilConnectionsWtNnBlcRcv import UtilConnectionsWtNnBlcRcv
 from TargetVisualizationLib.UtilCalculations import quat2mat
 
@@ -302,11 +303,17 @@ class TargetVisualizationLogic(ScriptedLoadableModuleLogic):
     
     self._connections._parameterNode = self._parameterNode
 
-    # TODO: make sure this works (observer may not be constant, if failed, put the following to utilPoseMsgCallback)
     currentPoseTransform = self._parameterNode.GetNodeReference("CurrentPoseTransform")
     currentPoseIndicator = self._parameterNode.GetNodeReference("CurrentPoseIndicator")
     currentPoseTransform.SetMatrixTransformToParent(self._connections._transformMatrixCurrentPose)
     currentPoseIndicator.SetAndObserveTransformNodeID(currentPoseTransform.GetID())
+
+    if not self._connections._transformNodeTargetPoseSingleton:
+      if not slicer.mrmlScene.GetSingletonNode("MedImgPlan.TargetPoseTransform", "vtkMRMLTransformNode"):
+        self._connections._transformNodeTargetPoseSingleton = \
+          slicer.mrmlScene.GetSingletonNode("MedImgPlan.TargetPoseTransform", "vtkMRMLTransformNode")
+
+    self._connections._currentPoseIndicator = currentPoseIndicator
 
     self._connections._flag_receiving_nnblc = True
     self._connections.receiveTimerCallBack()
@@ -324,6 +331,8 @@ class TargetVizConnections(UtilConnectionsWtNnBlcRcv):
   def __init__(self, configPath, modulesufx):
     super().__init__(configPath, modulesufx)
     self._transformMatrixCurrentPose = None
+    self._transformNodeTargetPoseSingleton = None
+    self._currentPoseIndicator = None
   
   def setup(self):
     super().setup()
@@ -360,5 +369,9 @@ class TargetVizConnections(UtilConnectionsWtNnBlcRcv):
     
     setTransform(mat, p, self._transformMatrixCurrentPose)
     self._parameterNode.GetNodeReference("CurrentPoseTransform").SetMatrixTransformToParent(self._transformMatrixCurrentPose)
-
+    if self._transformNodeTargetPoseSingleton:
+      targetTransform = \
+        self._transformNodeTargetPoseSingleton.GetMatrixTransformFromParent()
+      setColorByDistance( \
+        self._currentPoseIndicator, targetTransform, self._transformMatrixCurrentPose)
     slicer.app.processEvents()

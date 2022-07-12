@@ -370,7 +370,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
 
     if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
       transformNode = slicer.vtkMRMLTransformNode()
+      transformNodeSingleton = slicer.vtkMRMLTransformNode()
       slicer.mrmlScene.AddNode(transformNode)
+      slicer.mrmlScene.AddNode(transformNodeSingleton)
+      transformNodeSingleton.SetSingletonTag("MedImgPlan.TargetPoseTransform")
       self._parameterNode.SetNodeReferenceID("TargetPoseTransform", transformNode.GetID())
 
     if not self._parameterNode.GetNodeReference("TargetPoseIndicator"):
@@ -379,13 +382,18 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       inputModel = slicer.util.loadModel(self._configPath+configData["POSE_INDICATOR_MODEL"])
       self._parameterNode.SetNodeReferenceID("TargetPoseIndicator", inputModel.GetID())
 
+    inputModel.GetDisplayNode().SetColor(0,1,0)
+
     transformMatrix = vtk.vtkMatrix4x4()
+    transformMatrixSingleton = vtk.vtkMatrix4x4()
     setTransform(mat, p, transformMatrix)
+    setTransform(mat, p, transformMatrixSingleton)
 
     targetPoseTransform = self._parameterNode.GetNodeReference("TargetPoseTransform")
     targetPoseIndicator = self._parameterNode.GetNodeReference("TargetPoseIndicator")
 
     targetPoseTransform.SetMatrixTransformToParent(transformMatrix)
+    transformNodeSingleton.SetMatrixTransformToParent(transformMatrixSingleton)
     targetPoseIndicator.SetAndObserveTransformNodeID(targetPoseTransform.GetID())
 
     slicer.app.processEvents()
