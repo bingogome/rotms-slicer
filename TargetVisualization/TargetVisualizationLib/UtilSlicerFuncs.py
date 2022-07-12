@@ -54,4 +54,5 @@ def setColorByDistance( \
     indx = (finetune_thresh - dist) / finetune_thresh \
         if finetune_thresh >= dist else 0.0
 
-    currentPoseIndicator.SetColor(1.0-indx, indx, 0)
+    currentPoseIndicator.GetDisplayNode().SetColor(1.0-indx, indx, 0)
+
