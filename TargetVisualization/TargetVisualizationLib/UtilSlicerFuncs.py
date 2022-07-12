@@ -40,13 +40,16 @@ def setTransform(rotm, p, T):
 def setColorByDistance( \
     currentPoseIndicator, targetTransform, curTransform):
 
-    dist = \
-        targetTransform.GetElement(0, 3) * curTransform.GetElement(0, 3) + \
-        targetTransform.GetElement(1, 3) * curTransform.GetElement(1, 3) + \
-        targetTransform.GetElement(2, 3) * curTransform.GetElement(2, 3)
-    dist = math.sqrt(dist)
+    distarr = [ \
+        targetTransform.GetElement(0, 3) - curTransform.GetElement(0, 3), \
+        targetTransform.GetElement(1, 3) - curTransform.GetElement(1, 3), \
+        targetTransform.GetElement(2, 3) - curTransform.GetElement(2, 3) \
+        ]
 
-    finetune_thresh = 10.0 # mm
+    dist = math.sqrt( \
+        distarr[0] * distarr[0] + distarr[1] * distarr[1] + distarr[2] * distarr[2])
+        
+    finetune_thresh = 15.0 # mm
 
     indx = (finetune_thresh - dist) / finetune_thresh \
         if finetune_thresh >= dist else 0.0

@@ -309,7 +309,7 @@ class TargetVisualizationLogic(ScriptedLoadableModuleLogic):
     currentPoseIndicator.SetAndObserveTransformNodeID(currentPoseTransform.GetID())
 
     if not self._connections._transformNodeTargetPoseSingleton:
-      if not slicer.mrmlScene.GetSingletonNode("MedImgPlan.TargetPoseTransform", "vtkMRMLTransformNode"):
+      if slicer.mrmlScene.GetSingletonNode("MedImgPlan.TargetPoseTransform", "vtkMRMLTransformNode"):
         self._connections._transformNodeTargetPoseSingleton = \
           slicer.mrmlScene.GetSingletonNode("MedImgPlan.TargetPoseTransform", "vtkMRMLTransformNode")
 
