@@ -314,6 +314,7 @@ class TargetVisualizationLogic(ScriptedLoadableModuleLogic):
           slicer.mrmlScene.GetSingletonNode("MedImgPlan.TargetPoseTransform", "vtkMRMLTransformNode")
 
     self._connections._currentPoseIndicator = currentPoseIndicator
+    self._connections._colorchangethresh = self._connections._configData["COLOR_CHANGE_THRESH"]
 
     self._connections._flag_receiving_nnblc = True
     self._connections.receiveTimerCallBack()
@@ -369,9 +370,12 @@ class TargetVizConnections(UtilConnectionsWtNnBlcRcv):
     
     setTransform(mat, p, self._transformMatrixCurrentPose)
     self._parameterNode.GetNodeReference("CurrentPoseTransform").SetMatrixTransformToParent(self._transformMatrixCurrentPose)
+    
     if self._transformNodeTargetPoseSingleton:
+      
       targetTransform = \
         self._transformNodeTargetPoseSingleton.GetMatrixTransformToParent()
       setColorByDistance( \
-        self._currentPoseIndicator, targetTransform, self._transformMatrixCurrentPose)
+        self._currentPoseIndicator, targetTransform, self._transformMatrixCurrentPose, self._colorchangethresh)
+    
     slicer.app.processEvents()

@@ -38,7 +38,7 @@ def setTransform(rotm, p, T):
     T.SetElement(2,3,p[2])
 
 def setColorByDistance( \
-    currentPoseIndicator, targetTransform, curTransform):
+    currentPoseIndicator, targetTransform, curTransform, colorchangethresh):
 
     distarr = [ \
         targetTransform.GetElement(0, 3) - curTransform.GetElement(0, 3), \
@@ -49,7 +49,7 @@ def setColorByDistance( \
     dist = math.sqrt( \
         distarr[0] * distarr[0] + distarr[1] * distarr[1] + distarr[2] * distarr[2])
         
-    finetune_thresh = 50.0 # mm
+    finetune_thresh = colorchangethresh # mm
 
     indx = (finetune_thresh - dist) / finetune_thresh \
         if finetune_thresh >= dist else 0.0
