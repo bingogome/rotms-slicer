@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>289</width>
+    <width>243</width>
     <height>835</height>
    </rect>
   </property>
@@ -17,13 +17,6 @@
       <string>Session State</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_6">
-      <item row="1" column="1">
-       <widget class="QPushButton" name="pushConnectRob">
-        <property name="text">
-         <string>Connect Robot</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="1">
        <widget class="QPushButton" name="pushSessionReinit">
         <property name="text">
@@ -31,10 +24,62 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="ctkCollapsibleButton" name="collapRobotConn">
+     <property name="text">
+      <string>Robot Connection</string>
+     </property>
+     <property name="collapsed">
+      <bool>false</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_7">
+      <item row="0" column="0">
+       <widget class="QPushButton" name="pushConnectRob">
+        <property name="text">
+         <string>Connect Robot</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
        <widget class="QPushButton" name="pushDisconnectRob">
         <property name="text">
          <string>Disconnect Robot</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="ctkCollapsibleButton" name="collapRobotState">
+     <property name="text">
+      <string>Robot State</string>
+     </property>
+     <property name="collapsed">
+      <bool>true</bool>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_8">
+      <item row="1" column="0">
+       <widget class="QPushButton" name="pushGetJntAngs">
+        <property name="text">
+         <string>Get Joint Angles</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QPushButton" name="pushGetEFFPose">
+        <property name="text">
+         <string>Get End Pose</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="2">
+       <widget class="QPushButton" name="pushGetJntSetInit">
+        <property name="text">
+         <string>Get Joints and Set as Init</string>
         </property>
        </widget>
       </item>
@@ -69,38 +114,17 @@
       <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="2" column="0" colspan="2">
+      <item row="1" column="0" colspan="2">
        <widget class="QPushButton" name="pushExecute">
         <property name="text">
          <string>Execute Motion To Offset</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QPushButton" name="pushGetJntAngs">
-        <property name="text">
-         <string>Get Joint Angles</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0" colspan="2">
+      <item row="2" column="0" colspan="2">
        <widget class="QPushButton" name="pushConfirm">
         <property name="text">
          <string>Confirm and Bring Closer</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="QPushButton" name="pushGetEFFPose">
-        <property name="text">
-         <string>Get End Pose</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0" colspan="2">
-       <widget class="QPushButton" name="pushGetJntSetInit">
-        <property name="text">
-         <string>Get Joints and Set as Init</string>
         </property>
        </widget>
       </item>
@@ -116,17 +140,24 @@
       <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_5">
-      <item row="0" column="0">
+      <item row="2" column="0">
+       <widget class="QPushButton" name="pushReInit">
+        <property name="text">
+         <string>Move to Initial</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
        <widget class="QPushButton" name="pushReOffset">
         <property name="text">
          <string>Move Back to Offset</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QPushButton" name="pushReInit">
+      <item row="0" column="0">
+       <widget class="QPushButton" name="pushRobotHoming">
         <property name="text">
-         <string>Move Back to Initial</string>
+         <string>Bring to Home</string>
         </property>
        </widget>
       </item>
