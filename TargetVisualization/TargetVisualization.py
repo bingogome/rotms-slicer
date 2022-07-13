@@ -371,7 +371,7 @@ class TargetVizConnections(UtilConnectionsWtNnBlcRcv):
     self._parameterNode.GetNodeReference("CurrentPoseTransform").SetMatrixTransformToParent(self._transformMatrixCurrentPose)
     if self._transformNodeTargetPoseSingleton:
       targetTransform = \
-        self._transformNodeTargetPoseSingleton.GetMatrixTransformFromParent()
+        self._transformNodeTargetPoseSingleton.GetMatrixTransformToParent()
       setColorByDistance( \
         self._currentPoseIndicator, targetTransform, self._transformMatrixCurrentPose)
     slicer.app.processEvents()
