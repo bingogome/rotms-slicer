@@ -25,45 +25,16 @@ SOFTWARE.
 import os
 import json
 import logging
-import socket
+
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
-#
-# Connection
-#
-
-class TargetVisualizationConnection():
-  """
-  Connection class for the TargetVisualization module
-  """
-
-  def __init__(self,configPath):
-
-    # port init
-    with open(configPath+"Config.json") as f:
-      configData = json.load(f)
-    
-    self._sock_ip_receive = configData["IP_RECEIVE_TARGETVIZ"]
-    self._sock_ip_send = configData["IP_SEND_TARGETVIZ"]
-    self._sock_receive_port = configData["PORT_RECEIVE_TARGETVIZ"]
-    self._sock_send_port = configData["PORT_SEND_TARGETVIZ"]
-
-    self._sock_receive = None
-    self._sock_send = None
-  
-  def setup(self):
-    self._sock_receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    self._sock_send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    self._sock_receive.bind((self._sock_ip_receive, self._sock_receive_port))
-    self._sock_receive.settimeout(0.5)
-    
-  def clear(self):
-    if self._sock_receive:
-      self._sock_receive.close()
-    if self._sock_send:
-      self._sock_send.close()
+from TargetVisualizationLib.UtilConnections import UtilConnections
+from TargetVisualizationLib.UtilSlicerFuncs import setTransform
+from TargetVisualizationLib.UtilSlicerFuncs import setColorByDistance
+from TargetVisualizationLib.UtilConnectionsWtNnBlcRcv import UtilConnectionsWtNnBlcRcv
+from TargetVisualizationLib.UtilCalculations import quat2mat
 
 #
 # TargetVisualization
@@ -145,7 +116,7 @@ class TargetVisualizationWidget(ScriptedLoadableModuleWidget, VTKObservationMixi
 
     # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
     # (in the selected parameter node).
-    self.ui.selectorModel.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+    # self.ui.selectorModel.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
 
     # Buttons
     self.ui.pushStartTargetViz.connect('clicked(bool)', self.onPushStartTargetViz)
@@ -199,12 +170,6 @@ class TargetVisualizationWidget(ScriptedLoadableModuleWidget, VTKObservationMixi
 
     self.setParameterNode(self.logic.getParameterNode())
 
-    # Select default input nodes if nothing is selected yet to save a few clicks for the user
-    if not self._parameterNode.GetNodeReference("InputVolume"):
-      firstVolumeNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLScalarVolumeNode")
-      if firstVolumeNode:
-        self._parameterNode.SetNodeReferenceID("InputVolume", firstVolumeNode.GetID())
-
   def setParameterNode(self, inputParameterNode):
     """
     Set and observe parameter node.
@@ -238,20 +203,17 @@ class TargetVisualizationWidget(ScriptedLoadableModuleWidget, VTKObservationMixi
     # Make sure GUI changes do not call updateParameterNodeFromGUI (it could cause infinite loop)
     self._updatingGUIFromParameterNode = True
 
-    # Update node selectors and sliders
-    self.ui.inputSelector.setCurrentNode(self._parameterNode.GetNodeReference("InputVolume"))
-    self.ui.outputSelector.setCurrentNode(self._parameterNode.GetNodeReference("OutputVolume"))
-    self.ui.invertedOutputSelector.setCurrentNode(self._parameterNode.GetNodeReference("OutputVolumeInverse"))
-    self.ui.imageThresholdSliderWidget.value = float(self._parameterNode.GetParameter("Threshold"))
-    self.ui.invertOutputCheckBox.checked = (self._parameterNode.GetParameter("Invert") == "true")
-
     # Update buttons states and tooltips
-    if self._parameterNode.GetNodeReference("InputVolume") and self._parameterNode.GetNodeReference("OutputVolume"):
-      self.ui.applyButton.toolTip = "Compute output volume"
-      self.ui.applyButton.enabled = True
+    if self._parameterNode.GetParameter("Visualizing") == "true":
+      self.ui.pushStartTargetViz.toolTip = "The module is visualizing"
+      self.ui.pushStartTargetViz.enabled = False
+      self.ui.pushStopTargetViz.toolTip = "Stop visualizing"
+      self.ui.pushStopTargetViz.enabled = True
     else:
-      self.ui.applyButton.toolTip = "Select input and output volume nodes"
-      self.ui.applyButton.enabled = False
+      self.ui.pushStartTargetViz.toolTip = "Start visualizing"
+      self.ui.pushStartTargetViz.enabled = True
+      self.ui.pushStopTargetViz.toolTip = "Visualization not started"
+      self.ui.pushStopTargetViz.enabled = False
 
     # All the GUI updates are done
     self._updatingGUIFromParameterNode = False
@@ -267,34 +229,27 @@ class TargetVisualizationWidget(ScriptedLoadableModuleWidget, VTKObservationMixi
 
     wasModified = self._parameterNode.StartModify()  # Modify all properties in a single batch
 
-    self._parameterNode.SetNodeReferenceID("InputVolume", self.ui.inputSelector.currentNodeID)
-    self._parameterNode.SetNodeReferenceID("OutputVolume", self.ui.outputSelector.currentNodeID)
-    self._parameterNode.SetParameter("Threshold", str(self.ui.imageThresholdSliderWidget.value))
-    self._parameterNode.SetParameter("Invert", "true" if self.ui.invertOutputCheckBox.checked else "false")
-    self._parameterNode.SetNodeReferenceID("OutputVolumeInverse", self.ui.invertedOutputSelector.currentNodeID)
-
     self._parameterNode.EndModify(wasModified)
 
-  def onApplyButton(self):
-    """
-    Run processing when user clicks "Apply" button.
-    """
+  def onPushStartTargetViz(self):
+    msg = self.logic._commandsData["VISUALIZE_START"]
     try:
-
-      # Compute output
-      self.logic.process(self.ui.inputSelector.currentNode(), self.ui.outputSelector.currentNode(),
-        self.ui.imageThresholdSliderWidget.value, self.ui.invertOutputCheckBox.checked)
-
-      # Compute inverted output (if needed)
-      if self.ui.invertedOutputSelector.currentNode():
-        # If additional output volume is selected then result with inverted threshold is written there
-        self.logic.process(self.ui.inputSelector.currentNode(), self.ui.invertedOutputSelector.currentNode(),
-          self.ui.imageThresholdSliderWidget.value, not self.ui.invertOutputCheckBox.checked, showResult=False)
-
-    except Exception as e:
-      slicer.util.errorDisplay("Failed to compute results: "+str(e))
-      import traceback
-      traceback.print_exc()
+      self.logic._connections.utilSendCommand(msg)
+    except:
+      return
+    self.logic.processStartTargetViz()
+    self._parameterNode.SetParameter("Visualizing", "true")
+      
+    
+  def onPushStopTargetViz(self):
+    msg = self.logic._commandsData["VISUALIZE_STOP"]
+    try:
+      self.logic._connections.utilSendCommand(msg)
+    except:
+      return
+    self.logic.processStopTargetViz()
+    self._parameterNode.SetParameter("Visualizing", "false")
+    
 
 
 #
@@ -317,7 +272,7 @@ class TargetVisualizationLogic(ScriptedLoadableModuleLogic):
     """
     ScriptedLoadableModuleLogic.__init__(self)
     self._configPath = configPath
-    self._connections = TargetVisualizationConnection(configPath)
+    self._connections = TargetVizConnections(configPath, "TARGETVIZ")
     self._connections.setup()
 
     with open(self._configPath+"CommandsConfig.json") as f:
@@ -327,7 +282,100 @@ class TargetVisualizationLogic(ScriptedLoadableModuleLogic):
     """
     Initialize parameter node with default settings.
     """
-    if not parameterNode.GetParameter("Threshold"):
-      parameterNode.SetParameter("Threshold", "100.0")
-    if not parameterNode.GetParameter("Invert"):
-      parameterNode.SetParameter("Invert", "false")
+    if not parameterNode.GetParameter("Visualizing"):
+      parameterNode.SetParameter("Visualizing", "false")
+    
+  def processStartTargetViz(self):
+    """
+    Called when click the start target viz button
+    """
+    self._parameterNode = self.getParameterNode()
+    if not self._parameterNode.GetNodeReference("CurrentPoseTransform"):
+      transformNode = slicer.vtkMRMLTransformNode()
+      slicer.mrmlScene.AddNode(transformNode)
+      self._parameterNode.SetNodeReferenceID("CurrentPoseTransform", transformNode.GetID())
+
+    if not self._parameterNode.GetNodeReference("CurrentPoseIndicator"):
+      with open(self._configPath+"Config.json") as f:
+        configData = json.load(f)
+      inputModel = slicer.util.loadModel(self._configPath+configData["POSE_INDICATOR_MODEL"])
+      self._parameterNode.SetNodeReferenceID("CurrentPoseIndicator", inputModel.GetID())
+    
+    self._connections._parameterNode = self._parameterNode
+
+    currentPoseTransform = self._parameterNode.GetNodeReference("CurrentPoseTransform")
+    currentPoseIndicator = self._parameterNode.GetNodeReference("CurrentPoseIndicator")
+    currentPoseTransform.SetMatrixTransformToParent(self._connections._transformMatrixCurrentPose)
+    currentPoseIndicator.SetAndObserveTransformNodeID(currentPoseTransform.GetID())
+
+    if not self._connections._transformNodeTargetPoseSingleton:
+      if slicer.mrmlScene.GetSingletonNode("MedImgPlan.TargetPoseTransform", "vtkMRMLTransformNode"):
+        self._connections._transformNodeTargetPoseSingleton = \
+          slicer.mrmlScene.GetSingletonNode("MedImgPlan.TargetPoseTransform", "vtkMRMLTransformNode")
+
+    self._connections._currentPoseIndicator = currentPoseIndicator
+    self._connections._colorchangethresh = self._connections._configData["COLOR_CHANGE_THRESH"]
+
+    self._connections._flag_receiving_nnblc = True
+    self._connections.receiveTimerCallBack()
+
+  def processStopTargetViz(self):
+
+    self._connections._flag_receiving_nnblc = False
+
+#
+# Use UtilConnectionsWtNnBlcRcv and override the data handler
+#
+
+class TargetVizConnections(UtilConnectionsWtNnBlcRcv):
+
+  def __init__(self, configPath, modulesufx):
+    super().__init__(configPath, modulesufx)
+    self._transformMatrixCurrentPose = None
+    self._transformNodeTargetPoseSingleton = None
+    self._currentPoseIndicator = None
+  
+  def setup(self):
+    super().setup()
+    if not self._transformMatrixCurrentPose:
+      self._transformMatrixCurrentPose = vtk.vtkMatrix4x4()
+
+  def handleReceivedData(self):
+    """
+    Override the parent class function
+    """
+    mat, p = self.utilMsgParse()
+    self.utilPoseMsgCallback(mat, p)
+  
+  def utilMsgParse(self):
+    """
+    Msg format: "__msg_pose_0000.00000_0000.00000_0000.00000_0000.00000_0000.00000_0000.00000_0000.00000"
+        x, y, z, qx, qy, qz, qw
+        in mm
+    """
+    data = self._data_buff.decode("UTF-8")
+    msg = data[11:]
+    num_str = msg.split("_")
+    num = []
+    for i in num_str:
+      num.append(float(i))
+    p = num[0:3]
+    mat = quat2mat(num[3:])
+    return mat, p
+
+  def utilPoseMsgCallback(self, mat, p):  
+    """
+    Called each time when a valid pose message is received
+    """
+    
+    setTransform(mat, p, self._transformMatrixCurrentPose)
+    self._parameterNode.GetNodeReference("CurrentPoseTransform").SetMatrixTransformToParent(self._transformMatrixCurrentPose)
+    
+    if self._transformNodeTargetPoseSingleton:
+      
+      targetTransform = \
+        self._transformNodeTargetPoseSingleton.GetMatrixTransformToParent()
+      setColorByDistance( \
+        self._currentPoseIndicator, targetTransform, self._transformMatrixCurrentPose, self._colorchangethresh)
+    
+    slicer.app.processEvents()

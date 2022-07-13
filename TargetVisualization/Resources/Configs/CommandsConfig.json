@@ -1,0 +1,12 @@
+{
+    "_comment1": "This is the commands that will be sent from 3D slicer to the distant side.", 
+    "_comment2": "The unit of the numbers sent out in the commands are in ROS convention",
+    "_comment3": "The commands should not exceed 256 chars (receiving side buffer)",
+    "_comment4": "The commands are 16-chars",
+    
+    "TargetVizCmd":
+    {
+        "VISUALIZE_START": "start_visualizex",
+        "VISUALIZE_STOP": "stop_visualizexx"
+    }
+}

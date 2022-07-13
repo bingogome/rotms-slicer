@@ -1,0 +1,27 @@
+{
+    "_comment1": "This is the commands that will be sent from 3D slicer to the distant side.", 
+    "_comment2": "The unit of the numbers sent out in the commands are in ROS convention",
+    "_comment3": "The commands should not exceed 256 chars (receiving side buffer)",
+    "_comment4": "The commands are 16-chars",
+    
+    "RobCtrlCmd":
+    {
+        "GET_JNT_ANGS": "get_jnt_angsxxxx",
+        "GET_EFF_POSE": "get_eff_posexxxx",
+        "GET_JNT_ANGS_TOINIT": "get_jnt_setinitx",
+
+        "EXECUTE_MOTION": "execute_motionxx",
+        "EXECUTE_MOVE_CONFIRM": "execute_confirmx",
+        "EXECUTE_ENDBACK": "end_session_back",
+        "EXECUTE_BACKINIT": "execute_backinit",
+        "EXECUTE_BACKOFFSET": "execute_bkoffset",
+
+        "SESSION_REINIT": "session_reinitxx",
+        
+        "MAN_ADJUST_T": "adjust_tranxxxxx",
+        "MAN_ADJUST_R": "adjust_oriexxxxx",
+
+        "ROB_CONN_ON": "rob_conn_onxxxxx",
+        "ROB_CONN_OFF": "rob_conn_offxxxx"
+    }
+}

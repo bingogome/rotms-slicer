@@ -4,6 +4,8 @@ set(MODULE_NAME TargetVisualization)
 #-----------------------------------------------------------------------------
 set(MODULE_PYTHON_SCRIPTS
   ${MODULE_NAME}.py
+  ${MODULE_NAME}Lib/UtilConnections.py
+  ${MODULE_NAME}Lib/UtilSlicerFuncs.py
   )
 
 set(MODULE_PYTHON_RESOURCES

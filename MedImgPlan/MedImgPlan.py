@@ -25,54 +25,20 @@ SOFTWARE.
 import os
 import json
 import logging
-import socket
+
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
-from MedImgPlanLib import UtilCalculations
-from MedImgPlanLib import UtilSlicerFuncs
-from MedImgPlanLib import UtilFormat
+from MedImgPlanLib.UtilConnections import UtilConnections
+from MedImgPlanLib.UtilFormat import utilNumStrFormat
+from MedImgPlanLib.UtilCalculations import mat2quat, utilPosePlan
+from MedImgPlanLib.UtilSlicerFuncs import setTransform
 
 """
 Check CommandsConfig.json to get UDP messages.
 Check Config.json to get program settings.
 """
-
-#
-# Connection
-#
-
-class MedImgPlanConnection():
-  """
-  Connection class for the MedImgPlan module
-  """
-
-  def __init__(self,configPath):
-
-    # port init
-    with open(configPath+"Config.json") as f:
-      configData = json.load(f)
-    
-    self._sock_ip_receive = configData["IP_RECEIVE_MEDIMG"]
-    self._sock_ip_send = configData["IP_SEND_MEDIMG"]
-    self._sock_receive_port = configData["PORT_RECEIVE_MEDIMG"]
-    self._sock_send_port = configData["PORT_SEND_MEDIMG"]
-
-    self._sock_receive = None
-    self._sock_send = None
-  
-  def setup(self):
-    self._sock_receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    self._sock_send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    self._sock_receive.bind((self._sock_ip_receive, self._sock_receive_port))
-    self._sock_receive.settimeout(0.5)
-    
-  def clear(self):
-    if self._sock_receive:
-      self._sock_receive.close()
-    if self._sock_send:
-      self._sock_send.close()
 
 #
 # MedImgPlan
@@ -154,11 +120,13 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
     # (in the selected parameter node).
-    self.ui.markupsRegistration.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
-    self.ui.markupsToolPosePlan.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+    self.ui.markupsRegistration.connect("markupsNodeChanged()", self.updateParameterNodeFromGUI) 
+    self.ui.markupsRegistration.markupsPlaceWidget().setPlaceModePersistency(True)
+    self.ui.markupsToolPosePlan.connect("markupsNodeChanged()", self.updateParameterNodeFromGUI)
+    self.ui.markupsToolPosePlan.markupsPlaceWidget().setPlaceModePersistency(True)
 
     # Buttons
-    self.ui.pushPlanFiducials.connect('clicked(bool)', self.onPushPlanFiducials)
+    self.ui.pushPlanLandmarks.connect('clicked(bool)', self.onPushPlanLandmarks)
     self.ui.pushDigitize.connect('clicked(bool)', self.onPushDigitize)
     self.ui.pushRegister.connect('clicked(bool)', self.onPushRegistration)
     self.ui.pushUsePreviousRegistration.connect('clicked(bool)', self.onPushUsePreviousRegistration)
@@ -213,10 +181,10 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.setParameterNode(self.logic.getParameterNode())
 
     # Select default input nodes if nothing is selected yet to save a few clicks for the user
-    if not self._parameterNode.GetNodeReference("FiducialsMarkups"):
+    if not self._parameterNode.GetNodeReference("LandmarksMarkups"):
       firstMarkupsNode = slicer.mrmlScene.GetFirstNodeByClass("vtkMRMLMarkupsNode")
       if firstMarkupsNode:
-        self._parameterNode.SetNodeReferenceID("FiducialsMarkups", firstMarkupsNode.GetID())
+        self._parameterNode.SetNodeReferenceID("LandmarksMarkups", firstMarkupsNode.GetID())
 
   def setParameterNode(self, inputParameterNode):
     """
@@ -252,27 +220,31 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self._updatingGUIFromParameterNode = True
 
     # Update node selectors and sliders
-    self.ui.markupsRegistration.setCurrentNode(self._parameterNode.GetNodeReference("FiducialsMarkups"))
+    self.ui.markupsRegistration.setCurrentNode(self._parameterNode.GetNodeReference("LandmarksMarkups"))
     self.ui.markupsToolPosePlan.setCurrentNode(self._parameterNode.GetNodeReference("ToolPoseMarkups"))
     
     # Update buttons states and tooltips
-    if self._parameterNode.GetNodeReference("FiducialsMarkups"):
-      self.ui.pushPlanFiducials.toolTip = "Feed in all the fiducials"
-      self.ui.pushPlanFiducials.enabled = True
+    if self._parameterNode.GetNodeReference("LandmarksMarkups"):
+      self.ui.pushPlanLandmarks.toolTip = "Feed in all the landmarks"
+      self.ui.pushPlanLandmarks.enabled = True
       self.ui.pushDigitize.toolTip = "Start digitizing"
       self.ui.pushDigitize.enabled = True
+      self.ui.pushRegister.toolTip = "Register"
+      self.ui.pushRegister.enabled = True
     else:
-      self.ui.pushPlanFiducials.toolTip = "Select fiducial markups node first"
-      self.ui.pushPlanFiducials.enabled = False
-      self.ui.pushDigitize.toolTip = "Select fiducial markups node first"
+      self.ui.pushPlanLandmarks.toolTip = "Select landmark markups node first"
+      self.ui.pushPlanLandmarks.enabled = False
+      self.ui.pushDigitize.toolTip = "Select landmark markups node first"
       self.ui.pushDigitize.enabled = False
+      self.ui.pushRegister.toolTip = "Select landmark markups node first"
+      self.ui.pushRegister.enabled = False
 
     if self._parameterNode.GetNodeReference("ToolPoseMarkups"):
-      self.ui.pushPlanFiducials.toolTip = "Feed in tool pose"
-      self.ui.pushPlanFiducials.enabled = True
+      self.ui.pushToolPosePlan.toolTip = "Feed in tool pose"
+      self.ui.pushToolPosePlan.enabled = True
     else:
-      self.ui.pushPlanFiducials.toolTip = "Select fiducial markups node"
-      self.ui.pushPlanFiducials.enabled = False
+      self.ui.pushToolPosePlan.toolTip = "Select landmark markups node"
+      self.ui.pushToolPosePlan.enabled = False
 
     # All the GUI updates are done
     self._updatingGUIFromParameterNode = False
@@ -282,33 +254,51 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     This method is called when the user makes any change in the GUI.
     The changes are saved into the parameter node (so that they are restored when the scene is saved and loaded).
     """
+    # print("updated gui")
 
     if self._parameterNode is None or self._updatingGUIFromParameterNode:
       return
 
     wasModified = self._parameterNode.StartModify()  # Modify all properties in a single batch
 
-    self._parameterNode.SetNodeReferenceID("FiducialsMarkups", self.ui.markupsRegistration.currentNodeID)
-    self._parameterNode.SetNodeReferenceID("ToolPoseMarkups", self.ui.markupsToolPosePlan.currentNodeID)
+    if self.ui.markupsRegistration.currentNode():
+      self._parameterNode.SetNodeReferenceID("LandmarksMarkups", self.ui.markupsRegistration.currentNode().GetID())
+    else:
+      self._parameterNode.SetNodeReferenceID("LandmarksMarkups", None)
+    if self.ui.markupsToolPosePlan.currentNode():
+      self._parameterNode.SetNodeReferenceID("ToolPoseMarkups", self.ui.markupsToolPosePlan.currentNode().GetID())
+    else:
+      self._parameterNode.SetNodeReferenceID("ToolPoseMarkups", None)
 
     self._parameterNode.EndModify(wasModified)
 
-  def onPushPlanFiducials(self):
-    self.logic.processPushPlanFiducials(self.ui.markupsRegistration.currentNode())
+  def onPushPlanLandmarks(self):
+    self.updateParameterNodeFromGUI()
+    self.logic.processPushPlanLandmarks(self._parameterNode.GetNodeReference("LandmarksMarkups"))
 
   def onPushDigitize(self):
+    self.updateParameterNodeFromGUI()
     msg = self.logic._commandsData["START_AUTO_DIGITIZE"]
-    self.logic.utilSendCommand(msg)
+    self.logic._connections.utilSendCommand(msg)
 
   def onPushRegistration(self):
+    self.updateParameterNodeFromGUI()
     msg = self.logic._commandsData["START_REGISTRATION"]
-    self.logic.utilSendCommand(msg)
+    self.logic._connections.utilSendCommand(msg)
+    data = self.logic._connections.receiveMsg()
+    print("Registration residual: " + str(data) + "mm")
+    slicer.util.infoDisplay("Registration residual: " + str(data) + "mm")
 
   def onPushUsePreviousRegistration(self):
-    msg = self.logic._commandsData["USE_PREV_REGISTRATION"]
-    self.logic.utilSendCommand(msg)
+    self.updateParameterNodeFromGUI()
+    msg = self.logic._commandsData["START_USE_PREV_REGISTRATION"]
+    self.logic._connections.utilSendCommand(msg)
+    data = self.logic._connections.receiveMsg()
+    print("Registration residual: " + str(data) + "mm")
+    slicer.util.infoDisplay("Registration residual: " + str(data) + "mm")
 
   def onPushToolPosePlan(self):
+    self.updateParameterNodeFromGUI()
     self.logic.processPushToolPosePlan(self.ui.markupsToolPosePlan.currentNode())
 
 
@@ -333,8 +323,9 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     """
     ScriptedLoadableModuleLogic.__init__(self)
     self._configPath = configPath
-    self._connections = MedImgPlanConnection(configPath)
+    self._connections = UtilConnections(configPath,"MEDIMG")
     self._connections.setup()
+    self._parameterNode = self.getParameterNode()
     
     with open(self._configPath+"CommandsConfig.json") as f:
       self._commandsData = (json.load(f))["MegImgCmd"]
@@ -345,7 +336,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     """
     return
 
-  def processPushPlanFiducials(self, inputMarkupsNode):
+  def processPushPlanLandmarks(self, inputMarkupsNode):
     """
     Send out the markups for registration 
     """
@@ -353,7 +344,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       raise ValueError("Input markup is invalid")
     if inputMarkupsNode.GetNumberOfFiducials() < 3:
       raise ValueError("Input landmarks are less than 3")
-    self.utilSendFiducials(-1)
+    self.utilSendLandmarks(-1)
   
   def processPushToolPosePlan(self, inputMarkupsNode):
     """
@@ -363,38 +354,57 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     if not inputMarkupsNode:
       raise ValueError("Input markup is invalid")
 
-    if inputMarkupsNode.GetNumberOfFiducials() != 4:
-      raise ValueError("Input fiducials are not 4")
+    if inputMarkupsNode.GetNumberOfFiducials() != 4 and \
+      inputMarkupsNode.GetNumberOfFiducials() != 3:
+      raise ValueError("Input landmarks are not 3 or 4")
 
     a = [0,0,0]
     b = [0,0,0]
     c = [0,0,0]
     p = [0,0,0]
-    inputMarkupsNode.GetNthFiducialPosition(1,a)
-    inputMarkupsNode.GetNthFiducialPosition(2,b)
-    inputMarkupsNode.GetNthFiducialPosition(3,c)
-    inputMarkupsNode.GetNthFiducialPosition(0,p)
+
+    if inputMarkupsNode.GetNumberOfFiducials() == 4:
+      inputMarkupsNode.GetNthFiducialPosition(1,a)
+      inputMarkupsNode.GetNthFiducialPosition(2,b)
+      inputMarkupsNode.GetNthFiducialPosition(3,c)
+      inputMarkupsNode.GetNthFiducialPosition(0,p)
+    if inputMarkupsNode.GetNumberOfFiducials() == 3:
+      inputMarkupsNode.GetNthFiducialPosition(0,a)
+      inputMarkupsNode.GetNthFiducialPosition(1,b)
+      inputMarkupsNode.GetNthFiducialPosition(2,c)
+      p[0] = (a[0]+b[0]+c[0])/3.0
+      p[1] = (a[1]+b[1]+c[1])/3.0
+      p[2] = (a[2]+b[2]+c[2])/3.0
 
     mat = utilPosePlan(a,b,c,p)
 
     if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
       transformNode = slicer.vtkMRMLTransformNode()
+      transformNodeSingleton = slicer.vtkMRMLTransformNode()
       slicer.mrmlScene.AddNode(transformNode)
+      slicer.mrmlScene.AddNode(transformNodeSingleton)
+      transformNodeSingleton.SetSingletonTag("MedImgPlan.TargetPoseTransform")
       self._parameterNode.SetNodeReferenceID("TargetPoseTransform", transformNode.GetID())
+      self._parameterNode.SetNodeReferenceID("TargetPoseTransformSingleton", transformNodeSingleton.GetID())
 
     if not self._parameterNode.GetNodeReference("TargetPoseIndicator"):
       with open(self._configPath+"Config.json") as f:
         configData = json.load(f)
-      inputModel = slicer.util.loadModel(configData["POSE_INDICATOR_MODEL"])
+      inputModel = slicer.util.loadModel(self._configPath+configData["POSE_INDICATOR_MODEL"])
       self._parameterNode.SetNodeReferenceID("TargetPoseIndicator", inputModel.GetID())
+      inputModel.GetDisplayNode().SetColor(0,1,0)
 
     transformMatrix = vtk.vtkMatrix4x4()
+    transformMatrixSingleton = vtk.vtkMatrix4x4()
     setTransform(mat, p, transformMatrix)
+    setTransform(mat, p, transformMatrixSingleton)
 
     targetPoseTransform = self._parameterNode.GetNodeReference("TargetPoseTransform")
+    targetPoseTransformSingleton = self._parameterNode.GetNodeReference("TargetPoseTransformSingleton")
     targetPoseIndicator = self._parameterNode.GetNodeReference("TargetPoseIndicator")
 
     targetPoseTransform.SetMatrixTransformToParent(transformMatrix)
+    targetPoseTransformSingleton.SetMatrixTransformToParent(transformMatrixSingleton)
     targetPoseIndicator.SetAndObserveTransformNodeID(targetPoseTransform.GetID())
 
     slicer.app.processEvents()
@@ -402,62 +412,51 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     quat = mat2quat(mat)
 
     msg = self._commandsData["TARGET_POSE_ORIENTATION"] + \
-      "_" + utilNumStrFormat(quat[0]) + \
-      "_" + utilNumStrFormat(quat[1]) + \
-      "_" + utilNumStrFormat(quat[2]) + \
-      "_" + utilNumStrFormat(quat[3])
+      "_" + utilNumStrFormat(quat[0],15,17) + \
+      "_" + utilNumStrFormat(quat[1],15,17) + \
+      "_" + utilNumStrFormat(quat[2],15,17) + \
+      "_" + utilNumStrFormat(quat[3],15,17)
 
-    self.utilSendCommand(msg)
+    self._connections.utilSendCommand(msg)
 
     msg = self._commandsData["TARGET_POSE_TRANSLATION"] + \
-      "_" + utilNumStrFormat(p[0]/1000,7) + \
-      "_" + utilNumStrFormat(p[1]/1000,7) + \
-      "_" + utilNumStrFormat(p[2]/1000,7)
+      "_" + utilNumStrFormat(p[0]/1000,15,17) + \
+      "_" + utilNumStrFormat(p[1]/1000,15,17) + \
+      "_" + utilNumStrFormat(p[2]/1000,15,17)
 
-  def utilSendCommand(self, msg, errorMsg="Failed to send command ", res=False):
-    if len(msg) > 150:
-      raise RuntimeError("Command contains too many characters.")
-    try:
-      self._connections._sock_send.sendto( \
-        msg.encode('UTF-8'), (self._connections._sock_ip_send, self._connections._sock_send_port) )
-      try:
-        data = self._connections._sock_receive.recvfrom(512)
-      except socket.error:
-        raise RuntimeError("Command response timedout")
-    except Exception as e:
-      slicer.util.errorDisplay(errorMsg+str(e))
-      import traceback
-      traceback.print_exc()
-    if res:
-      return data
+    self._connections.utilSendCommand(msg)
 
-  def utilSendFiducials(self, curIdx):
+  def utilSendLandmarks(self, curIdx):
     """
-    Utility function to recurrantly send fiducials (landmarks on medical image)
+    Utility function to recurrantly send landmarks (landmarks on medical image)
     """
-    inputMarkupsNode = self._parameterNode.GetNodeReference("FiducialsMarkups")
+    inputMarkupsNode = self._parameterNode.GetNodeReference("LandmarksMarkups")
     numOfFid = inputMarkupsNode.GetNumberOfFiducials()
-
-    if curIdx != -1:
+    
+    if curIdx == numOfFid:
+      msg = self._commandsData["LANDMARK_LAST_RECEIVED"]
+    elif curIdx != -1:
       ras = [0,0,0]
       inputMarkupsNode.GetNthFiducialPosition(curIdx,ras)
-      # curIdx is -1, send the current fiducial
+      # curIdx is -1, send the current landmark
       # Send in SI units (meter/second/...)
-      msg = self._commandsData["CURRENT_FIDUCIAL_ON_IMG"] + \
+      msg = self._commandsData["LANDMARK_CURRENT_ON_IMG"] + \
         "_" + str(curIdx).zfill(2) + \
-        "_" + utilNumStrFormat(ras[0]/1000,7) + \
-        "_" + utilNumStrFormat(ras[1]/1000,7) + \
-        "_" + utilNumStrFormat(ras[2]/1000,7)
+        "_" + utilNumStrFormat(ras[0]/1000,15,17) + \
+        "_" + utilNumStrFormat(ras[1]/1000,15,17) + \
+        "_" + utilNumStrFormat(ras[2]/1000,15,17)
     else:
-      # curIdx is -1, send the number of fiducials
-      msg = self._commandsData["NUM_OF_FIDUCIAL_ON_IMG"] + \
+      # curIdx is -1, send the number of landmarks
+      msg = self._commandsData["LANDMARK_NUM_OF_ON_IMG"] + \
         "_" + str(numOfFid).zfill(2)
     
-    self.utilSendCommand(msg)
+    print(msg)
+    
+    self._connections.utilSendCommand(msg)
 
-    if curIdx < numOfFid-1:
+    if curIdx <= numOfFid-1:
       curIdx = curIdx+1
-      self.utilSendFiducials(curIdx)
+      self.utilSendLandmarks(curIdx)
 
 
 

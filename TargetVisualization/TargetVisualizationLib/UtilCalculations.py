@@ -25,35 +25,12 @@ SOFTWARE.
 import math
 
 def mat2quat(R):
-    if R[0][0]+R[1][1]+R[2][2] > 0:
-        qw = math.sqrt(1.0 + R[0][0] + R[1][1] + R[2][2]) / 2.0 * 4.0
-        x = (R[2][1] - R[1][2]) / qw
-        y = (R[0][2] - R[2][0]) / qw
-        z = (R[1][0] - R[0][1]) / qw
-        # print(x,y,z,qw)
-        return [x,y,z,qw/4]
-    elif (R[0][0] > R[1][1]) and (R[0][0] > R[2][2]):
-        s = math.sqrt(1.0 + R[0][0] - R[1][1] - R[2][2]) * 2.0
-        qw = (R[2][1] - R[1][2]) / s
-        qx = 0.25 * s
-        qy = (R[0][1] + R[1][0]) / s
-        qz = (R[0][2] + R[2][0]) / s
-        return [qx, qy, qz, qw]
-    elif R[1][1] > R[2][2]:
-        s = math.sqrt(1.0 + R[1][1] - R[0][0] - R[2][2]) * 2.0
-        qw = (R[0][2] - R[2][0]) / s
-        qx = (R[0][1] + R[1][0]) / s
-        qy = 0.25 * s
-        qz = (R[1][2] + R[2][1]) / s
-        return [qx, qy, qz, qw]
-    else:
-        s = math.sqrt(1.0 + R[2][2] - R[0][0] - R[1][1]) * 2.0
-        qw = (R[1][0] - R[0][1]) / s
-        qx = (R[0][2] + R[2][0]) / s
-        qy = (R[1][2] + R[2][1]) / s
-        qz = 0.25 * s
-        return [qx, qy, qz, qw]
-
+    qw = math.sqrt(1.0+R[0][0]+R[1][1]+R[2][2]) / 2.0 * 4.0
+    x = (R[2][1] - R[1][2]) / qw
+    y = (R[0][2] - R[2][0]) / qw
+    z = (R[1][0] - R[0][1]) / qw
+    # print(x,y,z,qw)
+    return [x,y,z,qw/4]
 
 def quat2mat(q):
     qx = q[0]

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>361</width>
+    <width>408</width>
     <height>781</height>
    </rect>
   </property>
@@ -19,18 +19,21 @@
      <property name="text">
       <string>Registration</string>
      </property>
+     <property name="collapsed">
+      <bool>true</bool>
+     </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="2" column="0">
-       <widget class="QPushButton" name="pushPlanFiducials">
+       <widget class="QPushButton" name="pushPlanLandmarks">
         <property name="text">
-         <string>All Fiducials Planned</string>
+         <string>All Landmarks Planned</string>
         </property>
        </widget>
       </item>
       <item row="0" column="0">
        <widget class="QLabel" name="labelRegistration">
         <property name="text">
-         <string>Collect at least 3 fiducials.</string>
+         <string>Collect at least 3 landmarks.</string>
         </property>
        </widget>
       </item>
@@ -49,7 +52,15 @@
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="qSlicerSimpleMarkupsWidget" name="markupsRegistration"/>
+       <widget class="qSlicerSimpleMarkupsWidget" name="markupsRegistration">
+        <property name="defaultNodeColor">
+         <color>
+          <red>0</red>
+          <green>255</green>
+          <blue>0</blue>
+         </color>
+        </property>
+       </widget>
       </item>
       <item row="4" column="0">
        <widget class="QPushButton" name="pushRegister">
@@ -66,9 +77,20 @@
      <property name="text">
       <string>Tool Pose Plan</string>
      </property>
+     <property name="collapsed">
+      <bool>true</bool>
+     </property>
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="3" column="0">
-       <widget class="qSlicerSimpleMarkupsWidget" name="markupsToolPosePlan"/>
+       <widget class="qSlicerSimpleMarkupsWidget" name="markupsToolPosePlan">
+        <property name="defaultNodeColor">
+         <color>
+          <red>255</red>
+          <green>0</green>
+          <blue>0</blue>
+         </color>
+        </property>
+       </widget>
       </item>
       <item row="1" column="0">
        <widget class="QLabel" name="labelToolPosePlan2">

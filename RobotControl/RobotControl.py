@@ -25,48 +25,13 @@ SOFTWARE.
 import os
 import json
 import logging
-import socket
-from RobotControl.RobotControlLib.UtilFormat import utilNumStrFormat
+import math
 import vtk, qt, ctk, slicer
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
-from RobotControlLib import UtilFormat
-
-#
-# Connection
-#
-
-class RobotControlConnection():
-  """
-  Connection class for the RobotControl module
-  """
-
-  def __init__(self,configPath):
-
-    # port init
-    with open(configPath+"Config.json") as f:
-      configData = json.load(f)
-    
-    self._sock_ip_receive = configData["IP_RECEIVE_RobotControl"]
-    self._sock_ip_send = configData["IP_SEND_RobotControl"]
-    self._sock_receive_port = configData["PORT_RECEIVE_RobotControl"]
-    self._sock_send_port = configData["PORT_SEND_RobotControl"]
-
-    self._sock_receive = None
-    self._sock_send = None
-  
-  def setup(self):
-    self._sock_receive = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    self._sock_send = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    self._sock_receive.bind((self._sock_ip_receive, self._sock_receive_port))
-    self._sock_receive.settimeout(0.5)
-    
-  def clear(self):
-    if self._sock_receive:
-      self._sock_receive.close()
-    if self._sock_send:
-      self._sock_send.close()
+from RobotControlLib.UtilConnections import UtilConnections
+from RobotControlLib.UtilFormat import utilNumStrFormat
 
 #
 # RobotControl
@@ -153,10 +118,21 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.checkBoxSafe.connect("toggled(bool)", self.updateParameterNodeFromGUI)
 
     # Buttons
+
+    self.ui.pushSessionReinit.connect('clicked(bool)', self.onPushSessionReinit)
+    self.ui.pushConnectRob.connect('clicked(bool)', self.onPushConnectRob)
+    self.ui.pushDisconnectRob.connect('clicked(bool)', self.onPushDisconnectRob)
+
     self.ui.pushGetJntAngs.connect('clicked(bool)', self.onPushGetJntAngs)
     self.ui.pushGetEFFPose.connect('clicked(bool)', self.onPushGetEFFPose)
+    self.ui.pushGetJntSetInit.connect('clicked(bool)', self.onPushGetJntSetInit)
+
     self.ui.pushExecute.connect('clicked(bool)', self.onPushExecute)
     self.ui.pushConfirm.connect('clicked(bool)', self.onPushConfirm)
+    self.ui.pushEndAndBack.connect('clicked(bool)', self.onPushEndAndBack)
+    self.ui.pushReInit.connect('clicked(bool)', self.onPushReInit)
+    self.ui.pushReOffset.connect('clicked(bool)', self.onPushReOffset)
+
     self.ui.pushBackward.connect('clicked(bool)', self.onPushBackward)
     self.ui.pushCloser.connect('clicked(bool)', self.onPushCloser)
     self.ui.pushFarther.connect('clicked(bool)', self.onPushFarther)
@@ -166,7 +142,6 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.pushRight.connect('clicked(bool)', self.onPushRight)
     self.ui.pushRoll.connect('clicked(bool)', self.onPushRoll)
     self.ui.pushYaw.connect('clicked(bool)', self.onPushYaw)
-    self.ui.pushEnd.connect('clicked(bool)', self.onPushEnd)
 
     # Make sure parameter node is initialized (needed for module reload)
     self.initializeParameterNode()
@@ -255,7 +230,7 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.checkBoxSafe.checked = (self._parameterNode.GetParameter("SafeCheck") == "true")
 
     # Update buttons states and tooltips
-    if self._parameterNode.GetParameter("SafeCheck"):
+    if self._parameterNode.GetParameter("SafeCheck") == "true":
       self.ui.pushExecute.toolTip = "Push button to move robot to an offset location"
       self.ui.pushExecute.enabled = True
       self.ui.pushConfirm.toolTip = "Push button to move robot to planned location"
@@ -277,7 +252,7 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       self.ui.pushRoll.toolTip = "Roll tool"
       self.ui.pushRoll.enabled = True
       self.ui.pushYaw.toolTip = "Yaw tool"
-      self.ui.pushYaw
+      self.ui.pushYaw.enabled = True
     else:
       self.ui.pushExecute.toolTip = "Safety not checked"
       self.ui.pushExecute.enabled = False
@@ -322,21 +297,55 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     self._parameterNode.EndModify(wasModified)
 
+  def onPushSessionReinit(self):
+    msg = self.logic._commandsData["SESSION_REINIT"]
+    self.logic._connections.utilSendCommand(msg)
+
+  def onPushConnectRob(self):
+    msg = self.logic._commandsData["ROB_CONN_ON"]
+    self.logic._connections.utilSendCommand(msg)
+
+  def onPushDisconnectRob(self):
+    msg = self.logic._commandsData["ROB_CONN_OFF"]
+    self.logic._connections.utilSendCommand(msg)
+
   def onPushGetJntAngs(self):
     msg = self.logic._commandsData["GET_JNT_ANGS"]
-    self.logic.utilSendCommand(msg)
+    self.logic._connections.utilSendCommand(msg)
+    data = self.logic._connections.receiveMsg()
+    print(data)
 
   def onPushGetEFFPose(self):
     msg = self.logic._commandsData["GET_EFF_POSE"]
-    self.logic.utilSendCommand(msg)
+    self.logic._connections.utilSendCommand(msg)
+    data = self.logic._connections.receiveMsg()
+    print(data)
+
+  def onPushGetJntSetInit(self):
+    msg = self.logic._commandsData["GET_JNT_ANGS_TOINIT"]
+    self.logic._connections.utilSendCommand(msg)
+    data = self.logic._connections.receiveMsg()
+    print(data)
 
   def onPushExecute(self):
     msg = self.logic._commandsData["EXECUTE_MOTION"]
-    self.logic.utilSendCommand(msg)
+    self.logic._connections.utilSendCommand(msg)
 
   def onPushConfirm(self):
     msg = self.logic._commandsData["EXECUTE_MOVE_CONFIRM"]
-    self.logic.utilSendCommand(msg)
+    self.logic._connections.utilSendCommand(msg)
+
+  def onPushEndAndBack(self):
+    msg = self.logic._commandsData["EXECUTE_ENDBACK"]
+    self.logic._connections.utilSendCommand(msg)
+
+  def onPushReInit(self):
+    msg = self.logic._commandsData["EXECUTE_BACKINIT"]
+    self.logic._connections.utilSendCommand(msg)
+  
+  def onPushReOffset(self):
+    msg = self.logic._commandsData["EXECUTE_BACKOFFSET"]
+    self.logic._connections.utilSendCommand(msg)
 
   def onPushBackward(self):
     self.logic.utilManualAdjust("backward", \
@@ -374,10 +383,6 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.logic.utilManualAdjust("yaw", \
       float(self._parameterNode.GetParameter("RotationAdjustmentValue")))
 
-  def onPushEnd(self):
-    msg = self.logic._commandsData["END_SESSION"]
-    self.logic.utilSendCommand(msg)
-
 #
 # RobotControlLogic
 #
@@ -398,7 +403,7 @@ class RobotControlLogic(ScriptedLoadableModuleLogic):
     """
     ScriptedLoadableModuleLogic.__init__(self)
     self._configPath = configPath
-    self._connections = RobotControlConnection(configPath)
+    self._connections = UtilConnections(configPath,"RobotControl")
     self._connections.setup()
 
     with open(self._configPath+"CommandsConfig.json") as f:
@@ -409,54 +414,37 @@ class RobotControlLogic(ScriptedLoadableModuleLogic):
     Initialize parameter node with default settings.
     """
     if not parameterNode.GetParameter("RotationAdjustmentValue"):
-      parameterNode.SetParameter("RotationAdjustmentValue", "1.0") # default 1 degree adjustment
+      parameterNode.SetParameter("RotationAdjustmentValue", "0.5") # default 0.5 degree adjustment
     if not parameterNode.GetParameter("TranslationAdjustmentValue"):
       parameterNode.SetParameter("TranslationAdjustmentValue", "5.0") # default 5 mm adjustment
     if not parameterNode.GetParameter("SafeCheck"):
       parameterNode.SetParameter("SafeCheck", "false")
 
-  def utilSendCommand(self, msg, errorMsg="Failed to send command ", res=False):
-    if len(msg) > 150:
-      raise RuntimeError("Command contains too many characters.")
-    try:
-      self._connections._sock_send.sendto( \
-        msg.encode('UTF-8'), (self._connections._sock_ip_send, self._connections._sock_send_port) )
-      try:
-        data = self._connections._sock_receive.recvfrom(512)
-      except socket.error:
-        raise RuntimeError("Command response timedout")
-    except Exception as e:
-      slicer.util.errorDisplay(errorMsg+str(e))
-      import traceback
-      traceback.print_exc()
-    if res:
-      return data
-
   def utilManualAdjust(self, cmdstr, value):
     if cmdstr == "backward":
-      self.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_BACKWARD"] + "_" + utilNumStrFormat(value))
+      self._connections.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_T"] + "_0.0_" + utilNumStrFormat(value/1000.0, decimal=10) + "_0.0")
     if cmdstr == "closer":
-      self.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_CLOSER"] + "_" + utilNumStrFormat(value))
+      self._connections.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_T"] + "_0.0_0.0_" + utilNumStrFormat(-value/1000.0, decimal=10))
     if cmdstr == "farther":
-      self.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_FARTHER"] + "_" + utilNumStrFormat(value))
+      self._connections.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_T"] + "_0.0_0.0_" + utilNumStrFormat(value/1000.0, decimal=10))
     if cmdstr == "forward":
-      self.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_FORWARD"] + "_" + utilNumStrFormat(value))
+      self._connections.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_T"] + "_0.0_" + utilNumStrFormat(-value/1000.0, decimal=10) + "_0.0")
     if cmdstr == "left":
-      self.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_LEFT"] + "_" + utilNumStrFormat(value))
+      self._connections.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_T"] + "_" + utilNumStrFormat(value/1000.0, decimal=10) + "_0.0_0.0")
     if cmdstr == "pitch":
-      self.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_PITCH"] + "_" + utilNumStrFormat(value))
+      self._connections.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_R"] + "_" + utilNumStrFormat(value/180.0*math.pi, decimal=10) + "_0.0_0.0")
     if cmdstr == "right":
-      self.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_RIGHT"] + "_" + utilNumStrFormat(value))
+      self._connections.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_T"] + "_" + utilNumStrFormat(-value/1000.0, decimal=10) + "_0.0_0.0")
     if cmdstr == "roll":
-      self.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_ROLL"] + "_" + utilNumStrFormat(value))
+      self._connections.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_R"] + "_0.0_" + utilNumStrFormat(value/180.0*math.pi, decimal=10)+ "_0.0")
     if cmdstr == "yaw":
-      self.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_YAW"] + "_" + utilNumStrFormat(value))
+      self._connections.utilSendCommand( \
+        self._commandsData["MAN_ADJUST_R"] + "_0.0_0.0_" + utilNumStrFormat(value/180.0*math.pi, decimal=10))
