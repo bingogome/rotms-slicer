@@ -354,17 +354,27 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     if not inputMarkupsNode:
       raise ValueError("Input markup is invalid")
 
-    if inputMarkupsNode.GetNumberOfFiducials() != 4:
-      raise ValueError("Input landmarks are not 4")
+    if inputMarkupsNode.GetNumberOfFiducials() != 4 and \
+      inputMarkupsNode.GetNumberOfFiducials() != 3:
+      raise ValueError("Input landmarks are not 3 or 4")
 
     a = [0,0,0]
     b = [0,0,0]
     c = [0,0,0]
     p = [0,0,0]
-    inputMarkupsNode.GetNthFiducialPosition(1,a)
-    inputMarkupsNode.GetNthFiducialPosition(2,b)
-    inputMarkupsNode.GetNthFiducialPosition(3,c)
-    inputMarkupsNode.GetNthFiducialPosition(0,p)
+
+    if inputMarkupsNode.GetNumberOfFiducials() == 4:
+      inputMarkupsNode.GetNthFiducialPosition(1,a)
+      inputMarkupsNode.GetNthFiducialPosition(2,b)
+      inputMarkupsNode.GetNthFiducialPosition(3,c)
+      inputMarkupsNode.GetNthFiducialPosition(0,p)
+    if inputMarkupsNode.GetNumberOfFiducials() == 3:
+      inputMarkupsNode.GetNthFiducialPosition(0,a)
+      inputMarkupsNode.GetNthFiducialPosition(1,b)
+      inputMarkupsNode.GetNthFiducialPosition(2,c)
+      p[0] = (a[0]+b[0]+c[0])/3.0
+      p[1] = (a[1]+b[1]+c[1])/3.0
+      p[2] = (a[2]+b[2]+c[2])/3.0
 
     mat = utilPosePlan(a,b,c,p)
 
