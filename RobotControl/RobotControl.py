@@ -422,28 +422,28 @@ class RobotControlLogic(ScriptedLoadableModuleLogic):
   def utilManualAdjust(self, cmdstr, value):
     if cmdstr == "backward":
       self._connections.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_T"] + "_" + utilNumStrFormat(value) + "_0.0_0.0")
+        self._commandsData["MAN_ADJUST_T"] + "_" + utilNumStrFormat(value/1000.0, decimal=10) + "_0.0_0.0")
     if cmdstr == "closer":
       self._connections.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_T"] + "_0.0_0.0_" + utilNumStrFormat(-value))
+        self._commandsData["MAN_ADJUST_T"] + "_0.0_0.0_" + utilNumStrFormat(-value/1000.0, decimal=10))
     if cmdstr == "farther":
       self._connections.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_T"] + "_0.0_0.0_" + utilNumStrFormat(value))
+        self._commandsData["MAN_ADJUST_T"] + "_0.0_0.0_" + utilNumStrFormat(value/1000.0, decimal=10))
     if cmdstr == "forward":
       self._connections.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_T"] + "_" + utilNumStrFormat(-value) + "_0.0_0.0")
+        self._commandsData["MAN_ADJUST_T"] + "_" + utilNumStrFormat(-value/1000.0, decimal=10) + "_0.0_0.0")
     if cmdstr == "left":
       self._connections.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_T"] + "_0.0_" + utilNumStrFormat(-value) + "_0.0")
+        self._commandsData["MAN_ADJUST_T"] + "_0.0_" + utilNumStrFormat(-value/1000.0, decimal=10) + "_0.0")
     if cmdstr == "pitch":
       self._connections.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_R"] + "_" + utilNumStrFormat(value))
+        self._commandsData["MAN_ADJUST_R"] + "_0.0_" + utilNumStrFormat(value, decimal=10) + "_0.0")
     if cmdstr == "right":
       self._connections.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_T"] + "_0.0_" + utilNumStrFormat(value) + "_0.0")
+        self._commandsData["MAN_ADJUST_T"] + "_0.0_" + utilNumStrFormat(value/1000.0, decimal=10) + "_0.0")
     if cmdstr == "roll":
       self._connections.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_R"] + "_" + utilNumStrFormat(value))
+        self._commandsData["MAN_ADJUST_R"] + "_" + utilNumStrFormat(value, decimal=10)+ "_0.0_0.0")
     if cmdstr == "yaw":
       self._connections.utilSendCommand( \
-        self._commandsData["MAN_ADJUST_R"] + "_" + utilNumStrFormat(value))
+        self._commandsData["MAN_ADJUST_R"] + "_0.0_0.0_" + utilNumStrFormat(value, decimal=10))

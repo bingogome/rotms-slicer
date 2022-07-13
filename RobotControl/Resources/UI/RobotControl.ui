@@ -157,8 +157,11 @@
         <property name="pageStep">
          <double>1.500000000000000</double>
         </property>
+        <property name="minimum">
+         <double>-2.500000000000000</double>
+        </property>
         <property name="maximum">
-         <double>3.000000000000000</double>
+         <double>2.500000000000000</double>
         </property>
        </widget>
       </item>
