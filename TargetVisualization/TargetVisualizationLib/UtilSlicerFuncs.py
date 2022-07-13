@@ -49,7 +49,7 @@ def setColorByDistance( \
     dist = math.sqrt( \
         distarr[0] * distarr[0] + distarr[1] * distarr[1] + distarr[2] * distarr[2])
         
-    finetune_thresh = 15.0 # mm
+    finetune_thresh = 50.0 # mm
 
     indx = (finetune_thresh - dist) / finetune_thresh \
         if finetune_thresh >= dist else 0.0
