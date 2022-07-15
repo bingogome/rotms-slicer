@@ -120,16 +120,18 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # Buttons
 
     self.ui.pushSessionReinit.connect('clicked(bool)', self.onPushSessionReinit)
+
     self.ui.pushConnectRob.connect('clicked(bool)', self.onPushConnectRob)
     self.ui.pushDisconnectRob.connect('clicked(bool)', self.onPushDisconnectRob)
 
+    self.ui.pushGetJntSetInit.connect('clicked(bool)', self.onPushGetJntSetInit)
     self.ui.pushGetJntAngs.connect('clicked(bool)', self.onPushGetJntAngs)
     self.ui.pushGetEFFPose.connect('clicked(bool)', self.onPushGetEFFPose)
-    self.ui.pushGetJntSetInit.connect('clicked(bool)', self.onPushGetJntSetInit)
 
     self.ui.pushExecute.connect('clicked(bool)', self.onPushExecute)
     self.ui.pushConfirm.connect('clicked(bool)', self.onPushConfirm)
-    self.ui.pushEndAndBack.connect('clicked(bool)', self.onPushEndAndBack)
+
+    self.ui.pushRobotHoming.connect('clicked(bool)', self.onPushRobotHoming)
     self.ui.pushReInit.connect('clicked(bool)', self.onPushReInit)
     self.ui.pushReOffset.connect('clicked(bool)', self.onPushReOffset)
 
@@ -142,6 +144,8 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.pushRight.connect('clicked(bool)', self.onPushRight)
     self.ui.pushRoll.connect('clicked(bool)', self.onPushRoll)
     self.ui.pushYaw.connect('clicked(bool)', self.onPushYaw)
+
+    self.ui.pushEndAndBack.connect('clicked(bool)', self.onPushEndAndBack)
 
     # Make sure parameter node is initialized (needed for module reload)
     self.initializeParameterNode()
@@ -337,6 +341,10 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
   def onPushEndAndBack(self):
     msg = self.logic._commandsData["EXECUTE_ENDBACK"]
+    self.logic._connections.utilSendCommand(msg)
+
+  def onPushRobotHoming(self):
+    msg = self.logic._commandsData["EXECUTE_ROB_HOMING"]
     self.logic._connections.utilSendCommand(msg)
 
   def onPushReInit(self):

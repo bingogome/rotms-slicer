@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>243</width>
+    <width>261</width>
     <height>835</height>
    </rect>
   </property>
@@ -291,7 +291,7 @@
       <item row="0" column="0">
        <widget class="QPushButton" name="pushEndAndBack">
         <property name="text">
-         <string>Back to Offset End Session</string>
+         <string>Back to Initial End Session</string>
         </property>
        </widget>
       </item>
