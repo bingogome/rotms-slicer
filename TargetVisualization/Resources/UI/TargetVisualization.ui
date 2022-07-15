@@ -12,17 +12,49 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QPushButton" name="pushStartTargetViz">
+    <widget class="ctkCollapsibleButton" name="CollapsibleButton_2">
      <property name="text">
-      <string>Start Target Visualization</string>
+      <string>Go to Other Modules</string>
      </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="0">
+       <widget class="QPushButton" name="pushModuleRobCtrl">
+        <property name="text">
+         <string>Robot Ctrl</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="pushModuleMedImgPlan">
+        <property name="text">
+         <string>Med Img Plan</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="pushStopTargetViz">
+    <widget class="ctkCollapsibleButton" name="CollapsibleButton">
      <property name="text">
-      <string>Stop Target Visualization</string>
+      <string>Target Visualization</string>
      </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QPushButton" name="pushStartTargetViz">
+        <property name="text">
+         <string>Start Target Visualization</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="pushStopTargetViz">
+        <property name="text">
+         <string>Stop Target Visualization</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
    <item>
@@ -41,6 +73,12 @@
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>ctkCollapsibleButton</class>
+   <extends>QWidget</extends>
+   <header>ctkCollapsibleButton.h</header>
+   <container>1</container>
+  </customwidget>
   <customwidget>
    <class>qMRMLWidget</class>
    <extends>QWidget</extends>

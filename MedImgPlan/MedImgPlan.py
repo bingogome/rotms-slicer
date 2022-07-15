@@ -126,6 +126,9 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.markupsToolPosePlan.markupsPlaceWidget().setPlaceModePersistency(True)
 
     # Buttons
+    self.ui.pushModuleTargetViz.connect('clicked(bool)', self.onPushModuleTargetViz)
+    self.ui.pushModuleRobCtrl.connect('clicked(bool)', self.onPushModuleRobCtrl)
+
     self.ui.pushPlanLandmarks.connect('clicked(bool)', self.onPushPlanLandmarks)
     self.ui.pushDigitize.connect('clicked(bool)', self.onPushDigitize)
     self.ui.pushRegister.connect('clicked(bool)', self.onPushRegistration)
@@ -271,6 +274,12 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       self._parameterNode.SetNodeReferenceID("ToolPoseMarkups", None)
 
     self._parameterNode.EndModify(wasModified)
+
+  def onPushModuleRobCtrl(self):
+    slicer.util.selectModule("RobotControl")
+
+  def onPushModuleTargetViz(self):
+    slicer.util.selectModule("TargetVisualization")
 
   def onPushPlanLandmarks(self):
     self.updateParameterNodeFromGUI()

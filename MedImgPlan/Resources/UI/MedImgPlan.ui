@@ -6,11 +6,34 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>408</width>
+    <width>377</width>
     <height>781</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="ctkCollapsibleButton" name="collapOtherModule">
+     <property name="text">
+      <string>Go to Other Modules</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="0">
+       <widget class="QPushButton" name="pushModuleRobCtrl">
+        <property name="text">
+         <string>Robot Ctrl</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="pushModuleTargetViz">
+        <property name="text">
+         <string>Target Viz</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
    <item>
     <widget class="ctkCollapsibleButton" name="collapRegistration">
      <property name="enabled">

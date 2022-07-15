@@ -119,6 +119,9 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     # Buttons
 
+    self.ui.pushModuleTargetViz.connect('clicked(bool)', self.onPushModuleTargetViz)
+    self.ui.pushModuleMedImgPlan.connect('clicked(bool)', self.onPushModuleMedImgPlan)
+
     self.ui.pushSessionReinit.connect('clicked(bool)', self.onPushSessionReinit)
 
     self.ui.pushConnectRob.connect('clicked(bool)', self.onPushConnectRob)
@@ -300,6 +303,12 @@ class RobotControlWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self._parameterNode.SetParameter("SafeCheck", "true" if self.ui.checkBoxSafe.checked else "false")
 
     self._parameterNode.EndModify(wasModified)
+
+  def onPushModuleMedImgPlan(self):
+    slicer.util.selectModule("MedImgPlan")
+
+  def onPushModuleTargetViz(self):
+    slicer.util.selectModule("TargetVisualization")
 
   def onPushSessionReinit(self):
     msg = self.logic._commandsData["SESSION_REINIT"]
