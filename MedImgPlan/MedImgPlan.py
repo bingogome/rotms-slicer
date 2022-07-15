@@ -364,8 +364,9 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       raise ValueError("Input markup is invalid")
 
     if inputMarkupsNode.GetNumberOfFiducials() != 4 and \
-      inputMarkupsNode.GetNumberOfFiducials() != 3:
-      raise ValueError("Input landmarks are not 3 or 4")
+      inputMarkupsNode.GetNumberOfFiducials() != 3 and \
+      inputMarkupsNode.GetNumberOfFiducials() != 2:
+      raise ValueError("Input number of landmarks are not 2, 3 or 4")
 
     a = [0,0,0]
     b = [0,0,0]
@@ -377,6 +378,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       inputMarkupsNode.GetNthFiducialPosition(2,b)
       inputMarkupsNode.GetNthFiducialPosition(3,c)
       inputMarkupsNode.GetNthFiducialPosition(0,p)
+      mat = utilPosePlan(a,b,c,p)
     if inputMarkupsNode.GetNumberOfFiducials() == 3:
       inputMarkupsNode.GetNthFiducialPosition(0,a)
       inputMarkupsNode.GetNthFiducialPosition(1,b)
@@ -384,8 +386,28 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       p[0] = (a[0]+b[0]+c[0])/3.0
       p[1] = (a[1]+b[1]+c[1])/3.0
       p[2] = (a[2]+b[2]+c[2])/3.0
-
-    mat = utilPosePlan(a,b,c,p)
+      mat = utilPosePlan(a,b,c,p)
+    if inputMarkupsNode.GetNumberOfFiducials() == 2:
+      override_y = [0,0,0]
+      inputMarkupsNode.GetNthFiducialPosition(0,p)
+      inputMarkupsNode.GetNthFiducialPosition(1,override_y)
+      pointLocator = vtk.vtkPointLocator()
+      inModel = slicer.mrmlScene.GetFirstNodeByName("TMS-Head-01")
+      pointLocator.SetDataSet(inModel.GetPolyData())
+      pointLocator.BuildLocator()
+      closest_point = pointLocator.FindClosestPoint(p)
+      closest_point_ = inModel.GetPolyData().GetPoint(closest_point)
+      closest_point = pointLocator.FindClosestPoint(closest_point_)
+      cell_points = vtk.vtkIdList()
+      inModel.GetPolyData().GetPointCells(closest_point, cell_points)
+      inModel.GetPolyData().GetCellPoints(cell_points.GetId(0), cell_points)
+      a_ = inModel.GetPolyData().GetPoint(cell_points.GetId(0))
+      b_ = inModel.GetPolyData().GetPoint(cell_points.GetId(1))
+      c_ = inModel.GetPolyData().GetPoint(cell_points.GetId(2))
+      a[0], b[0], c[0] = a_[0], b_[0], c_[0]
+      a[1], b[1], c[1] = a_[1], b_[1], c_[1]
+      a[2], b[2], c[2] = a_[2], b_[2], c_[2]
+      mat = utilPosePlan(a,b,c,p,override_y)
 
     if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
       transformNode = slicer.vtkMRMLTransformNode()
