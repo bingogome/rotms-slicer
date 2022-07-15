@@ -20,7 +20,7 @@ include(${Slicer_USE_FILE})
 #-----------------------------------------------------------------------------
 # Extension modules
 add_subdirectory(RobotControl)
-add_subdirectory(MRIPlan)
+add_subdirectory(MedImgPlan)
 add_subdirectory(TargetVisualization)
 add_subdirectory(SlicerTestExample)
 ## NEXT_MODULE

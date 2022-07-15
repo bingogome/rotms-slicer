@@ -119,6 +119,9 @@ class TargetVisualizationWidget(ScriptedLoadableModuleWidget, VTKObservationMixi
     # self.ui.selectorModel.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
 
     # Buttons
+    self.ui.pushModuleRobCtrl.connect('clicked(bool)', self.onPushModuleRobCtrl)
+    self.ui.pushModuleMedImgPlan.connect('clicked(bool)', self.onPushModuleMedImgPlan)
+
     self.ui.pushStartTargetViz.connect('clicked(bool)', self.onPushStartTargetViz)
     self.ui.pushStopTargetViz.connect('clicked(bool)', self.onPushStopTargetViz)
 
@@ -230,6 +233,12 @@ class TargetVisualizationWidget(ScriptedLoadableModuleWidget, VTKObservationMixi
     wasModified = self._parameterNode.StartModify()  # Modify all properties in a single batch
 
     self._parameterNode.EndModify(wasModified)
+
+  def onPushModuleRobCtrl(self):
+    slicer.util.selectModule("RobotControl")
+
+  def onPushModuleMedImgPlan(self):
+    slicer.util.selectModule("MedImgPlan")
 
   def onPushStartTargetViz(self):
     msg = self.logic._commandsData["VISUALIZE_START"]

@@ -124,8 +124,12 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.markupsRegistration.markupsPlaceWidget().setPlaceModePersistency(True)
     self.ui.markupsToolPosePlan.connect("markupsNodeChanged()", self.updateParameterNodeFromGUI)
     self.ui.markupsToolPosePlan.markupsPlaceWidget().setPlaceModePersistency(True)
+    self.ui.comboMeshSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
 
     # Buttons
+    self.ui.pushModuleTargetViz.connect('clicked(bool)', self.onPushModuleTargetViz)
+    self.ui.pushModuleRobCtrl.connect('clicked(bool)', self.onPushModuleRobCtrl)
+
     self.ui.pushPlanLandmarks.connect('clicked(bool)', self.onPushPlanLandmarks)
     self.ui.pushDigitize.connect('clicked(bool)', self.onPushDigitize)
     self.ui.pushRegister.connect('clicked(bool)', self.onPushRegistration)
@@ -222,7 +226,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # Update node selectors and sliders
     self.ui.markupsRegistration.setCurrentNode(self._parameterNode.GetNodeReference("LandmarksMarkups"))
     self.ui.markupsToolPosePlan.setCurrentNode(self._parameterNode.GetNodeReference("ToolPoseMarkups"))
-    
+    self.ui.comboMeshSelector.setCurrentNode(self._parameterNode.GetNodeReference("InputMesh"))
+
     # Update buttons states and tooltips
     if self._parameterNode.GetNodeReference("LandmarksMarkups"):
       self.ui.pushPlanLandmarks.toolTip = "Feed in all the landmarks"
@@ -261,6 +266,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     wasModified = self._parameterNode.StartModify()  # Modify all properties in a single batch
 
+    self._parameterNode.SetNodeReferenceID("InputMesh", self.ui.comboMeshSelector.currentNodeID)
+
     if self.ui.markupsRegistration.currentNode():
       self._parameterNode.SetNodeReferenceID("LandmarksMarkups", self.ui.markupsRegistration.currentNode().GetID())
     else:
@@ -271,6 +278,12 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       self._parameterNode.SetNodeReferenceID("ToolPoseMarkups", None)
 
     self._parameterNode.EndModify(wasModified)
+
+  def onPushModuleRobCtrl(self):
+    slicer.util.selectModule("RobotControl")
+
+  def onPushModuleTargetViz(self):
+    slicer.util.selectModule("TargetVisualization")
 
   def onPushPlanLandmarks(self):
     self.updateParameterNodeFromGUI()
@@ -341,9 +354,11 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     Send out the markups for registration 
     """
     if not inputMarkupsNode:
-      raise ValueError("Input markup is invalid")
+      slicer.util.errorDisplay("Input markup is invalid!")
+      raise ValueError("Input markup is invalid!")
     if inputMarkupsNode.GetNumberOfFiducials() < 3:
-      raise ValueError("Input landmarks are less than 3")
+      slicer.util.errorDisplay("Input landmarks are less than 3!")
+      raise ValueError("Input landmarks are less than 3!")
     self.utilSendLandmarks(-1)
   
   def processPushToolPosePlan(self, inputMarkupsNode):
@@ -352,11 +367,14 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     """
 
     if not inputMarkupsNode:
-      raise ValueError("Input markup is invalid")
+      slicer.util.errorDisplay("Input markup is invalid!")
+      raise ValueError("Input markup is invalid!")
 
     if inputMarkupsNode.GetNumberOfFiducials() != 4 and \
-      inputMarkupsNode.GetNumberOfFiducials() != 3:
-      raise ValueError("Input landmarks are not 3 or 4")
+      inputMarkupsNode.GetNumberOfFiducials() != 3 and \
+      inputMarkupsNode.GetNumberOfFiducials() != 2:
+      slicer.util.errorDisplay("Input number of landmarks are not 2, 3 or 4!")
+      raise ValueError("Input number of landmarks are not 2, 3 or 4!")
 
     a = [0,0,0]
     b = [0,0,0]
@@ -368,6 +386,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       inputMarkupsNode.GetNthFiducialPosition(2,b)
       inputMarkupsNode.GetNthFiducialPosition(3,c)
       inputMarkupsNode.GetNthFiducialPosition(0,p)
+      mat = utilPosePlan(a,b,c,p)
     if inputMarkupsNode.GetNumberOfFiducials() == 3:
       inputMarkupsNode.GetNthFiducialPosition(0,a)
       inputMarkupsNode.GetNthFiducialPosition(1,b)
@@ -375,8 +394,31 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       p[0] = (a[0]+b[0]+c[0])/3.0
       p[1] = (a[1]+b[1]+c[1])/3.0
       p[2] = (a[2]+b[2]+c[2])/3.0
-
-    mat = utilPosePlan(a,b,c,p)
+      mat = utilPosePlan(a,b,c,p)
+    if inputMarkupsNode.GetNumberOfFiducials() == 2:
+      override_y = [0,0,0]
+      inputMarkupsNode.GetNthFiducialPosition(0,p)
+      inputMarkupsNode.GetNthFiducialPosition(1,override_y)
+      pointLocator = vtk.vtkPointLocator()
+      inModel = self._parameterNode.GetNodeReference("InputMesh")
+      if not inModel:
+        slicer.util.errorDisplay("Please select a image model first!")
+        return
+      pointLocator.SetDataSet(inModel.GetPolyData())
+      pointLocator.BuildLocator()
+      closest_point = pointLocator.FindClosestPoint(p)
+      closest_point_ = inModel.GetPolyData().GetPoint(closest_point)
+      closest_point = pointLocator.FindClosestPoint(closest_point_)
+      cell_points = vtk.vtkIdList()
+      inModel.GetPolyData().GetPointCells(closest_point, cell_points)
+      inModel.GetPolyData().GetCellPoints(cell_points.GetId(0), cell_points)
+      a_ = inModel.GetPolyData().GetPoint(cell_points.GetId(0))
+      b_ = inModel.GetPolyData().GetPoint(cell_points.GetId(1))
+      c_ = inModel.GetPolyData().GetPoint(cell_points.GetId(2))
+      a[0], b[0], c[0] = a_[0], b_[0], c_[0]
+      a[1], b[1], c[1] = a_[1], b_[1], c_[1]
+      a[2], b[2], c[2] = a_[2], b_[2], c_[2]
+      mat = utilPosePlan(a,b,c,p,override_y)
 
     if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
       transformNode = slicer.vtkMRMLTransformNode()

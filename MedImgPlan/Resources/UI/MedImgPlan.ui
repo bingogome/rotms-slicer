@@ -6,11 +6,34 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>408</width>
+    <width>348</width>
     <height>781</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="ctkCollapsibleButton" name="collapOtherModule">
+     <property name="text">
+      <string>Go to Other Modules</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_3">
+      <item row="0" column="0">
+       <widget class="QPushButton" name="pushModuleRobCtrl">
+        <property name="text">
+         <string>Robot Ctrl</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="pushModuleTargetViz">
+        <property name="text">
+         <string>Target Viz</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
    <item>
     <widget class="ctkCollapsibleButton" name="collapRegistration">
      <property name="enabled">
@@ -81,7 +104,23 @@
       <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="3" column="0">
+      <item row="10" column="1">
+       <widget class="qMRMLNodeComboBox" name="comboMeshSelector">
+        <property name="nodeTypes">
+         <stringlist>
+          <string>vtkMRMLModelNode</string>
+         </stringlist>
+        </property>
+       </widget>
+      </item>
+      <item row="10" column="0">
+       <widget class="QLabel" name="label">
+        <property name="text">
+         <string>On Model:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="0" colspan="2">
        <widget class="qSlicerSimpleMarkupsWidget" name="markupsToolPosePlan">
         <property name="defaultNodeColor">
          <color>
@@ -92,31 +131,80 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="labelToolPosePlan2">
+      <item row="12" column="0" colspan="2">
+       <widget class="QPushButton" name="pushToolPosePlan">
         <property name="text">
-         <string>2. Put 3 points (counterclockwise) as the contact plane;</string>
+         <string>Plan Coil Pose</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="labelToolPosePlan3">
+      <item row="0" column="0" colspan="2">
+       <widget class="QLabel" name="labelToolPosePlanA">
         <property name="text">
-         <string>3. The last of the 3 points should be the tail direction of a tool</string>
+         <string>Method A (4 points)</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="labelToolPosePlan1">
+      <item row="1" column="0" colspan="2">
+       <widget class="QLabel" name="labelToolPosePlanA1">
         <property name="text">
          <string>1. Put 1 point as the contact point center;</string>
         </property>
        </widget>
       </item>
-      <item row="4" column="0">
-       <widget class="QPushButton" name="pushToolPosePlan">
+      <item row="2" column="0" colspan="2">
+       <widget class="QLabel" name="labelToolPosePlanA2">
         <property name="text">
-         <string>Plan Coil Pose</string>
+         <string>2. Put 3 points (counterclockwise) as the contact plane;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0" colspan="2">
+       <widget class="QLabel" name="labelToolPosePlanA3">
+        <property name="text">
+         <string>3. The last of the 3 points should be the tail direction of the tool</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0" colspan="2">
+       <widget class="QLabel" name="labelToolPosePlanB">
+        <property name="text">
+         <string>Method B (3 points)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0" colspan="2">
+       <widget class="QLabel" name="labelToolPosePlanB1">
+        <property name="text">
+         <string>1. Put 3 points (couterclockwise) as the contact plane;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0" colspan="2">
+       <widget class="QLabel" name="labelToolPosePlanB2">
+        <property name="text">
+         <string>2. The last of the 3 points should be the tail direction of the tool</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0" colspan="2">
+       <widget class="QLabel" name="labelToolPosePlanC">
+        <property name="text">
+         <string>Method C (2 points)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="0" colspan="2">
+       <widget class="QLabel" name="labelToolPosePlanC1">
+        <property name="text">
+         <string>1. Put 1 point as the contact point;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="9" column="0" colspan="2">
+       <widget class="QLabel" name="labelToolPosePlanC2">
+        <property name="text">
+         <string>2. Put another point as the tail direction of the tool</string>
         </property>
        </widget>
       </item>
@@ -144,6 +232,11 @@
    <extends>QWidget</extends>
    <header>ctkCollapsibleButton.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>qMRMLNodeComboBox</class>
+   <extends>QWidget</extends>
+   <header>qMRMLNodeComboBox.h</header>
   </customwidget>
   <customwidget>
    <class>qMRMLWidget</class>
@@ -194,6 +287,22 @@
     <hint type="destinationlabel">
      <x>202</x>
      <y>580</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MedImgPlan</sender>
+   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
+   <receiver>comboMeshSelector</receiver>
+   <slot>setMRMLScene(vtkMRMLScene*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>173</x>
+     <y>390</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>217</x>
+     <y>367</y>
     </hint>
    </hints>
   </connection>

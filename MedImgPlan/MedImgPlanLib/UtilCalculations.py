@@ -79,23 +79,27 @@ def transp(A):
   
 def crossProduct(a, b):
     return [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]
-
-def utilPosePlan(a,b,c,p):
+     
+def utilPosePlan(a,b,c,p,override_y=None):
     """
     Utility function that returns the orientation defined by 3 
-    points a, b, c, where the point c is the the direction of 
-    x-axis, and z-axis is perpendicular to a-b-c plane. 
+    points a, b, c, where the point c (or override_y) is the the 
+    direction of x-axis, and z-axis is perpendicular to a-b-c plane. 
     p is the origin of the output pose.
+    NOTE: 3D slicer flips x and y axes when loading a model, so the
+    directions can be displayed as flipped when showing
     Output is a rotation matrix.
     """
     n = crossProduct([b[0]-a[0],b[1]-a[1],b[2]-a[2]], [b[0]-c[0],b[1]-c[1],b[2]-c[2]])
     nrm = normvec3(n)
     n = [-n[0]/nrm,-n[1]/nrm,-n[2]/nrm]
-    x = crossProduct([c[0]-p[0],c[1]-p[1],c[2]-p[2]], n)
+    if override_y is not None:
+        x = crossProduct([override_y[0]-p[0],override_y[1]-p[1],override_y[2]-p[2]], n)
+    else:
+        x = crossProduct([c[0]-p[0],c[1]-p[1],c[2]-p[2]], n)
     nrm = normvec3(x)
     x = [x[0]/nrm,x[1]/nrm,x[2]/nrm]
     y = crossProduct(n, x)
     nrm = normvec3(y)
     y = [y[0]/nrm,y[1]/nrm,y[2]/nrm]
     return transp([x, y, n])
-     
