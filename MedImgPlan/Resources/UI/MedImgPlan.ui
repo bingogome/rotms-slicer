@@ -35,6 +35,31 @@
     </widget>
    </item>
    <item>
+    <widget class="ctkCollapsibleButton" name="collapModelSelect">
+     <property name="text">
+      <string>Model Selection</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_5">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelMeshSelector">
+        <property name="text">
+         <string>On Model:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="qMRMLNodeComboBox" name="comboMeshSelector">
+        <property name="nodeTypes">
+         <stringlist>
+          <string>vtkMRMLModelNode</string>
+         </stringlist>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <widget class="ctkCollapsibleButton" name="collapRegistration">
      <property name="enabled">
       <bool>true</bool>
@@ -46,17 +71,21 @@
       <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout">
+      <item row="1" column="0">
+       <widget class="qSlicerSimpleMarkupsWidget" name="markupsRegistration">
+        <property name="defaultNodeColor">
+         <color>
+          <red>0</red>
+          <green>255</green>
+          <blue>0</blue>
+         </color>
+        </property>
+       </widget>
+      </item>
       <item row="2" column="0">
        <widget class="QPushButton" name="pushPlanLandmarks">
         <property name="text">
          <string>All Landmarks Planned</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="labelRegistration">
-        <property name="text">
-         <string>Collect at least 3 landmarks.</string>
         </property>
        </widget>
       </item>
@@ -74,14 +103,10 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="qSlicerSimpleMarkupsWidget" name="markupsRegistration">
-        <property name="defaultNodeColor">
-         <color>
-          <red>0</red>
-          <green>255</green>
-          <blue>0</blue>
-         </color>
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelRegistration">
+        <property name="text">
+         <string>Collect at least 3 landmarks.</string>
         </property>
        </widget>
       </item>
@@ -90,6 +115,32 @@
         <property name="text">
          <string>Register</string>
         </property>
+       </widget>
+      </item>
+      <item row="6" column="0">
+       <widget class="ctkCollapsibleButton" name="collapTRE">
+        <property name="text">
+         <string>Check Target Registration Error</string>
+        </property>
+        <property name="collapsed">
+         <bool>true</bool>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_4">
+         <item row="0" column="0">
+          <widget class="QPushButton" name="pushStartTRE">
+           <property name="text">
+            <string>Start</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QPushButton" name="pushStopTRE">
+           <property name="text">
+            <string>Stop</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
      </layout>
@@ -104,22 +155,6 @@
       <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="10" column="1">
-       <widget class="qMRMLNodeComboBox" name="comboMeshSelector">
-        <property name="nodeTypes">
-         <stringlist>
-          <string>vtkMRMLModelNode</string>
-         </stringlist>
-        </property>
-       </widget>
-      </item>
-      <item row="10" column="0">
-       <widget class="QLabel" name="label">
-        <property name="text">
-         <string>On Model:</string>
-        </property>
-       </widget>
-      </item>
       <item row="11" column="0" colspan="2">
        <widget class="qSlicerSimpleMarkupsWidget" name="markupsToolPosePlan">
         <property name="defaultNodeColor">

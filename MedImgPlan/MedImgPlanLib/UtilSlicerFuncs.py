@@ -22,6 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import vtk, math
+
 def setTransform(rotm, p, T):
     T.SetElement(0,0,rotm[0][0])
     T.SetElement(0,1,rotm[0][1])
@@ -35,3 +37,17 @@ def setTransform(rotm, p, T):
     T.SetElement(0,3,p[0])
     T.SetElement(1,3,p[1])
     T.SetElement(2,3,p[2])
+
+def setColorTextByDistance(view, mesh_p, p, colorchangethresh):
+
+    distarr = [ mesh_p[0]-p[0], mesh_p[1]-p[1], mesh_p[2]-p[2] ]
+
+    dist = math.sqrt( \
+        distarr[0] * distarr[0] + distarr[1] * distarr[1] + distarr[2] * distarr[2])
+        
+    indx = (colorchangethresh - dist) / colorchangethresh \
+        if colorchangethresh >= dist else 0.0
+
+    view.cornerAnnotation().SetText(vtk.vtkCornerAnnotation.UpperRight,str(dist))
+    view.cornerAnnotation().GetTextProperty().SetColor(1.0-indx,indx,0)
+    view.forceRender()

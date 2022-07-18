@@ -13,6 +13,8 @@
         "LANDMARK_NUM_OF_ON_IMG": "img_fid_numxxxxx",
         "LANDMARK_LAST_RECEIVED": "img_fig_lastrecv",
         "TARGET_POSE_ORIENTATION": "target_rotxxxxxx",
-        "TARGET_POSE_TRANSLATION": "target_tslxxxxxx"
+        "TARGET_POSE_TRANSLATION": "target_tslxxxxxx",
+        "TRE_CALCULATION_START": "tre_startcalcuxx",
+        "TRE_CALCULATION_STOP": "tre_stopcalcuxxx"
     }
 }

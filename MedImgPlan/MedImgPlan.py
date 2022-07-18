@@ -31,9 +31,10 @@ from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
 from MedImgPlanLib.UtilConnections import UtilConnections
+from MedImgPlanLib.UtilConnectionsWtNnBlcRcv import UtilConnectionsWtNnBlcRcv
 from MedImgPlanLib.UtilFormat import utilNumStrFormat
 from MedImgPlanLib.UtilCalculations import mat2quat, utilPosePlan
-from MedImgPlanLib.UtilSlicerFuncs import setTransform
+from MedImgPlanLib.UtilSlicerFuncs import setColorTextByDistance, setTransform
 
 """
 Check CommandsConfig.json to get UDP messages.
@@ -129,6 +130,9 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # Buttons
     self.ui.pushModuleTargetViz.connect('clicked(bool)', self.onPushModuleTargetViz)
     self.ui.pushModuleRobCtrl.connect('clicked(bool)', self.onPushModuleRobCtrl)
+
+    self.ui.pushStartTRE.connect('clicked(bool)', self.onPushStartTRE)
+    self.ui.pushStopTRE.connect('clicked(bool)', self.onPushStopTRE)
 
     self.ui.pushPlanLandmarks.connect('clicked(bool)', self.onPushPlanLandmarks)
     self.ui.pushDigitize.connect('clicked(bool)', self.onPushDigitize)
@@ -285,6 +289,24 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
   def onPushModuleTargetViz(self):
     slicer.util.selectModule("TargetVisualization")
 
+  def onPushStartTRE(self):
+    msg = self.logic._commandsData["TRE_CALCULATION_START"]
+    try:
+      self.logic._connections.utilSendCommand(msg)
+    except:
+      return
+    self.logic.processStartTRECalculation()
+    self._parameterNode.SetParameter("TRECalculating", "true")
+  
+  def onPushStopTRE(self):
+    msg = self.logic._commandsData["TRE_CALCULATION_STOP"]
+    try:
+      self.logic._connections.utilSendCommand(msg)
+    except:
+      return
+    self.logic.processStopTRECalculation()
+    self._parameterNode.SetParameter("TRECalculating", "false")
+
   def onPushPlanLandmarks(self):
     self.updateParameterNodeFromGUI()
     self.logic.processPushPlanLandmarks(self._parameterNode.GetNodeReference("LandmarksMarkups"))
@@ -336,7 +358,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     """
     ScriptedLoadableModuleLogic.__init__(self)
     self._configPath = configPath
-    self._connections = UtilConnections(configPath,"MEDIMG")
+    self._connections = MedImgConnections(configPath,"MEDIMG")
     self._connections.setup()
     self._parameterNode = self.getParameterNode()
     
@@ -347,7 +369,21 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     """
     Initialize parameter node with default settings.
     """
-    return
+    if not parameterNode.GetParameter("TRECalculating"):
+      parameterNode.SetParameter("TRECalculating", "false")
+
+  def processStartTRECalculation(self):
+    """
+    Called when click the start button
+    """
+    self._connections._parameterNode = self.getParameterNode()
+    self._connections._flag_receiving_nnblc = True
+    self._connections.receiveTimerCallBack()
+    self._connections._colorchangethresh = self._connections._configData["COLOR_CHANGE_THRESH"]
+
+  def processStopTRECalculation(self):
+
+    self._connections._flag_receiving_nnblc = False
 
   def processPushPlanLandmarks(self, inputMarkupsNode):
     """
@@ -500,10 +536,56 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       curIdx = curIdx+1
       self.utilSendLandmarks(curIdx)
 
+#
+# Use UtilConnectionsWtNnBlcRcv and override the data handler
+#
 
+class MedImgConnections(UtilConnectionsWtNnBlcRcv):
 
+  def __init__(self, configPath, modulesufx):
+    super().__init__(configPath, modulesufx)
+  
+  def setup(self):
+    super().setup()
+    self._view = slicer.app.layoutManager().threeDWidget(0).threeDView()
 
+  def handleReceivedData(self):
+    """
+    Override the parent class function
+    """
+    p = self.utilMsgParse()
+    self.utilPointMsgCallback(p)
+  
+  def utilMsgParse(self):
+    """
+    Msg format: "__msg_point_0000.00000_0000.00000_0000.00000"
+        x, y, z
+        in mm
+    """
+    data = self._data_buff.decode("UTF-8")
+    msg = data[12:]
+    num_str = msg.split("_")
+    num = []
+    for i in num_str:
+      num.append(float(i))
+    return num
 
+  def utilPointMsgCallback(self, p):  
+    """
+    Called each time when a valid point message is received
+    """
+
+    inModel = self._parameterNode.GetNodeReference("InputMesh")
+    if not inModel:
+      slicer.util.errorDisplay("Please select a image model first!")
+      return
+    pointLocator = vtk.vtkPointLocator()
+    pointLocator.SetDataSet(inModel.GetPolyData())
+    pointLocator.BuildLocator()
+    closest_point = pointLocator.FindClosestPoint(p)
+    p_closest = inModel.GetPolyData().GetPoint(closest_point)
+
+    setColorTextByDistance(self._view, p_closest, p, self._colorchangethresh)
 
     
     
