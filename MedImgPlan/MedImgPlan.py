@@ -290,7 +290,7 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     slicer.util.selectModule("TargetVisualization")
 
   def onPushStartTRE(self):
-    msg = self.logic._commandsData["TRE_CALCULATION_START"]
+    msg = self.logic._commandsData["START_TRE_CALCULATION_START"]
     try:
       self.logic._connections.utilSendCommand(msg)
     except:
@@ -299,7 +299,7 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self._parameterNode.SetParameter("TRECalculating", "true")
   
   def onPushStopTRE(self):
-    msg = self.logic._commandsData["TRE_CALCULATION_STOP"]
+    msg = self.logic._commandsData["START_TRE_CALCULATION_STOP"]
     try:
       self.logic._connections.utilSendCommand(msg)
     except:
