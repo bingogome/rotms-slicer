@@ -283,6 +283,7 @@ class TargetVisualizationLogic(ScriptedLoadableModuleLogic):
     self._configPath = configPath
     self._connections = TargetVizConnections(configPath, "TARGETVIZ")
     self._connections.setup()
+    self._parameterNode = self.getParameterNode()
 
     with open(self._configPath+"CommandsConfig.json") as f:
       self._commandsData = (json.load(f))["TargetVizCmd"]
@@ -299,6 +300,8 @@ class TargetVisualizationLogic(ScriptedLoadableModuleLogic):
     Called when click the start target viz button
     """
     self._parameterNode = self.getParameterNode()
+    self._connections._parameterNode = self.getParameterNode()
+
     if not self._parameterNode.GetNodeReference("CurrentPoseTransform"):
       transformNode = slicer.vtkMRMLTransformNode()
       slicer.mrmlScene.AddNode(transformNode)
@@ -310,8 +313,6 @@ class TargetVisualizationLogic(ScriptedLoadableModuleLogic):
       inputModel = slicer.util.loadModel(self._configPath+configData["POSE_INDICATOR_MODEL"])
       self._parameterNode.SetNodeReferenceID("CurrentPoseIndicator", inputModel.GetID())
     
-    self._connections._parameterNode = self._parameterNode
-
     currentPoseTransform = self._parameterNode.GetNodeReference("CurrentPoseTransform")
     currentPoseIndicator = self._parameterNode.GetNodeReference("CurrentPoseIndicator")
     currentPoseTransform.SetMatrixTransformToParent(self._connections._transformMatrixCurrentPose)

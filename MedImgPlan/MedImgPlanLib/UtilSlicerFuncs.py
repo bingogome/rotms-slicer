@@ -24,7 +24,12 @@ SOFTWARE.
 
 import vtk, math
 
-def setTransform(rotm, p, T):
+def setTranslation(p, T):
+    T.SetElement(0,3,p[0])
+    T.SetElement(1,3,p[1])
+    T.SetElement(2,3,p[2])
+
+def setRotation(rotm, T):
     T.SetElement(0,0,rotm[0][0])
     T.SetElement(0,1,rotm[0][1])
     T.SetElement(0,2,rotm[0][2])
@@ -34,11 +39,15 @@ def setTransform(rotm, p, T):
     T.SetElement(2,0,rotm[2][0])
     T.SetElement(2,1,rotm[2][1])
     T.SetElement(2,2,rotm[2][2])
-    T.SetElement(0,3,p[0])
-    T.SetElement(1,3,p[1])
-    T.SetElement(2,3,p[2])
 
-def setColorTextByDistance(view, mesh_p, p, colorchangethresh):
+def setTransform(rotm, p, T):
+    setRotation(rotm, T)
+    setTranslation(p, T)
+
+def setColorTextByDistance( \
+    view, mesh_p, p, colorchangethresh, \
+    indicatorPointOnMesh, \
+    indicatorPointPtrtip):
 
     distarr = [ mesh_p[0]-p[0], mesh_p[1]-p[1], mesh_p[2]-p[2] ]
 
@@ -51,3 +60,7 @@ def setColorTextByDistance(view, mesh_p, p, colorchangethresh):
     view.cornerAnnotation().SetText(vtk.vtkCornerAnnotation.UpperRight, "Estimate of TRE: {:.4f} mm".format(dist))
     view.cornerAnnotation().GetTextProperty().SetColor(1.0-indx,indx,0)
     view.forceRender()
+
+    indicatorPointOnMesh.GetDisplayNode().SetColor(1.0-indx, indx, 0)
+    indicatorPointPtrtip.GetDisplayNode().SetColor(1.0-indx, indx, 0)
+

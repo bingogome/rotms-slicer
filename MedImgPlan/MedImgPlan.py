@@ -34,7 +34,7 @@ from MedImgPlanLib.UtilConnections import UtilConnections
 from MedImgPlanLib.UtilConnectionsWtNnBlcRcv import UtilConnectionsWtNnBlcRcv
 from MedImgPlanLib.UtilFormat import utilNumStrFormat
 from MedImgPlanLib.UtilCalculations import mat2quat, utilPosePlan
-from MedImgPlanLib.UtilSlicerFuncs import setColorTextByDistance, setTransform
+from MedImgPlanLib.UtilSlicerFuncs import setColorTextByDistance, setTransform, setTranslation
 
 """
 Check CommandsConfig.json to get UDP messages.
@@ -376,10 +376,47 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     """
     Called when click the start button
     """
+    self._parameterNode = self.getParameterNode()
     self._connections._parameterNode = self.getParameterNode()
+
+    if not self._parameterNode.GetNodeReference("PointOnMeshTr"):
+      transformNode = slicer.vtkMRMLTransformNode()
+      slicer.mrmlScene.AddNode(transformNode)
+      self._parameterNode.SetNodeReferenceID("PointOnMeshTr", transformNode.GetID())
+
+    if not self._parameterNode.GetNodeReference("PointOnMeshIndicator"):
+      with open(self._configPath+"Config.json") as f:
+        configData = json.load(f)
+      inputModel = slicer.util.loadModel(self._configPath+configData["POINT_INDICATOR_MODEL"])
+      self._parameterNode.SetNodeReferenceID("PointOnMeshIndicator", inputModel.GetID())
+
+    if not self._parameterNode.GetNodeReference("PointPtrtipTr"):
+      transformNode = slicer.vtkMRMLTransformNode()
+      slicer.mrmlScene.AddNode(transformNode)
+      self._parameterNode.SetNodeReferenceID("PointPtrtipTr", transformNode.GetID())
+
+    if not self._parameterNode.GetNodeReference("PointPtrtipIndicator"):
+      with open(self._configPath+"Config.json") as f:
+        configData = json.load(f)
+      inputModel = slicer.util.loadModel(self._configPath+configData["POINT_INDICATOR_MODEL"])
+      self._parameterNode.SetNodeReferenceID("PointPtrtipIndicator", inputModel.GetID())
+
+    pointOnMeshTransform = self._parameterNode.GetNodeReference("PointOnMeshTr")
+    pointOnMeshIndicator = self._parameterNode.GetNodeReference("PointOnMeshIndicator")
+    pointOnMeshTransform.SetMatrixTransformToParent(self._connections._transformMatrixPointOnMesh)
+    pointOnMeshIndicator.SetAndObserveTransformNodeID(pointOnMeshTransform.GetID())
+
+    pointPtrtipTransform = self._parameterNode.GetNodeReference("PointPtrtipTr")
+    pointPtrtipIndicator = self._parameterNode.GetNodeReference("PointPtrtipIndicator")
+    pointPtrtipTransform.SetMatrixTransformToParent(self._connections._transformMatrixPointPtrtip)
+    pointPtrtipIndicator.SetAndObserveTransformNodeID(pointPtrtipTransform.GetID())
+
+    self._connections._pointOnMeshIndicator = pointOnMeshIndicator
+    self._connections._pointPtrtipIndicator = pointPtrtipIndicator
+
+    self._connections._colorchangethresh = self._connections._configData["COLOR_CHANGE_THRESH"]
     self._connections._flag_receiving_nnblc = True
     self._connections.receiveTimerCallBack()
-    self._connections._colorchangethresh = self._connections._configData["COLOR_CHANGE_THRESH"]
 
   def processStopTRECalculation(self):
 
@@ -544,6 +581,10 @@ class MedImgConnections(UtilConnectionsWtNnBlcRcv):
 
   def __init__(self, configPath, modulesufx):
     super().__init__(configPath, modulesufx)
+    self._transformMatrixPointOnMesh = None
+    self._pointOnMeshIndicator = None
+    self._transformMatrixPointPtrtip = None
+    self._pointPtrtipIndicator = None
   
   def setup(self):
     super().setup()
@@ -585,7 +626,20 @@ class MedImgConnections(UtilConnectionsWtNnBlcRcv):
     closest_point = pointLocator.FindClosestPoint(p)
     p_closest = inModel.GetPolyData().GetPoint(closest_point)
 
-    setColorTextByDistance(self._view, p_closest, p, self._colorchangethresh)
+    setTranslation(p, self._transformMatrixPointPtrtip)
+    setTranslation(p_closest, self._transformMatrixPointOnMesh)
+
+    self._parameterNode.GetNodeReference( \
+      "PointPtrtipTr").SetMatrixTransformToParent(self._transformMatrixPointPtrtip)
+    self._parameterNode.GetNodeReference( \
+      "PointOnMeshTr").SetMatrixTransformToParent(self._transformMatrixPointOnMesh)
+
+    setColorTextByDistance( \
+      self._view, p_closest, p, self._colorchangethresh, \
+      self._pointOnMeshIndicator, \
+      self._pointPtrtipIndicator)
+
+    slicer.app.processEvents()
 
     
     
