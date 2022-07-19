@@ -48,6 +48,6 @@ def setColorTextByDistance(view, mesh_p, p, colorchangethresh):
     indx = (colorchangethresh - dist) / colorchangethresh \
         if colorchangethresh >= dist else 0.0
 
-    view.cornerAnnotation().SetText(vtk.vtkCornerAnnotation.UpperRight,"Estimate of TRE: {:.4f}".format(dist) + " mm")
+    view.cornerAnnotation().SetText(vtk.vtkCornerAnnotation.UpperRight, "Estimate of TRE: {:.4f} mm".format(dist))
     view.cornerAnnotation().GetTextProperty().SetColor(1.0-indx,indx,0)
     view.forceRender()
