@@ -376,6 +376,11 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     """
     Called when click the start button
     """
+    inModel = self._parameterNode.GetNodeReference("InputMesh")
+    if not inModel:
+      slicer.util.errorDisplay("Please select a image model first!")
+      return
+    
     self._parameterNode = self.getParameterNode()
     self._connections._parameterNode = self.getParameterNode()
 
@@ -589,6 +594,10 @@ class MedImgConnections(UtilConnectionsWtNnBlcRcv):
   def setup(self):
     super().setup()
     self._view = slicer.app.layoutManager().threeDWidget(0).threeDView()
+    if not self._transformMatrixPointPtrtip:
+      self._transformMatrixPointPtrtip = vtk.vtkMatrix4x4()
+    if not self._transformMatrixPointOnMesh:
+      self._transformMatrixPointOnMesh = vtk.vtkMatrix4x4()
 
   def handleReceivedData(self):
     """
@@ -615,11 +624,7 @@ class MedImgConnections(UtilConnectionsWtNnBlcRcv):
     """
     Called each time when a valid point message is received
     """
-
     inModel = self._parameterNode.GetNodeReference("InputMesh")
-    if not inModel:
-      slicer.util.errorDisplay("Please select a image model first!")
-      return
     pointLocator = vtk.vtkPointLocator()
     pointLocator.SetDataSet(inModel.GetPolyData())
     pointLocator.BuildLocator()
