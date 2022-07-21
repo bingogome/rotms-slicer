@@ -130,6 +130,7 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # Buttons
     self.ui.pushModuleTargetViz.connect('clicked(bool)', self.onPushModuleTargetViz)
     self.ui.pushModuleRobCtrl.connect('clicked(bool)', self.onPushModuleRobCtrl)
+    self.ui.pushModuleFreeSurfer.connect('clicked(bool)', self.onPushModuleFreeSurfer)
 
     self.ui.pushStartTRE.connect('clicked(bool)', self.onPushStartTRE)
     self.ui.pushStopTRE.connect('clicked(bool)', self.onPushStopTRE)
@@ -288,6 +289,9 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
   def onPushModuleTargetViz(self):
     slicer.util.selectModule("TargetVisualization")
+
+  def onPushModuleFreeSurfer(self):
+    slicer.util.selectModule("FreeSurferImporter")
 
   def onPushStartTRE(self):
     msg = self.logic._commandsData["START_TRE_CALCULATION_START"]

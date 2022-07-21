@@ -31,6 +31,13 @@
         </property>
        </widget>
       </item>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="pushModuleFreeSurfer">
+        <property name="text">
+         <string>Free Surfer Importer</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
