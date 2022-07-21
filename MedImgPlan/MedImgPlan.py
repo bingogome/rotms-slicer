@@ -127,6 +127,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.markupsToolPosePlan.markupsPlaceWidget().setPlaceModePersistency(True)
     self.ui.comboMeshSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
 
+    self.ui.sliderColorThresh.connect("valueChanged(double)", self.updateParameterNodeFromGUI)
+
     # Buttons
     self.ui.pushModuleTargetViz.connect('clicked(bool)', self.onPushModuleTargetViz)
     self.ui.pushModuleRobCtrl.connect('clicked(bool)', self.onPushModuleRobCtrl)
@@ -232,6 +234,7 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.markupsRegistration.setCurrentNode(self._parameterNode.GetNodeReference("LandmarksMarkups"))
     self.ui.markupsToolPosePlan.setCurrentNode(self._parameterNode.GetNodeReference("ToolPoseMarkups"))
     self.ui.comboMeshSelector.setCurrentNode(self._parameterNode.GetNodeReference("InputMesh"))
+    self.ui.sliderColorThresh.value = float(self._parameterNode.GetParameter("ColorChangeThresh"))
 
     # Update buttons states and tooltips
     if self._parameterNode.GetNodeReference("LandmarksMarkups"):
@@ -272,6 +275,7 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     wasModified = self._parameterNode.StartModify()  # Modify all properties in a single batch
 
     self._parameterNode.SetNodeReferenceID("InputMesh", self.ui.comboMeshSelector.currentNodeID)
+    self._parameterNode.SetParameter("ColorChangeThresh", str(self.ui.sliderColorThresh.value))
 
     if self.ui.markupsRegistration.currentNode():
       self._parameterNode.SetNodeReferenceID("LandmarksMarkups", self.ui.markupsRegistration.currentNode().GetID())
@@ -373,6 +377,8 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     """
     Initialize parameter node with default settings.
     """
+    if not parameterNode.GetParameter("ColorChangeThresh"):
+      parameterNode.SetParameter("ColorChangeThresh", "4.0") 
     if not parameterNode.GetParameter("TRECalculating"):
       parameterNode.SetParameter("TRECalculating", "false")
 
@@ -423,7 +429,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     self._connections._pointOnMeshIndicator = pointOnMeshIndicator
     self._connections._pointPtrtipIndicator = pointPtrtipIndicator
 
-    self._connections._colorchangethresh = self._connections._configData["COLOR_CHANGE_THRESH"]
+    self._connections._colorchangethresh = float(self._parameterNode.GetParameter("ColorChangeThresh"))
     self._connections._flag_receiving_nnblc = True
     self._connections.receiveTimerCallBack()
 

@@ -7,6 +7,5 @@
     "POINT_INDICATOR_MODEL": "point.STL",
     "IP_RECEIVE_NNBLC_MEDIMG": "localhost",
     "PORT_RECEIVE_NNBLC_MEDIMG": 8083,
-    "COLOR_CHANGE_THRESH": 4.0,
     "EOM_MEDIMG": ";"
 }

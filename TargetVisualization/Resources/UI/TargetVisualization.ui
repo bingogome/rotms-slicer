@@ -40,17 +40,37 @@
       <string>Target Visualization</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
+      <item row="3" column="0">
+       <widget class="QPushButton" name="pushStopTargetViz">
+        <property name="text">
+         <string>Stop Target Visualization</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="ctkSliderWidget" name="sliderColorThresh">
+        <property name="minimum">
+         <double>1.000000000000000</double>
+        </property>
+        <property name="maximum">
+         <double>100.000000000000000</double>
+        </property>
+        <property name="value">
+         <double>20.000000000000000</double>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
        <widget class="QPushButton" name="pushStartTargetViz">
         <property name="text">
          <string>Start Target Visualization</string>
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QPushButton" name="pushStopTargetViz">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelColorThresh">
         <property name="text">
-         <string>Stop Target Visualization</string>
+         <string>Color Change Thresh: (mm)</string>
         </property>
        </widget>
       </item>
@@ -78,6 +98,11 @@
    <extends>QWidget</extends>
    <header>ctkCollapsibleButton.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ctkSliderWidget</class>
+   <extends>QWidget</extends>
+   <header>ctkSliderWidget.h</header>
   </customwidget>
   <customwidget>
    <class>qMRMLWidget</class>

@@ -117,6 +117,7 @@ class TargetVisualizationWidget(ScriptedLoadableModuleWidget, VTKObservationMixi
     # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
     # (in the selected parameter node).
     # self.ui.selectorModel.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+    self.ui.sliderColorThresh.connect("valueChanged(double)", self.updateParameterNodeFromGUI)
 
     # Buttons
     self.ui.pushModuleRobCtrl.connect('clicked(bool)', self.onPushModuleRobCtrl)
@@ -206,6 +207,9 @@ class TargetVisualizationWidget(ScriptedLoadableModuleWidget, VTKObservationMixi
     # Make sure GUI changes do not call updateParameterNodeFromGUI (it could cause infinite loop)
     self._updatingGUIFromParameterNode = True
 
+    # Update node selectors and sliders
+    self.ui.sliderColorThresh.value = float(self._parameterNode.GetParameter("ColorChangeThresh"))
+
     # Update buttons states and tooltips
     if self._parameterNode.GetParameter("Visualizing") == "true":
       self.ui.pushStartTargetViz.toolTip = "The module is visualizing"
@@ -217,7 +221,7 @@ class TargetVisualizationWidget(ScriptedLoadableModuleWidget, VTKObservationMixi
       self.ui.pushStartTargetViz.enabled = True
       self.ui.pushStopTargetViz.toolTip = "Visualization not started"
       self.ui.pushStopTargetViz.enabled = False
-
+    
     # All the GUI updates are done
     self._updatingGUIFromParameterNode = False
 
@@ -232,6 +236,8 @@ class TargetVisualizationWidget(ScriptedLoadableModuleWidget, VTKObservationMixi
 
     wasModified = self._parameterNode.StartModify()  # Modify all properties in a single batch
 
+    self._parameterNode.SetParameter("ColorChangeThresh", str(self.ui.sliderColorThresh.value))
+    
     self._parameterNode.EndModify(wasModified)
 
   def onPushModuleRobCtrl(self):
@@ -292,6 +298,8 @@ class TargetVisualizationLogic(ScriptedLoadableModuleLogic):
     """
     Initialize parameter node with default settings.
     """
+    if not parameterNode.GetParameter("ColorChangeThresh"):
+      parameterNode.SetParameter("ColorChangeThresh", "20.0") 
     if not parameterNode.GetParameter("Visualizing"):
       parameterNode.SetParameter("Visualizing", "false")
     
@@ -324,7 +332,7 @@ class TargetVisualizationLogic(ScriptedLoadableModuleLogic):
           slicer.mrmlScene.GetSingletonNode("MedImgPlan.TargetPoseTransform", "vtkMRMLTransformNode")
 
     self._connections._currentPoseIndicator = currentPoseIndicator
-    self._connections._colorchangethresh = self._connections._configData["COLOR_CHANGE_THRESH"]
+    self._connections._colorchangethresh = float(self._parameterNode.GetParameter("ColorChangeThresh"))
 
     self._connections._flag_receiving_nnblc = True
     self._connections.receiveTimerCallBack()
