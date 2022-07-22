@@ -48,14 +48,30 @@
      </property>
      <layout class="QGridLayout" name="gridLayout_5">
       <item row="0" column="0">
-       <widget class="QLabel" name="labelMeshSelector">
+       <widget class="QLabel" name="labelMeshSelectorSkin">
         <property name="text">
-         <string>On Model:</string>
+         <string>Skin Model:</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="qMRMLNodeComboBox" name="comboMeshSelector">
+       <widget class="qMRMLNodeComboBox" name="comboMeshSelectorSkin">
+        <property name="nodeTypes">
+         <stringlist>
+          <string>vtkMRMLModelNode</string>
+         </stringlist>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelMeshSelectorBrain">
+        <property name="text">
+         <string>Brain Model:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="qMRMLNodeComboBox" name="comboMeshSelectorBrain">
         <property name="nodeTypes">
          <stringlist>
           <string>vtkMRMLModelNode</string>
@@ -175,6 +191,9 @@
    </item>
    <item>
     <widget class="ctkCollapsibleButton" name="collapToolPosePlan">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
      <property name="text">
       <string>Tool Pose Plan</string>
      </property>
@@ -270,6 +289,13 @@
         </property>
        </widget>
       </item>
+      <item row="10" column="0">
+       <widget class="QCheckBox" name="checkPlanBrain">
+        <property name="text">
+         <string>Plan on Brain?</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -360,7 +386,7 @@
   <connection>
    <sender>MedImgPlan</sender>
    <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
-   <receiver>comboMeshSelector</receiver>
+   <receiver>comboMeshSelectorSkin</receiver>
    <slot>setMRMLScene(vtkMRMLScene*)</slot>
    <hints>
     <hint type="sourcelabel">
@@ -370,6 +396,22 @@
     <hint type="destinationlabel">
      <x>217</x>
      <y>367</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>MedImgPlan</sender>
+   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
+   <receiver>comboMeshSelectorBrain</receiver>
+   <slot>setMRMLScene(vtkMRMLScene*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>173</x>
+     <y>390</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>214</x>
+     <y>180</y>
     </hint>
    </hints>
   </connection>

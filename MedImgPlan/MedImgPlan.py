@@ -125,8 +125,9 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.markupsRegistration.markupsPlaceWidget().setPlaceModePersistency(True)
     self.ui.markupsToolPosePlan.connect("markupsNodeChanged()", self.updateParameterNodeFromGUI)
     self.ui.markupsToolPosePlan.markupsPlaceWidget().setPlaceModePersistency(True)
-    self.ui.comboMeshSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
-
+    self.ui.comboMeshSelectorSkin.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+    self.ui.comboMeshSelectorBrain.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+    self.ui.checkPlanBrain.connect("toggled(bool)", self.updateParameterNodeFromGUI)
     self.ui.sliderColorThresh.connect("valueChanged(double)", self.updateParameterNodeFromGUI)
 
     # Buttons
@@ -233,8 +234,10 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # Update node selectors and sliders
     self.ui.markupsRegistration.setCurrentNode(self._parameterNode.GetNodeReference("LandmarksMarkups"))
     self.ui.markupsToolPosePlan.setCurrentNode(self._parameterNode.GetNodeReference("ToolPoseMarkups"))
-    self.ui.comboMeshSelector.setCurrentNode(self._parameterNode.GetNodeReference("InputMesh"))
+    self.ui.comboMeshSelectorSkin.setCurrentNode(self._parameterNode.GetNodeReference("InputMeshSkin"))
+    self.ui.comboMeshSelectorBrain.setCurrentNode(self._parameterNode.GetNodeReference("InputMeshBrain"))
     self.ui.sliderColorThresh.value = float(self._parameterNode.GetParameter("ColorChangeThresh"))
+    self.ui.checkPlanBrain.checked = (self._parameterNode.GetParameter("PlanOnBrain") == "true")
 
     # Update buttons states and tooltips
     if self._parameterNode.GetNodeReference("LandmarksMarkups"):
@@ -267,15 +270,16 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     This method is called when the user makes any change in the GUI.
     The changes are saved into the parameter node (so that they are restored when the scene is saved and loaded).
     """
-    # print("updated gui")
 
     if self._parameterNode is None or self._updatingGUIFromParameterNode:
       return
 
     wasModified = self._parameterNode.StartModify()  # Modify all properties in a single batch
 
-    self._parameterNode.SetNodeReferenceID("InputMesh", self.ui.comboMeshSelector.currentNodeID)
+    self._parameterNode.SetNodeReferenceID("InputMeshSkin", self.ui.comboMeshSelectorSkin.currentNodeID)
+    self._parameterNode.SetNodeReferenceID("InputMeshBrain", self.ui.comboMeshSelectorBrain.currentNodeID)
     self._parameterNode.SetParameter("ColorChangeThresh", str(self.ui.sliderColorThresh.value))
+    self._parameterNode.SetParameter("PlanOnBrain", "true" if self.ui.checkPlanBrain.checked else "false")
 
     if self.ui.markupsRegistration.currentNode():
       self._parameterNode.SetNodeReferenceID("LandmarksMarkups", self.ui.markupsRegistration.currentNode().GetID())
@@ -381,12 +385,14 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       parameterNode.SetParameter("ColorChangeThresh", "4.0") 
     if not parameterNode.GetParameter("TRECalculating"):
       parameterNode.SetParameter("TRECalculating", "false")
+    if not parameterNode.GetParameter("PlanOnBrain"):
+      parameterNode.SetParameter("PlanOnBrain", "true")
 
   def processStartTRECalculation(self):
     """
     Called when click the start button
     """
-    inModel = self._parameterNode.GetNodeReference("InputMesh")
+    inModel = self._parameterNode.GetNodeReference("InputMeshSkin")
     if not inModel:
       slicer.util.errorDisplay("Please select a image model first!")
       return
@@ -488,7 +494,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       inputMarkupsNode.GetNthFiducialPosition(0,p)
       inputMarkupsNode.GetNthFiducialPosition(1,override_y)
       pointLocator = vtk.vtkPointLocator()
-      inModel = self._parameterNode.GetNodeReference("InputMesh")
+      if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
+        inModel = self._parameterNode.GetNodeReference("InputMeshBrain")
+      if (self._parameterNode.GetParameter("PlanOnBrain") == "false"):
+        inModel = self._parameterNode.GetNodeReference("InputMeshSkin")
       if not inModel:
         slicer.util.errorDisplay("Please select a image model first!")
         return
@@ -526,6 +535,27 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
 
     transformMatrix = vtk.vtkMatrix4x4()
     transformMatrixSingleton = vtk.vtkMatrix4x4()
+
+    if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
+      
+      inModel = self._parameterNode.GetNodeReference("InputMeshSkin")
+    
+      cellLocator = vtk.vtkCellLocator()
+      cellLocator.SetDataSet(inModel.GetPolyData())
+      cellLocator.BuildLocator()
+
+      ray_point = [0.0,0.0,0.0]
+      ray_length = 10000.0
+      ray_point[0],ray_point[1],ray_point[2] = \
+        p[0]+ray_length*mat[0][2],p[1]+ray_length*mat[1][2],p[2]+ray_length*mat[2][2]
+      
+      cl_pIntSect, cl_pcoords = [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]
+      cl_t, cl_sub_id = vtk.mutable(0), vtk.mutable(0)
+      cellLocator.IntersectWithLine( \
+        p,ray_point,1e-6,cl_t,cl_pIntSect,cl_pcoords,cl_sub_id)
+
+      p[0], p[1], p[2] = cl_pIntSect[0], cl_pIntSect[1], cl_pIntSect[2]
+
     setTransform(mat, p, transformMatrix)
     setTransform(mat, p, transformMatrixSingleton)
 
@@ -634,7 +664,7 @@ class MedImgConnections(UtilConnectionsWtNnBlcRcv):
     """
     Called each time when a valid point message is received
     """
-    inModel = self._parameterNode.GetNodeReference("InputMesh")
+    inModel = self._parameterNode.GetNodeReference("InputMeshSkin")
     pointLocator = vtk.vtkPointLocator()
     pointLocator.SetDataSet(inModel.GetPolyData())
     pointLocator.BuildLocator()
