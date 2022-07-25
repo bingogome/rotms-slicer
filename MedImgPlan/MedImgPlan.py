@@ -493,7 +493,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       override_y = [0,0,0]
       inputMarkupsNode.GetNthFiducialPosition(0,p)
       inputMarkupsNode.GetNthFiducialPosition(1,override_y)
-      pointLocator = vtk.vtkPointLocator()
+
       if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
         inModel = self._parameterNode.GetNodeReference("InputMeshBrain")
       if (self._parameterNode.GetParameter("PlanOnBrain") == "false"):
@@ -501,18 +501,19 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       if not inModel:
         slicer.util.errorDisplay("Please select a image model first!")
         return
-      pointLocator.SetDataSet(inModel.GetPolyData())
-      pointLocator.BuildLocator()
-      closest_point = pointLocator.FindClosestPoint(p)
-      cell_points = vtk.vtkIdList()
-      inModel.GetPolyData().GetPointCells(closest_point, cell_points)
-      inModel.GetPolyData().GetCellPoints(cell_points.GetId(0), cell_points)
-      a_ = inModel.GetPolyData().GetPoint(cell_points.GetId(0))
-      b_ = inModel.GetPolyData().GetPoint(cell_points.GetId(1))
-      c_ = inModel.GetPolyData().GetPoint(cell_points.GetId(2))
-      a[0], b[0], c[0] = a_[0], b_[0], c_[0]
-      a[1], b[1], c[1] = a_[1], b_[1], c_[1]
-      a[2], b[2], c[2] = a_[2], b_[2], c_[2]
+
+      cellLocator1 = vtk.vtkCellLocator()
+      cellLocator1.SetDataSet(inModel.GetMesh())
+      cellLocator1.BuildLocator()
+      closestPoint = [0.0, 0.0, 0.0]
+      cellObj = vtk.vtkGenericCell()
+      cellId, subId, dist2 = vtk.mutable(0), vtk.mutable(0), vtk.mutable(0.0)
+      cellLocator1.FindClosestPoint(p, closestPoint, cellObj, cellId, subId, dist2)
+    
+      cellObj.GetPoints().GetPoint(0, a)
+      cellObj.GetPoints().GetPoint(1, b)
+      cellObj.GetPoints().GetPoint(2, c)
+
       mat = utilPosePlan(a,b,c,p,override_y)
       drawAPlane(mat, p, self._configPath, "PlaneOnMeshIndicator", "PlaneOnMeshTransform", self._parameterNode)
 
@@ -539,9 +540,9 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       
       inModel = self._parameterNode.GetNodeReference("InputMeshSkin")
     
-      cellLocator = vtk.vtkCellLocator()
-      cellLocator.SetDataSet(inModel.GetPolyData())
-      cellLocator.BuildLocator()
+      cellLocator2 = vtk.vtkCellLocator()
+      cellLocator2.SetDataSet(inModel.GetPolyData())
+      cellLocator2.BuildLocator()
 
       ray_point = [0.0,0.0,0.0]
       ray_length = 10000.0
@@ -550,7 +551,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       
       cl_pIntSect, cl_pcoords = [0.0, 0.0, 0.0],[0.0, 0.0, 0.0]
       cl_t, cl_sub_id = vtk.mutable(0), vtk.mutable(0)
-      cellLocator.IntersectWithLine( \
+      cellLocator2.IntersectWithLine( \
         p,ray_point,1e-6,cl_t,cl_pIntSect,cl_pcoords,cl_sub_id)
 
       p[0], p[1], p[2] = cl_pIntSect[0], cl_pIntSect[1], cl_pIntSect[2]
