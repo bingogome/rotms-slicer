@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import vtk, math
+import vtk, math, slicer, json
 
 def setTranslation(p, T):
     T.SetElement(0,3,p[0])
@@ -64,3 +64,28 @@ def setColorTextByDistance( \
     indicatorPointOnMesh.GetDisplayNode().SetColor(1.0-indx, indx, 0)
     indicatorPointPtrtip.GetDisplayNode().SetColor(1.0-indx, indx, 0)
 
+def drawAPlane(mat, p, configPath, modelName, transformName, parameterNode):
+
+    with open(configPath+"Config.json") as f:
+        configData = json.load(f)
+
+        if not parameterNode.GetNodeReference(modelName):
+            planeModel = slicer.util.loadModel(configPath+configData["PLANE_INDICATOR_MODEL"])
+            planeModel.GetDisplayNode().SetOpacity(0.3)
+            parameterNode.SetNodeReferenceID(modelName, planeModel.GetID())
+
+    if not parameterNode.GetNodeReference(transformName):
+        transformNode = slicer.vtkMRMLTransformNode()
+        slicer.mrmlScene.AddNode(transformNode)
+        parameterNode.SetNodeReferenceID(transformName, transformNode.GetID())
+
+    planeModel = parameterNode.GetNodeReference(modelName)
+    transformNode = parameterNode.GetNodeReference(transformName)
+
+    transformMatrix = vtk.vtkMatrix4x4()
+    setTransform(mat, p, transformMatrix)
+
+    transformNode.SetMatrixTransformToParent(transformMatrix)
+    planeModel.SetAndObserveTransformNodeID(transformNode.GetID())
+
+    slicer.app.processEvents()

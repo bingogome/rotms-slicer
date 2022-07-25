@@ -34,7 +34,7 @@ from MedImgPlanLib.UtilConnections import UtilConnections
 from MedImgPlanLib.UtilConnectionsWtNnBlcRcv import UtilConnectionsWtNnBlcRcv
 from MedImgPlanLib.UtilFormat import utilNumStrFormat
 from MedImgPlanLib.UtilCalculations import mat2quat, utilPosePlan
-from MedImgPlanLib.UtilSlicerFuncs import setColorTextByDistance, setTransform, setTranslation
+from MedImgPlanLib.UtilSlicerFuncs import drawAPlane, setColorTextByDistance, setTransform, setTranslation
 
 """
 Check CommandsConfig.json to get UDP messages.
@@ -504,8 +504,6 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       pointLocator.SetDataSet(inModel.GetPolyData())
       pointLocator.BuildLocator()
       closest_point = pointLocator.FindClosestPoint(p)
-      closest_point_ = inModel.GetPolyData().GetPoint(closest_point)
-      closest_point = pointLocator.FindClosestPoint(closest_point_)
       cell_points = vtk.vtkIdList()
       inModel.GetPolyData().GetPointCells(closest_point, cell_points)
       inModel.GetPolyData().GetCellPoints(cell_points.GetId(0), cell_points)
@@ -516,6 +514,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       a[1], b[1], c[1] = a_[1], b_[1], c_[1]
       a[2], b[2], c[2] = a_[2], b_[2], c_[2]
       mat = utilPosePlan(a,b,c,p,override_y)
+      drawAPlane(mat, p, self._configPath, "PlaneOnMeshIndicator", "PlaneOnMeshTransform", self._parameterNode)
 
     if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
       transformNode = slicer.vtkMRMLTransformNode()
