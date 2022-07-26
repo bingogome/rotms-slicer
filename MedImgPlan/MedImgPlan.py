@@ -496,6 +496,17 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
 
       if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
         inModel = self._parameterNode.GetNodeReference("InputMeshBrain")
+        self._parameterNode.SetNodeReferenceID("BrainMeshOffsetTransform", \
+          inModel.GetParentTransformNode().GetID())
+        transformFilter = vtk.vtkTransformPolyDataFilter()
+        transformFilterTransform = vtk.vtkTransform()
+        transformFilterTransform.SetMatrix( \
+          self._parameterNode.GetNodeReference("BrainMeshOffsetTransform").GetMatrixTransformToParent())
+        transformFilter.SetTransform(transformFilterTransform)
+        transformFilter.SetInputData(inModel.GetPolyData())
+        transformFilter.Update()
+        inModelOffsetted = transformFilter.GetOutput()
+        
       if (self._parameterNode.GetParameter("PlanOnBrain") == "false"):
         inModel = self._parameterNode.GetNodeReference("InputMeshSkin")
       if not inModel:
@@ -503,7 +514,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         return
 
       cellLocator1 = vtk.vtkCellLocator()
-      cellLocator1.SetDataSet(inModel.GetMesh())
+      cellLocator1.SetDataSet(inModelOffsetted)
       cellLocator1.BuildLocator()
       closestPoint = [0.0, 0.0, 0.0]
       cellObj = vtk.vtkGenericCell()
