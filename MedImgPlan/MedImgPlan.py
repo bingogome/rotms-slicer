@@ -251,6 +251,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       self.ui.pushDigitize.enabled = True
       self.ui.pushDigHighlighted.toolTip = "Digitize a highlighted landmark"
       self.ui.pushDigHighlighted.enabled = True
+      self.ui.pushDigPrevAndDigHilight.toolTip = "Use previous digitization, and \n digitize a highlighted landmark"
+      self.ui.pushDigPrevAndDigHilight.enabled = True
       self.ui.pushRegister.toolTip = "Register"
       self.ui.pushRegister.enabled = True
     else:
@@ -260,6 +262,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       self.ui.pushDigitize.enabled = False
       self.ui.pushDigHighlighted.toolTip = "Select landmark markups node first"
       self.ui.pushDigHighlighted.enabled = False
+      self.ui.pushDigPrevAndDigHilight.toolTip = "Select landmark markups node first"
+      self.ui.pushDigPrevAndDigHilight.enabled = False
       self.ui.pushRegister.toolTip = "Select landmark markups node first"
       self.ui.pushRegister.enabled = False
 
