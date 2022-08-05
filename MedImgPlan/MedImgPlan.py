@@ -340,7 +340,7 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       slicer.util.errorDisplay("Please highlight a landmark first!")
       return
     idx = int(self._parameterNode.GetParameter("LandmarkWidgetHilightIdx"))
-    msg = self.logic._commandsData["LANDMARK_DIG_NUM"] + \
+    msg = self.logic._commandsData["START_LANDMARK_DIG_NUM"] + \
       "_" + str(idx).zfill(2)
     try:
       self.logic._connections.utilSendCommand(msg)
