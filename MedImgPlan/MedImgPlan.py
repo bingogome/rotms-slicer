@@ -142,6 +142,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.pushPlanLandmarks.connect('clicked(bool)', self.onPushPlanLandmarks)
     self.ui.pushDigHighlighted.connect('clicked(bool)', self.onPushDigHighlighted)
     self.ui.pushDigitize.connect('clicked(bool)', self.onPushDigitize)
+    self.ui.pushDigPrev.connect('clicked(bool)', self.onPushDigPrev)
+    self.ui.pushDigPrevAndDigHilight.connect('clicked(bool)', self.onPushDigPrevAndDigHilight)
     self.ui.pushRegister.connect('clicked(bool)', self.onPushRegistration)
     self.ui.pushUsePreviousRegistration.connect('clicked(bool)', self.onPushUsePreviousRegistration)
     self.ui.pushToolPosePlan.connect('clicked(bool)', self.onPushToolPosePlan)
@@ -336,17 +338,14 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
   def onPushDigHighlighted(self):
     self.updateParameterNodeFromGUI()
-    if not self._parameterNode.GetParameter("LandmarkWidgetHilightIdx"):
-      slicer.util.errorDisplay("Please highlight a landmark first!")
-      return
-    idx = int(self._parameterNode.GetParameter("LandmarkWidgetHilightIdx"))
-    msg = self.logic._commandsData["START_LANDMARK_DIG_NUM"] + \
-      "_" + str(idx).zfill(2)
-    try:
-      self.logic._connections.utilSendCommand(msg)
-    except:
-      return
-    print(msg)
+    self.logic.processDigHilight()
+  
+  def onPushDigPrevAndDigHilight(self):
+    self.logic.processDigPrevAndDigHilight()
+
+  def onPushDigPrev(self):
+    msg = self.logic._commandsData["START_LANDMARK_DIG_PREV"]
+    self.logic._connections.utilSendCommand(msg)
 
   def onLandmarkWidgetHilightChange(self, idx):
     self._parameterNode.SetParameter("LandmarkWidgetHilightIdx", str(idx))
@@ -478,6 +477,25 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       slicer.util.errorDisplay("Input landmarks are less than 3!")
       raise ValueError("Input landmarks are less than 3!")
     self.utilSendLandmarks(-1)
+
+  def processDigHilight(self):
+    self.processDigIndividual("START_LANDMARK_DIG_NUM")
+
+  def processDigPrevAndDigHilight(self):
+    self.processDigIndividual("START_LANDMARK_DIG_PREV_DIG_HILIGHT")
+
+  def processDigIndividual(self, s):
+    if not self._parameterNode.GetParameter("LandmarkWidgetHilightIdx"):
+      slicer.util.errorDisplay("Please highlight a landmark first!")
+      return
+    idx = int(self._parameterNode.GetParameter("LandmarkWidgetHilightIdx"))
+    msg = self._commandsData[s] + \
+      "_" + str(idx).zfill(2)
+    try:
+      self._connections.utilSendCommand(msg)
+    except:
+      return
+    print(msg)
   
   def processPushToolPosePlan(self, inputMarkupsNode):
     """

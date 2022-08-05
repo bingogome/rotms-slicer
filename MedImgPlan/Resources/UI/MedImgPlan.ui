@@ -94,20 +94,6 @@
       <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="3" column="1">
-       <widget class="QPushButton" name="pushDigitize">
-        <property name="text">
-         <string>Start Auto-Digitize</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QPushButton" name="pushDigHighlighted">
-        <property name="text">
-         <string>Digitize Highlighted</string>
-        </property>
-       </widget>
-      </item>
       <item row="1" column="0" colspan="2">
        <widget class="qSlicerSimpleMarkupsWidget" name="markupsRegistration">
         <property name="defaultNodeColor">
@@ -119,35 +105,7 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="0" colspan="2">
-       <widget class="QLabel" name="labelRegistration">
-        <property name="text">
-         <string>Collect at least 3 landmarks.</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0" colspan="2">
-       <widget class="QPushButton" name="pushPlanLandmarks">
-        <property name="text">
-         <string>All Landmarks Planned</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0" colspan="2">
-       <widget class="QPushButton" name="pushRegister">
-        <property name="text">
-         <string>Register</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="0" colspan="2">
-       <widget class="QPushButton" name="pushUsePreviousRegistration">
-        <property name="text">
-         <string>Use Previous Registration</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="0" colspan="2">
+      <item row="7" column="0" colspan="2">
        <widget class="ctkCollapsibleButton" name="collapTRE">
         <property name="text">
          <string>Check Target Registration Error</string>
@@ -191,6 +149,63 @@
           </widget>
          </item>
         </layout>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="2">
+       <widget class="QLabel" name="labelRegistration">
+        <property name="text">
+         <string>Collect at least 3 landmarks.</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="2">
+       <widget class="QPushButton" name="pushPlanLandmarks">
+        <property name="text">
+         <string>All Landmarks Planned</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QPushButton" name="pushDigHighlighted">
+        <property name="text">
+         <string>Digitize Highlighted</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QPushButton" name="pushDigPrevAndDigHilight">
+        <property name="text">
+         <string>Use Prev Dig
+ And Dig Highlighted</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QPushButton" name="pushDigitize">
+        <property name="text">
+         <string>Start Auto-Digitize</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QPushButton" name="pushDigPrev">
+        <property name="text">
+         <string>Use Prev Dig</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
+       <widget class="QPushButton" name="pushRegister">
+        <property name="text">
+         <string>Register</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1">
+       <widget class="QPushButton" name="pushUsePreviousRegistration">
+        <property name="text">
+         <string>Use Prev Registration</string>
+        </property>
        </widget>
       </item>
      </layout>
