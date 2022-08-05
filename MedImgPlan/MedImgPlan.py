@@ -123,6 +123,7 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     # (in the selected parameter node).
     self.ui.markupsRegistration.connect("markupsNodeChanged()", self.updateParameterNodeFromGUI) 
     self.ui.markupsRegistration.markupsPlaceWidget().setPlaceModePersistency(True)
+    self.ui.markupsRegistration.connect('currentMarkupsControlPointSelectionChanged(int)', self.onLandmarkWidgetHilightChange)
     self.ui.markupsToolPosePlan.connect("markupsNodeChanged()", self.updateParameterNodeFromGUI)
     self.ui.markupsToolPosePlan.markupsPlaceWidget().setPlaceModePersistency(True)
     self.ui.comboMeshSelectorSkin.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
@@ -139,6 +140,7 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.pushStopTRE.connect('clicked(bool)', self.onPushStopTRE)
 
     self.ui.pushPlanLandmarks.connect('clicked(bool)', self.onPushPlanLandmarks)
+    self.ui.pushDigHighlighted.connect('clicked(bool)', self.onPushDigHighlighted)
     self.ui.pushDigitize.connect('clicked(bool)', self.onPushDigitize)
     self.ui.pushRegister.connect('clicked(bool)', self.onPushRegistration)
     self.ui.pushUsePreviousRegistration.connect('clicked(bool)', self.onPushUsePreviousRegistration)
@@ -245,6 +247,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       self.ui.pushPlanLandmarks.enabled = True
       self.ui.pushDigitize.toolTip = "Start digitizing"
       self.ui.pushDigitize.enabled = True
+      self.ui.pushDigHighlighted.toolTip = "Digitize a highlighted landmark"
+      self.ui.pushDigHighlighted.enabled = True
       self.ui.pushRegister.toolTip = "Register"
       self.ui.pushRegister.enabled = True
     else:
@@ -252,6 +256,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
       self.ui.pushPlanLandmarks.enabled = False
       self.ui.pushDigitize.toolTip = "Select landmark markups node first"
       self.ui.pushDigitize.enabled = False
+      self.ui.pushDigHighlighted.toolTip = "Select landmark markups node first"
+      self.ui.pushDigHighlighted.enabled = False
       self.ui.pushRegister.toolTip = "Select landmark markups node first"
       self.ui.pushRegister.enabled = False
 
@@ -327,6 +333,24 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.updateParameterNodeFromGUI()
     msg = self.logic._commandsData["START_AUTO_DIGITIZE"]
     self.logic._connections.utilSendCommand(msg)
+
+  def onPushDigHighlighted(self):
+    self.updateParameterNodeFromGUI()
+    if not self._parameterNode.GetParameter("LandmarkWidgetHilightIdx"):
+      slicer.util.errorDisplay("Please highlight a landmark first!")
+      return
+    idx = int(self._parameterNode.GetParameter("LandmarkWidgetHilightIdx"))
+    msg = self.logic._commandsData["LANDMARK_DIG_NUM"] + \
+      "_" + str(idx).zfill(2)
+    try:
+      self.logic._connections.utilSendCommand(msg)
+    except:
+      return
+    print(msg)
+
+  def onLandmarkWidgetHilightChange(self, idx):
+    self._parameterNode.SetParameter("LandmarkWidgetHilightIdx", str(idx))
+    print("Highlighted the " + str(idx+1) + "th landmark")
 
   def onPushRegistration(self):
     self.updateParameterNodeFromGUI()
