@@ -130,6 +130,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.comboMeshSelectorBrain.connect("currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
     self.ui.checkPlanBrain.connect("toggled(bool)", self.updateParameterNodeFromGUI)
     self.ui.sliderColorThresh.connect("valueChanged(double)", self.updateParameterNodeFromGUI)
+    self.ui.sliderGridDistanceApart.connect("valueChanged(double)", self.updateParameterNodeFromGUI)
+    self.ui.sliderGridPlanNum.connect("valueChanged(double)", self.updateParameterNodeFromGUI)
 
     # Buttons
     self.ui.pushModuleTargetViz.connect('clicked(bool)', self.onPushModuleTargetViz)
@@ -147,6 +149,9 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.pushRegister.connect('clicked(bool)', self.onPushRegistration)
     self.ui.pushUsePreviousRegistration.connect('clicked(bool)', self.onPushUsePreviousRegistration)
     self.ui.pushToolPosePlan.connect('clicked(bool)', self.onPushToolPosePlan)
+
+    self.ui.pushPlanGrid.connect('clicked(bool)', self.onPushPlanGrid)
+    self.ui.pushGridSetNext.connect('clicked(bool)', self.onPushGridSetNext)
 
     # Make sure parameter node is initialized (needed for module reload)
     self.initializeParameterNode()
@@ -241,6 +246,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.ui.comboMeshSelectorSkin.setCurrentNode(self._parameterNode.GetNodeReference("InputMeshSkin"))
     self.ui.comboMeshSelectorBrain.setCurrentNode(self._parameterNode.GetNodeReference("InputMeshBrain"))
     self.ui.sliderColorThresh.value = float(self._parameterNode.GetParameter("ColorChangeThresh"))
+    self.ui.sliderGridDistanceApart.value = float(self._parameterNode.GetParameter("GridDistanceApart"))
+    self.ui.sliderGridPlanNum.value = float(self._parameterNode.GetParameter("GridPlanNum"))
     self.ui.checkPlanBrain.checked = (self._parameterNode.GetParameter("PlanOnBrain") == "true")
 
     # Update buttons states and tooltips
@@ -291,6 +298,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self._parameterNode.SetNodeReferenceID("InputMeshSkin", self.ui.comboMeshSelectorSkin.currentNodeID)
     self._parameterNode.SetNodeReferenceID("InputMeshBrain", self.ui.comboMeshSelectorBrain.currentNodeID)
     self._parameterNode.SetParameter("ColorChangeThresh", str(self.ui.sliderColorThresh.value))
+    self._parameterNode.SetParameter("GridDistanceApart", str(self.ui.sliderGridDistanceApart.value))
+    self._parameterNode.SetParameter("GridPlanNum", str(self.ui.sliderGridPlanNum.value))
     self._parameterNode.SetParameter("PlanOnBrain", "true" if self.ui.checkPlanBrain.checked else "false")
 
     if self.ui.markupsRegistration.currentNode():
@@ -375,7 +384,13 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
     self.updateParameterNodeFromGUI()
     self.logic.processPushToolPosePlan(self.ui.markupsToolPosePlan.currentNode())
 
+  def onPushPlanGrid(self):
+    self.updateParameterNodeFromGUI()
+    self.logic.processPlanGrid()
 
+  def onPushGridSetNext(self):
+    self.updateParameterNodeFromGUI()
+    self.logic.processGridSetNext()
 
 #
 # MedImgPlanLogic
@@ -410,6 +425,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     """
     if not parameterNode.GetParameter("ColorChangeThresh"):
       parameterNode.SetParameter("ColorChangeThresh", "4.0") 
+    if not parameterNode.GetParameter("GridDistanceApart"):
+      parameterNode.SetParameter("GridDistanceApart", "1.0") 
+    if not parameterNode.GetParameter("GridPlanNum"):
+      parameterNode.SetParameter("GridPlanNum", "16") 
     if not parameterNode.GetParameter("TRECalculating"):
       parameterNode.SetParameter("TRECalculating", "false")
     if not parameterNode.GetParameter("PlanOnBrain"):
@@ -516,10 +535,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
       slicer.util.errorDisplay("Input number of landmarks are not 2, 3 or 4!")
       raise ValueError("Input number of landmarks are not 2, 3 or 4!")
 
-    a = [0,0,0]
-    b = [0,0,0]
-    c = [0,0,0]
-    p = [0,0,0]
+    a,b,c,p = [0,0,0],[0,0,0],[0,0,0],[0,0,0]
 
     if inputMarkupsNode.GetNumberOfFiducials() == 4:
       inputMarkupsNode.GetNthFiducialPosition(1,a)
@@ -674,6 +690,13 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     if curIdx <= numOfFid-1:
       curIdx = curIdx+1
       self.utilSendLandmarks(curIdx)
+
+  def processPlanGrid(self):
+    int(self._parameterNode.GetParameter("GridPlanNum"))
+    float(self._parameterNode.GetParameter("GridDistanceApart"))
+
+  def processGridSetNext(self):
+    return
 
 #
 # Use UtilConnectionsWtNnBlcRcv and override the data handler
