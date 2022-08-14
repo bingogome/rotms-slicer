@@ -817,6 +817,38 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                     arr.append(arr[-1])
         return arr
 
+    def processGenerateGridCoordinateArr(self, numOfGrid):
+        dist = float(self._parameterNode.GetParameter("GridDistanceApart"))
+        arr = self.processGenerateGridIncrementDir(numOfGrid)
+        targetPoseTransform = self._parameterNode.GetNodeReference(
+            "TargetPoseTransform").GetMatrixTransformToParent()
+        temp = vtk.vtkMatrix4x4().DeepCopy(targetPoseTransform)
+        coor = [vtk.vtkMatrix4x4().DeepCopy(targetPoseTransform)]
+        arr.pop()
+        for i in arr:
+            if i == 1:
+                coor.append(vtk.vtkMatrix4x4().DeepCopy(
+                    temp.SetElement(0,3,temp.GetElement(0,3)+dist)))
+            if i == 2:
+                coor.append(vtk.vtkMatrix4x4().DeepCopy(
+                    temp.SetElement(1,3,temp.GetElement(1,3)+dist)))
+            if i == 3:
+                coor.append(vtk.vtkMatrix4x4().DeepCopy(
+                    temp.SetElement(0,3,temp.GetElement(0,3)-dist)))
+            if i == 4:
+                coor.append(vtk.vtkMatrix4x4().DeepCopy(
+                    temp.SetElement(1,3,temp.GetElement(1,3)-dist)))
+        return coor
+
+    def processVisualizePlanGrid(self,coor):
+        with open(self._configPath+"Config.json") as f:
+            configData = json.load(f)
+        idx = 0
+        for i in coor:
+            initModelAndTransform(self._parameterNode, \
+                "GridPlanNum"+str(idx), i, \
+                "GridPlanIndicatorNum"+str(idx), self._configPath+configData["POINT_INDICATOR_MODEL"])
+
     def processPlanGrid(self):
 
         if not self._parameterNode.GetParameter("TargetPoseTransform"):
@@ -827,6 +859,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             and (self._parameterNode.GetParameter("PlanGridOnAnatomySurf") == "true"):
                 slicer.util.errorDisplay("Please only check one method!")
                 raise ValueError("Please only check one method!")
+
         numOfGrid = int(self._parameterNode.GetParameter("GridPlanNum"))
         if numOfGrid > 1:
 
@@ -834,19 +867,20 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 inModel = self._parameterNode.GetNodeReference("InputMeshBrain")
             else:
                 inModel = self._parameterNode.GetNodeReference("InputMeshSkin")
-            
-            dist = float(self._parameterNode.GetParameter("GridDistanceApart"))
 
-            # if (self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true"):
-
+            if (self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true"):
+                coor = self.processGenerateGridCoordinateArr(numOfGrid)
+                self.processVisualizePlanGrid(coor)
 
             # if (self._parameterNode.GetParameter("PlanGridOnAnatomySurf") == "true"):
                 
 
 
-    # def processGridSetNext(self):
-    #     if numOfGrid > 1:
-    #         return
+    def processGridSetNext(self):
+        numOfGrid = int(self._parameterNode.GetParameter("GridPlanNum"))
+        if numOfGrid > 1:
+            return
+        return
 
 #
 # Use UtilConnectionsWtNnBlcRcv and override the data handler
