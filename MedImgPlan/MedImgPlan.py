@@ -37,7 +37,7 @@ from MedImgPlanLib.UtilConnections import UtilConnections
 from MedImgPlanLib.UtilConnectionsWtNnBlcRcv import UtilConnectionsWtNnBlcRcv
 from MedImgPlanLib.UtilFormat import utilNumStrFormat
 from MedImgPlanLib.UtilCalculations import mat2quat, utilPosePlan
-from MedImgPlanLib.UtilSlicerFuncs import drawAPlane, setColorTextByDistance, setTransform, setTranslation
+from MedImgPlanLib.UtilSlicerFuncs import drawAPlane, initModelAndTransform, setColorTextByDistance, setTransform, setTranslation
 
 """
 Check CommandsConfig.json to get UDP messages.
@@ -499,51 +499,16 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         self._parameterNode = self.getParameterNode()
         self._connections._parameterNode = self.getParameterNode()
 
-        if not self._parameterNode.GetNodeReference("PointOnMeshTr"):
-            transformNode = slicer.vtkMRMLTransformNode()
-            slicer.mrmlScene.AddNode(transformNode)
-            self._parameterNode.SetNodeReferenceID(
-                "PointOnMeshTr", transformNode.GetID())
+        with open(self._configPath+"Config.json") as f:
+            configData = json.load(f)
 
-        if not self._parameterNode.GetNodeReference("PointOnMeshIndicator"):
-            with open(self._configPath+"Config.json") as f:
-                configData = json.load(f)
-            inputModel = slicer.util.loadModel(
-                self._configPath+configData["POINT_INDICATOR_MODEL"])
-            self._parameterNode.SetNodeReferenceID(
-                "PointOnMeshIndicator", inputModel.GetID())
+        pointOnMeshIndicator = initModelAndTransform(self._parameterNode, \
+            "PointOnMeshTr", self._connections._transformMatrixPointOnMesh, \
+            "PointOnMeshIndicator", self._configPath+configData["POINT_INDICATOR_MODEL"])
 
-        if not self._parameterNode.GetNodeReference("PointPtrtipTr"):
-            transformNode = slicer.vtkMRMLTransformNode()
-            slicer.mrmlScene.AddNode(transformNode)
-            self._parameterNode.SetNodeReferenceID(
-                "PointPtrtipTr", transformNode.GetID())
-
-        if not self._parameterNode.GetNodeReference("PointPtrtipIndicator"):
-            with open(self._configPath+"Config.json") as f:
-                configData = json.load(f)
-            inputModel = slicer.util.loadModel(
-                self._configPath+configData["POINT_INDICATOR_MODEL"])
-            self._parameterNode.SetNodeReferenceID(
-                "PointPtrtipIndicator", inputModel.GetID())
-
-        pointOnMeshTransform = self._parameterNode.GetNodeReference(
-            "PointOnMeshTr")
-        pointOnMeshIndicator = self._parameterNode.GetNodeReference(
-            "PointOnMeshIndicator")
-        pointOnMeshTransform.SetMatrixTransformToParent(
-            self._connections._transformMatrixPointOnMesh)
-        pointOnMeshIndicator.SetAndObserveTransformNodeID(
-            pointOnMeshTransform.GetID())
-
-        pointPtrtipTransform = self._parameterNode.GetNodeReference(
-            "PointPtrtipTr")
-        pointPtrtipIndicator = self._parameterNode.GetNodeReference(
-            "PointPtrtipIndicator")
-        pointPtrtipTransform.SetMatrixTransformToParent(
-            self._connections._transformMatrixPointPtrtip)
-        pointPtrtipIndicator.SetAndObserveTransformNodeID(
-            pointPtrtipTransform.GetID())
+        pointPtrtipIndicator = initModelAndTransform(self._parameterNode, \
+            "PointPtrtipTr", self._connections._transformMatrixPointPtrtip, \
+            "PointPtrtipIndicator", self._configPath+configData["POINT_INDICATOR_MODEL"])
 
         self._connections._pointOnMeshIndicator = pointOnMeshIndicator
         self._connections._pointPtrtipIndicator = pointPtrtipIndicator
@@ -603,16 +568,25 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             slicer.util.errorDisplay(
                 "Input number of landmarks are not 2, 3 or 4!")
             raise ValueError("Input number of landmarks are not 2, 3 or 4!")
+        
+        p, mat = self.processToolPosePlanByNumOfPoints(inputMarkupsNode)
+        self.processToolPosePlanVisualization(p, mat)
+        self.processToolPosePlanSend(p, mat)
+
+    def processToolPosePlanByNumOfPoints(self, inputMarkupsNode):
 
         a, b, c, p = [0, 0, 0], [0, 0, 0], [0, 0, 0], [0, 0, 0]
 
         if inputMarkupsNode.GetNumberOfFiducials() == 4:
+
             inputMarkupsNode.GetNthFiducialPosition(1, a)
             inputMarkupsNode.GetNthFiducialPosition(2, b)
             inputMarkupsNode.GetNthFiducialPosition(3, c)
             inputMarkupsNode.GetNthFiducialPosition(0, p)
             mat = utilPosePlan(a, b, c, p)
+
         if inputMarkupsNode.GetNumberOfFiducials() == 3:
+
             inputMarkupsNode.GetNthFiducialPosition(0, a)
             inputMarkupsNode.GetNthFiducialPosition(1, b)
             inputMarkupsNode.GetNthFiducialPosition(2, c)
@@ -620,7 +594,9 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             p[1] = (a[1]+b[1]+c[1])/3.0
             p[2] = (a[2]+b[2]+c[2])/3.0
             mat = utilPosePlan(a, b, c, p)
+
         if inputMarkupsNode.GetNumberOfFiducials() == 2:
+
             override_y = [0, 0, 0]
             inputMarkupsNode.GetNthFiducialPosition(0, p)
             inputMarkupsNode.GetNthFiducialPosition(1, override_y)
@@ -629,7 +605,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 inModel = self._parameterNode.GetNodeReference(
                     "InputMeshBrain")
                 self._parameterNode.SetNodeReferenceID("BrainMeshOffsetTransform",
-                                                       inModel.GetParentTransformNode().GetID())
+                    inModel.GetParentTransformNode().GetID())
                 transformFilter = vtk.vtkTransformPolyDataFilter()
                 transformFilterTransform = vtk.vtkTransform()
                 transformFilterTransform.SetMatrix(
@@ -637,16 +613,17 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 transformFilter.SetTransform(transformFilterTransform)
                 transformFilter.SetInputData(inModel.GetPolyData())
                 transformFilter.Update()
-                inModelOffsetted = transformFilter.GetOutput()
+                inModel = transformFilter.GetOutput()
 
             if (self._parameterNode.GetParameter("PlanOnBrain") == "false"):
                 inModel = self._parameterNode.GetNodeReference("InputMeshSkin")
+                inModel = inModel.GetPolyData()
             if not inModel:
                 slicer.util.errorDisplay("Please select a image model first!")
                 return
 
             cellLocator1 = vtk.vtkCellLocator()
-            cellLocator1.SetDataSet(inModelOffsetted)
+            cellLocator1.SetDataSet(inModel)
             cellLocator1.BuildLocator()
             closestPoint = [0.0, 0.0, 0.0]
             cellObj = vtk.vtkGenericCell()
@@ -660,8 +637,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             cellObj.GetPoints().GetPoint(2, c)
 
             mat = utilPosePlan(a, b, c, p, override_y)
-            drawAPlane(mat, p, self._configPath, "PlaneOnMeshIndicator",
-                       "PlaneOnMeshTransform", self._parameterNode)
+        
+        return p, mat
+
+    def processToolPosePlanVisualizationInit(self):
 
         if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
             transformNode = slicer.vtkMRMLTransformNode()
@@ -684,8 +663,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 "TargetPoseIndicator", inputModel.GetID())
             inputModel.GetDisplayNode().SetColor(0, 1, 0)
 
-        transformMatrix = vtk.vtkMatrix4x4()
-        transformMatrixSingleton = vtk.vtkMatrix4x4()
+    def processToolPosePlanProjectTransformOnSkin(self, p, mat):
 
         if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
 
@@ -708,6 +686,19 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
 
             p[0], p[1], p[2] = cl_pIntSect[0], cl_pIntSect[1], cl_pIntSect[2]
 
+        return p
+
+    def processToolPosePlanVisualization(self, p, mat):
+
+        drawAPlane(mat, p, self._configPath, "PlaneOnMeshIndicator",
+            "PlaneOnMeshTransform", self._parameterNode)
+
+        self.processToolPosePlanVisualizationInit()
+        p = self.processToolPosePlanProjectTransformOnSkin(p, mat)
+
+        transformMatrix = vtk.vtkMatrix4x4()
+        transformMatrixSingleton = vtk.vtkMatrix4x4()
+
         setTransform(mat, p, transformMatrix)
         setTransform(mat, p, transformMatrixSingleton)
 
@@ -726,6 +717,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
 
         slicer.app.processEvents()
 
+    def processToolPosePlanSend(self, p, mat):
+
+        p = self.processToolPosePlanProjectTransformOnSkin(p, mat)
+        
         quat = mat2quat(mat)
 
         msg = self._commandsData["TARGET_POSE_ORIENTATION"] + \
@@ -742,6 +737,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             "_" + utilNumStrFormat(p[2]/1000, 15, 17)
 
         self._connections.utilSendCommand(msg)
+
 
     def utilSendLandmarks(self, curIdx):
         """

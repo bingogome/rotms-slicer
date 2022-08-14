@@ -89,3 +89,25 @@ def drawAPlane(mat, p, configPath, modelName, transformName, parameterNode):
     planeModel.SetAndObserveTransformNodeID(transformNode.GetID())
 
     slicer.app.processEvents()
+
+def initModelAndTransform(parameterNode, strTransformNode, mtxTransform, strModelNode, fModel):
+
+    if not parameterNode.GetNodeReference(strTransformNode):
+        transformNode = slicer.vtkMRMLTransformNode()
+        slicer.mrmlScene.AddNode(transformNode)
+        parameterNode.SetNodeReferenceID(
+            strTransformNode, transformNode.GetID())
+
+    if not parameterNode.GetNodeReference(strModelNode):
+        inputModel = slicer.util.loadModel(fModel)
+        parameterNode.SetNodeReferenceID(
+            strModelNode, inputModel.GetID())
+
+    modelTransform = parameterNode.GetNodeReference(strTransformNode)
+    modelIndicator = parameterNode.GetNodeReference(strModelNode)
+
+    modelTransform.SetMatrixTransformToParent(mtxTransform)
+    modelIndicator.SetAndObserveTransformNodeID(
+        modelTransform.GetID())
+
+    return modelIndicator
