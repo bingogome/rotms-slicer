@@ -131,6 +131,7 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
         # (in the selected parameter node).
+
         self.ui.markupsRegistration.connect(
             "markupsNodeChanged()", self.updateParameterNodeFromGUI)
         self.ui.markupsRegistration.markupsPlaceWidget().setPlaceModePersistency(True)
@@ -139,18 +140,24 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.markupsToolPosePlan.connect(
             "markupsNodeChanged()", self.updateParameterNodeFromGUI)
         self.ui.markupsToolPosePlan.markupsPlaceWidget().setPlaceModePersistency(True)
+
         self.ui.comboMeshSelectorSkin.connect(
             "currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
         self.ui.comboMeshSelectorBrain.connect(
             "currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
-        self.ui.checkPlanBrain.connect(
-            "toggled(bool)", self.updateParameterNodeFromGUI)
+
+        self.ui.checkPlanBrain.connect("toggled(bool)", self.updateParameterNodeFromGUI)
+
         self.ui.sliderColorThresh.connect(
             "valueChanged(double)", self.updateParameterNodeFromGUI)
+
         self.ui.sliderGridDistanceApart.connect(
             "valueChanged(double)", self.updateParameterNodeFromGUI)
         self.ui.sliderGridPlanNum.connect(
             "valueChanged(double)", self.updateParameterNodeFromGUI)
+
+        self.ui.checkBoxGridAnatomySurf.connect("toggled(bool)", self.updateParameterNodeFromGUI)
+        self.ui.checkBoxGridPerspPlane.connect("toggled(bool)", self.updateParameterNodeFromGUI)
 
         # Buttons
         self.ui.pushModuleTargetViz.connect(
@@ -290,6 +297,10 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self._parameterNode.GetParameter("GridPlanNum"))
         self.ui.checkPlanBrain.checked = (
             self._parameterNode.GetParameter("PlanOnBrain") == "true")
+        self.ui.checkBoxGridAnatomySurf.checked = (
+            self._parameterNode.GetParameter("PlanGridOnAnatomySurf") == "true")
+        self.ui.checkBoxGridPerspPlane.checked = (
+            self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true")
 
         # Update buttons states and tooltips
         if self._parameterNode.GetNodeReference("LandmarksMarkups"):
@@ -349,6 +360,12 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             "GridPlanNum", str(self.ui.sliderGridPlanNum.value))
         self._parameterNode.SetParameter(
             "PlanOnBrain", "true" if self.ui.checkPlanBrain.checked else "false")
+
+        # Grid plan pair
+        self._parameterNode.SetParameter(
+            "PlanGridOnAnatomySurf", "true" if self.ui.checkBoxGridAnatomySurf.checked else "false")
+        self._parameterNode.SetParameter(
+            "PlanGridOnPerspPlane", "true" if self.ui.checkBoxGridPerspPlane.checked else "false")
 
         if self.ui.markupsRegistration.currentNode():
             self._parameterNode.SetNodeReferenceID(
@@ -486,6 +503,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             parameterNode.SetParameter("TRECalculating", "false")
         if not parameterNode.GetParameter("PlanOnBrain"):
             parameterNode.SetParameter("PlanOnBrain", "true")
+        if not parameterNode.GetParameter("PlanGridOnAnatomySurf"):
+            parameterNode.SetParameter("PlanGridOnAnatomySurf", "true")
+        if not parameterNode.GetParameter("PlanGridOnPerspPlane"):
+            parameterNode.SetParameter("PlanGridOnPerspPlane", "false")
 
     def processStartTRECalculation(self):
         """
@@ -772,12 +793,57 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             curIdx = curIdx+1
             self.utilSendLandmarks(curIdx)
 
-    def processPlanGrid(self):
-        int(self._parameterNode.GetParameter("GridPlanNum"))
-        float(self._parameterNode.GetParameter("GridDistanceApart"))
+    def processGenerateGridIncrementDir(self, n):
+        # Output the direction arr of a squre spiral pattern
+        # n > 1
+        arr, finished_level = [], 0
+        for i in range(n):
+            if (i+1) == 1:
+                arr.append(1)
+                finished_level = 1
+            else:
+                if (i+1) - (2*(finished_level+1)-1) ** 2 == 0:
+                    finished_level += 1
+                    arr.append(1)
+                elif (i+1) - (2*finished_level-1) ** 2 == 1:
+                    arr.append(2)
+                elif (i+1) - (2*finished_level-1) ** 2 == 2 * (finished_level+1) - 2:
+                    arr.append(3)
+                elif (i+1) - (2*finished_level-1) ** 2 == 4 * (finished_level+1) - 4:
+                    arr.append(4)
+                elif (i+1) - (2*finished_level-1) ** 2 == 6 * (finished_level+1) - 6:
+                    arr.append(1)
+                else: 
+                    arr.append(arr[-1])
+        return arr
 
-    def processGridSetNext(self):
-        return
+    def processPlanGrid(self):
+
+        if (self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true") \
+            and (self._parameterNode.GetParameter("PlanGridOnAnatomySurf") == "true"):
+                slicer.util.errorDisplay(
+                    "Please only check one method!")
+                raise ValueError("Please only check one method!")
+        numOfGrid = int(self._parameterNode.GetParameter("GridPlanNum"))
+        if numOfGrid > 1:
+
+            if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
+                inModel = self._parameterNode.GetNodeReference("InputMeshBrain")
+            else:
+                inModel = self._parameterNode.GetNodeReference("InputMeshSkin")
+            
+            dist = float(self._parameterNode.GetParameter("GridDistanceApart"))
+
+            # if (self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true"):
+
+
+            # if (self._parameterNode.GetParameter("PlanGridOnAnatomySurf") == "true"):
+                
+
+
+    # def processGridSetNext(self):
+    #     if numOfGrid > 1:
+    #         return
 
 #
 # Use UtilConnectionsWtNnBlcRcv and override the data handler
