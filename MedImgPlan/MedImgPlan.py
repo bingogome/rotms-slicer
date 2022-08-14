@@ -819,10 +819,13 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
 
     def processPlanGrid(self):
 
+        if not self._parameterNode.GetParameter("TargetPoseTransform"):
+            slicer.util.errorDisplay("Please plan tool pose first!")
+            raise ValueError("Please plan tool pose first!")
+
         if (self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true") \
             and (self._parameterNode.GetParameter("PlanGridOnAnatomySurf") == "true"):
-                slicer.util.errorDisplay(
-                    "Please only check one method!")
+                slicer.util.errorDisplay("Please only check one method!")
                 raise ValueError("Please only check one method!")
         numOfGrid = int(self._parameterNode.GetParameter("GridPlanNum"))
         if numOfGrid > 1:
