@@ -44,6 +44,15 @@ def setTransform(rotm, p, T):
     setRotation(rotm, T)
     setTranslation(p, T)
 
+def getRotAndPFromMatrix(T):
+    p = [0,0,0]
+    p[0],p[1],p[2] = T.GetElement(0,3),T.GetElement(1,3),T.GetElement(2,3)
+    mat = [[0,0,0],[0,0,0],[0,0,0]]
+    mat[0][0],mat[0][1],mat[0][2] = T.GetElement(0,0),T.GetElement(0,1),T.GetElement(0,2)
+    mat[1][0],mat[1][1],mat[1][2] = T.GetElement(1,0),T.GetElement(1,1),T.GetElement(1,2)
+    mat[2][0],mat[2][1],mat[2][2] = T.GetElement(2,0),T.GetElement(2,1),T.GetElement(2,2)
+    return p, mat
+
 def setColorTextByDistance( \
     view, mesh_p, p, colorchangethresh, \
     indicatorPointOnMesh, \

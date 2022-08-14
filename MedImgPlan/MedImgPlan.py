@@ -37,7 +37,7 @@ from MedImgPlanLib.UtilConnections import UtilConnections
 from MedImgPlanLib.UtilConnectionsWtNnBlcRcv import UtilConnectionsWtNnBlcRcv
 from MedImgPlanLib.UtilFormat import utilNumStrFormat
 from MedImgPlanLib.UtilCalculations import mat2quat, utilPosePlan
-from MedImgPlanLib.UtilSlicerFuncs import drawAPlane, initModelAndTransform, setColorTextByDistance, setTransform, setTranslation
+from MedImgPlanLib.UtilSlicerFuncs import drawAPlane, getRotAndPFromMatrix, initModelAndTransform, setColorTextByDistance, setTransform, setTranslation
 
 """
 Check CommandsConfig.json to get UDP messages.
@@ -818,40 +818,75 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         return arr
 
     def processGenerateGridCoordinateArr(self, numOfGrid):
+
         dist = float(self._parameterNode.GetParameter("GridDistanceApart"))
         arr = self.processGenerateGridIncrementDir(numOfGrid)
+
         targetPoseTransform = self._parameterNode.GetNodeReference(
             "TargetPoseTransform").GetMatrixTransformToParent()
-        temp = vtk.vtkMatrix4x4().DeepCopy(targetPoseTransform)
-        coor = [vtk.vtkMatrix4x4().DeepCopy(targetPoseTransform)]
+
+        temp1, temp = vtk.vtkMatrix4x4(), vtk.vtkMatrix4x4()
+        temp1.DeepCopy(targetPoseTransform)
+        temp.DeepCopy(targetPoseTransform)
+
+        coor = [temp1]
         arr.pop()
+
         for i in arr:
+            temp2 = vtk.vtkMatrix4x4()
+            tempOffset = vtk.vtkMatrix4x4()
             if i == 1:
-                coor.append(vtk.vtkMatrix4x4().DeepCopy(
-                    temp.SetElement(0,3,temp.GetElement(0,3)+dist)))
+                tempOffset.SetElement(0,3,dist)
+                vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+                temp2.DeepCopy(temp)
+                coor.append(temp2)
             if i == 2:
-                coor.append(vtk.vtkMatrix4x4().DeepCopy(
-                    temp.SetElement(1,3,temp.GetElement(1,3)+dist)))
+                tempOffset.SetElement(1,3,dist)
+                vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+                temp2.DeepCopy(temp)
+                coor.append(temp2)
             if i == 3:
-                coor.append(vtk.vtkMatrix4x4().DeepCopy(
-                    temp.SetElement(0,3,temp.GetElement(0,3)-dist)))
+                tempOffset.SetElement(0,3,-dist)
+                vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+                temp2.DeepCopy(temp)
+                coor.append(temp2)
             if i == 4:
-                coor.append(vtk.vtkMatrix4x4().DeepCopy(
-                    temp.SetElement(1,3,temp.GetElement(1,3)-dist)))
+                tempOffset.SetElement(1,3,-dist)
+                vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+                temp2.DeepCopy(temp)
+                coor.append(temp2)
         return coor
 
-    def processVisualizePlanGrid(self,coor):
+    def processClearPrevGridPlan(self):
+        if self._parameterNode.GetParameter("GridPlanIndicatorNumPrev"):
+            prevnum = int(float(self._parameterNode.GetParameter("GridPlanIndicatorNumPrev")))
+            curnum = int(float(self._parameterNode.GetParameter("GridPlanNum")))
+            for i in range(prevnum):
+                if i>=curnum:
+                    slicer.mrmlScene.RemoveNode(self._parameterNode.GetNodeReference("GridPlanTransformNum"+str(i)))
+                    slicer.mrmlScene.RemoveNode(self._parameterNode.GetNodeReference("GridPlanIndicatorNum"+str(i)))
+
+    def processVisualizeAndLogPlanGrid(self,coor):
+
+        self.processClearPrevGridPlan()
         with open(self._configPath+"Config.json") as f:
             configData = json.load(f)
-        idx = 0
+        idx = -1
+
         for i in coor:
+            idx+=1
             initModelAndTransform(self._parameterNode, \
-                "GridPlanNum"+str(idx), i, \
-                "GridPlanIndicatorNum"+str(idx), self._configPath+configData["POINT_INDICATOR_MODEL"])
+                "GridPlanTransformNum"+str(idx), i, \
+                "GridPlanIndicatorNum"+str(idx), self._configPath+configData["POSE_INDICATOR_NOTAIL_MODEL"])
+            self._parameterNode.GetNodeReference("GridPlanIndicatorNum"+str(idx)).GetDisplayNode().SetColor(0, 0, 1)
+            if idx==0:
+                self._parameterNode.GetNodeReference("GridPlanIndicatorNum"+str(idx)).GetDisplayNode().SetColor(0, 1, 1)
+        self._parameterNode.SetParameter("GridPlanIndicatorNumPrev", self._parameterNode.GetParameter("GridPlanNum"))
+        self._parameterNode.SetParameter("GridPlanCurrentAt", "0")
 
     def processPlanGrid(self):
 
-        if not self._parameterNode.GetParameter("TargetPoseTransform"):
+        if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
             slicer.util.errorDisplay("Please plan tool pose first!")
             raise ValueError("Please plan tool pose first!")
 
@@ -860,7 +895,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 slicer.util.errorDisplay("Please only check one method!")
                 raise ValueError("Please only check one method!")
 
-        numOfGrid = int(self._parameterNode.GetParameter("GridPlanNum"))
+        numOfGrid = int(float(self._parameterNode.GetParameter("GridPlanNum")))
         if numOfGrid > 1:
 
             if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
@@ -870,17 +905,25 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
 
             if (self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true"):
                 coor = self.processGenerateGridCoordinateArr(numOfGrid)
-                self.processVisualizePlanGrid(coor)
+                self.processVisualizeAndLogPlanGrid(coor)
 
             # if (self._parameterNode.GetParameter("PlanGridOnAnatomySurf") == "true"):
-                
-
 
     def processGridSetNext(self):
-        numOfGrid = int(self._parameterNode.GetParameter("GridPlanNum"))
+
+        numOfGrid = int(float(self._parameterNode.GetParameter("GridPlanNum")))
         if numOfGrid > 1:
-            return
-        return
+            cur = int(float(self._parameterNode.GetParameter("GridPlanCurrentAt")))
+            if cur == numOfGrid-1:
+                cur = 0
+            else:
+                cur += 1
+            self._parameterNode.SetParameter("GridPlanCurrentAt", str(cur))
+
+            p, mat = getRotAndPFromMatrix(self._parameterNode.GetNodeReference(
+                "GridPlanTransformNum"+str(cur)).GetMatrixTransformToParent())
+            self.processToolPosePlanVisualization(p, mat)
+            self.processToolPosePlanSend(p, mat)    
 
 #
 # Use UtilConnectionsWtNnBlcRcv and override the data handler
