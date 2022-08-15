@@ -220,7 +220,7 @@
       <string>Tool Pose Plan</string>
      </property>
      <property name="collapsed">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="4" column="0" colspan="2">
@@ -324,61 +324,9 @@
          <string>Grid Plan</string>
         </property>
         <property name="collapsed">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <layout class="QGridLayout" name="gridLayout_6">
-         <item row="6" column="0" colspan="2">
-          <widget class="ctkSliderWidget" name="sliderGridDistanceApart">
-           <property name="decimals">
-            <number>1</number>
-           </property>
-           <property name="singleStep">
-            <double>0.100000000000000</double>
-           </property>
-           <property name="pageStep">
-            <double>1.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>8.000000000000000</double>
-           </property>
-           <property name="value">
-            <double>1.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="0">
-          <widget class="QLabel" name="labelGridDistanceApart">
-           <property name="text">
-            <string>Distance Apart: (mm)</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0" colspan="2">
-          <widget class="ctkSliderWidget" name="sliderGridPlanNum">
-           <property name="decimals">
-            <number>0</number>
-           </property>
-           <property name="minimum">
-            <double>1.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>144.000000000000000</double>
-           </property>
-           <property name="value">
-            <double>16.000000000000000</double>
-           </property>
-           <property name="tickInterval">
-            <double>0.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="7" column="0" colspan="2">
-          <widget class="QPushButton" name="pushPlanGrid">
-           <property name="text">
-            <string>Plan Grid</string>
-           </property>
-          </widget>
-         </item>
          <item row="2" column="0">
           <widget class="QLabel" name="labelGridPlanNum">
            <property name="text">
@@ -403,10 +351,69 @@
            </property>
           </widget>
          </item>
+         <item row="6" column="0" colspan="2">
+          <widget class="ctkSliderWidget" name="sliderGridDistanceApart">
+           <property name="decimals">
+            <number>1</number>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+           <property name="pageStep">
+            <double>1.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>8.000000000000000</double>
+           </property>
+           <property name="value">
+            <double>1.000000000000000</double>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="0" colspan="2">
+          <widget class="QPushButton" name="pushPlanGrid">
+           <property name="text">
+            <string>Plan Grid</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0" colspan="2">
+          <widget class="ctkSliderWidget" name="sliderGridPlanNum">
+           <property name="decimals">
+            <number>0</number>
+           </property>
+           <property name="minimum">
+            <double>1.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>144.000000000000000</double>
+           </property>
+           <property name="value">
+            <double>16.000000000000000</double>
+           </property>
+           <property name="tickInterval">
+            <double>0.000000000000000</double>
+           </property>
+          </widget>
+         </item>
          <item row="1" column="0" colspan="2">
           <widget class="QCheckBox" name="checkBoxGridPerspPlane">
            <property name="text">
             <string>Plan on Perspective Plane</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0">
+          <widget class="QLabel" name="labelGridDistanceApart">
+           <property name="text">
+            <string>Distance Apart: (mm)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="9" column="0" colspan="2">
+          <widget class="QPushButton" name="pushGridClear">
+           <property name="text">
+            <string>Clear Grid</string>
            </property>
           </widget>
          </item>

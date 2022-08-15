@@ -25,6 +25,7 @@ SOFTWARE.
 import os
 import json
 import logging
+import math
 
 import vtk
 import qt
@@ -37,7 +38,7 @@ from MedImgPlanLib.UtilConnections import UtilConnections
 from MedImgPlanLib.UtilConnectionsWtNnBlcRcv import UtilConnectionsWtNnBlcRcv
 from MedImgPlanLib.UtilFormat import utilNumStrFormat
 from MedImgPlanLib.UtilCalculations import mat2quat, utilPosePlan
-from MedImgPlanLib.UtilSlicerFuncs import drawAPlane, getRotAndPFromMatrix, initModelAndTransform, setColorTextByDistance, setTransform, setTranslation
+from MedImgPlanLib.UtilSlicerFuncs import drawAPlane, getRotAndPFromMatrix, initModelAndTransform, setColorTextByDistance, setRotation, setTransform, setTranslation
 
 """
 Check CommandsConfig.json to get UDP messages.
@@ -187,6 +188,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.pushPlanGrid.connect('clicked(bool)', self.onPushPlanGrid)
         self.ui.pushGridSetNext.connect(
             'clicked(bool)', self.onPushGridSetNext)
+        self.ui.pushGridClear.connect(
+            'clicked(bool)', self.onPushGridClear)
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
@@ -461,6 +464,13 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.updateParameterNodeFromGUI()
         self.logic.processGridSetNext()
 
+    def onPushGridClear(self):
+        if self._parameterNode.GetParameter("GridPlanIndicatorNumPrev"):
+            prevnum = int(float(self._parameterNode.GetParameter("GridPlanIndicatorNumPrev")))
+            for i in range(prevnum):
+                slicer.mrmlScene.RemoveNode(self._parameterNode.GetNodeReference("GridPlanTransformNum"+str(i)))
+                slicer.mrmlScene.RemoveNode(self._parameterNode.GetNodeReference("GridPlanIndicatorNum"+str(i)))
+
 #
 # MedImgPlanLogic
 #
@@ -605,6 +615,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             inputMarkupsNode.GetNthFiducialPosition(3, c)
             inputMarkupsNode.GetNthFiducialPosition(0, p)
             mat = utilPosePlan(a, b, c, p)
+            self._override_y = c
 
         if inputMarkupsNode.GetNumberOfFiducials() == 3:
 
@@ -615,6 +626,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             p[1] = (a[1]+b[1]+c[1])/3.0
             p[2] = (a[2]+b[2]+c[2])/3.0
             mat = utilPosePlan(a, b, c, p)
+            self._override_y = c
 
         if inputMarkupsNode.GetNumberOfFiducials() == 2:
 
@@ -658,6 +670,8 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             cellObj.GetPoints().GetPoint(2, c)
 
             mat = utilPosePlan(a, b, c, p, override_y)
+
+            self._override_y = override_y
         
         return p, mat
 
@@ -873,8 +887,62 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             configData = json.load(f)
         idx = -1
 
+        if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
+            inModel = self._parameterNode.GetNodeReference(
+                "InputMeshBrain")
+            self._parameterNode.SetNodeReferenceID("BrainMeshOffsetTransform",
+                inModel.GetParentTransformNode().GetID())
+            transformFilter = vtk.vtkTransformPolyDataFilter()
+            transformFilterTransform = vtk.vtkTransform()
+            transformFilterTransform.SetMatrix(
+                self._parameterNode.GetNodeReference("BrainMeshOffsetTransform").GetMatrixTransformToParent())
+            transformFilter.SetTransform(transformFilterTransform)
+            transformFilter.SetInputData(inModel.GetPolyData())
+            transformFilter.Update()
+            inModel = transformFilter.GetOutput()
+        if (self._parameterNode.GetParameter("PlanOnBrain") == "false"):
+            inModel = self._parameterNode.GetNodeReference("InputMeshSkin")
+            inModel = inModel.GetPolyData()
+        if not inModel:
+            slicer.util.errorDisplay("Please select a image model first!")
+            return
+
         for i in coor:
             idx+=1
+
+            p, mat = getRotAndPFromMatrix(i)
+            cellLocator2 = vtk.vtkCellLocator()
+            cellLocator2.SetDataSet(inModel)
+            cellLocator2.BuildLocator()
+            
+            ray_length = 0.0
+            cl_pIntSect = [float("nan"), float("nan"), float("nan")]
+            while math.isnan(sum(cl_pIntSect)) and ray_length<1000:
+                ray_point1,ray_point2 = [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]
+                ray_length += 5.0
+
+                ray_point1[0], ray_point1[1], ray_point1[2] = \
+                    p[0]+ray_length*mat[0][2], p[1]+ray_length*mat[1][2], p[2]+ray_length*mat[2][2]
+                ray_point2[0], ray_point2[1], ray_point2[2] = \
+                    p[0]-ray_length*mat[0][2], p[1]-ray_length*mat[1][2], p[2]-ray_length*mat[2][2]
+
+                cl_pIntSect, cl_pcoords = [float("nan"), float("nan"), float("nan")], [0.0, 0.0, 0.0]
+                cellObj, cellId, cl_t, cl_sub_id = vtk.vtkGenericCell(), vtk.mutable(0), vtk.mutable(0), vtk.mutable(0)
+                cellLocator2.IntersectWithLine(
+                    ray_point1, ray_point2, 1e-6, cl_t, cl_pIntSect, cl_pcoords, cl_sub_id, cellId, cellObj)
+                    
+            p[0], p[1], p[2] = cl_pIntSect[0], cl_pIntSect[1], cl_pIntSect[2]
+
+            a, b, c = [0, 0, 0], [0, 0, 0], [0, 0, 0]
+            cellObj.GetPoints().GetPoint(0, a)
+            cellObj.GetPoints().GetPoint(1, b)
+            cellObj.GetPoints().GetPoint(2, c)
+
+            mat = utilPosePlan(a, b, c, p, self._override_y)
+
+            setTranslation(p,i)
+            setRotation(mat,i)
+
             initModelAndTransform(self._parameterNode, \
                 "GridPlanTransformNum"+str(idx), i, \
                 "GridPlanIndicatorNum"+str(idx), self._configPath+configData["POSE_INDICATOR_NOTAIL_MODEL"])
@@ -897,11 +965,6 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
 
         numOfGrid = int(float(self._parameterNode.GetParameter("GridPlanNum")))
         if numOfGrid > 1:
-
-            if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
-                inModel = self._parameterNode.GetNodeReference("InputMeshBrain")
-            else:
-                inModel = self._parameterNode.GetNodeReference("InputMeshSkin")
 
             if (self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true"):
                 coor = self.processGenerateGridCoordinateArr(numOfGrid)
