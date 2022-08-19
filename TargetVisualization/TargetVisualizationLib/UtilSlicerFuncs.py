@@ -49,10 +49,8 @@ def setColorByDistance( \
     dist = math.sqrt( \
         distarr[0] * distarr[0] + distarr[1] * distarr[1] + distarr[2] * distarr[2])
         
-    finetune_thresh = colorchangethresh # mm
-
-    indx = (finetune_thresh - dist) / finetune_thresh \
-        if finetune_thresh >= dist else 0.0
+    indx = (colorchangethresh - dist) / colorchangethresh \
+        if colorchangethresh >= dist else 0.0
 
     currentPoseIndicator.GetDisplayNode().SetColor(1.0-indx, indx, 0)
 
