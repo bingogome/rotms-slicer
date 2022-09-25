@@ -220,27 +220,31 @@
       <string>Tool Pose Plan</string>
      </property>
      <property name="collapsed">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="4" column="0" colspan="2">
-       <widget class="QLabel" name="labelToolPosePlanB">
+      <item row="2" column="0" colspan="2">
+       <widget class="QLabel" name="labelToolPosePlanA2">
         <property name="text">
-         <string>Method B (3 points)</string>
+         <string>2. Put 3 points (counterclockwise) as the contact plane;</string>
         </property>
        </widget>
       </item>
-      <item row="8" column="0" colspan="2">
-       <widget class="QLabel" name="labelToolPosePlanC1">
-        <property name="text">
-         <string>1. Put 1 point as the contact point;</string>
+      <item row="11" column="0" colspan="2">
+       <widget class="qSlicerSimpleMarkupsWidget" name="markupsToolPosePlan">
+        <property name="defaultNodeColor">
+         <color>
+          <red>255</red>
+          <green>0</green>
+          <blue>0</blue>
+         </color>
         </property>
        </widget>
       </item>
-      <item row="10" column="0">
-       <widget class="QCheckBox" name="checkPlanBrain">
+      <item row="1" column="0" colspan="2">
+       <widget class="QLabel" name="labelToolPosePlanA1">
         <property name="text">
-         <string>Plan on Brain?</string>
+         <string>1. Put 1 point as the contact point center;</string>
         </property>
        </widget>
       </item>
@@ -258,28 +262,17 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="0" colspan="2">
-       <widget class="QLabel" name="labelToolPosePlanA3">
+      <item row="5" column="0" colspan="2">
+       <widget class="QLabel" name="labelToolPosePlanB1">
         <property name="text">
-         <string>3. The last of the 3 points should be the tail direction of the tool</string>
+         <string>1. Put 3 points (couterclockwise) as the contact plane;</string>
         </property>
        </widget>
       </item>
-      <item row="11" column="0" colspan="2">
-       <widget class="qSlicerSimpleMarkupsWidget" name="markupsToolPosePlan">
-        <property name="defaultNodeColor">
-         <color>
-          <red>255</red>
-          <green>0</green>
-          <blue>0</blue>
-         </color>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0" colspan="2">
-       <widget class="QLabel" name="labelToolPosePlanA2">
+      <item row="10" column="0">
+       <widget class="QCheckBox" name="checkPlanBrain">
         <property name="text">
-         <string>2. Put 3 points (counterclockwise) as the contact plane;</string>
+         <string>Plan on Brain?</string>
         </property>
        </widget>
       </item>
@@ -290,6 +283,13 @@
         </property>
        </widget>
       </item>
+      <item row="8" column="0" colspan="2">
+       <widget class="QLabel" name="labelToolPosePlanC1">
+        <property name="text">
+         <string>1. Put 1 point as the contact point;</string>
+        </property>
+       </widget>
+      </item>
       <item row="12" column="0" colspan="2">
        <widget class="QPushButton" name="pushToolPosePlan">
         <property name="text">
@@ -297,28 +297,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0" colspan="2">
-       <widget class="QLabel" name="labelToolPosePlanA1">
-        <property name="text">
-         <string>1. Put 1 point as the contact point center;</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="0" colspan="2">
-       <widget class="QLabel" name="labelToolPosePlanB1">
-        <property name="text">
-         <string>1. Put 3 points (couterclockwise) as the contact plane;</string>
-        </property>
-       </widget>
-      </item>
-      <item row="6" column="0" colspan="2">
-       <widget class="QLabel" name="labelToolPosePlanB2">
-        <property name="text">
-         <string>2. The last of the 3 points should be the tail direction of the tool</string>
-        </property>
-       </widget>
-      </item>
-      <item row="13" column="0" colspan="2">
+      <item row="14" column="0" colspan="2">
        <widget class="ctkCollapsibleGroupBox" name="collapGridPlan">
         <property name="title">
          <string>Grid Plan</string>
@@ -344,10 +323,10 @@
          <item row="0" column="0" colspan="2">
           <widget class="QCheckBox" name="checkBoxGridAnatomySurf">
            <property name="text">
-            <string>Plan on Anatomy Surface</string>
+            <string>Plan on Anatomy Surface (not functional)</string>
            </property>
            <property name="checked">
-            <bool>true</bool>
+            <bool>false</bool>
            </property>
           </widget>
          </item>
@@ -401,6 +380,9 @@
            <property name="text">
             <string>Plan on Perspective Plane</string>
            </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
           </widget>
          </item>
          <item row="5" column="0">
@@ -418,6 +400,34 @@
           </widget>
          </item>
         </layout>
+       </widget>
+      </item>
+      <item row="3" column="0" colspan="2">
+       <widget class="QLabel" name="labelToolPosePlanA3">
+        <property name="text">
+         <string>3. The last of the 3 points should be the tail direction of the tool</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0" colspan="2">
+       <widget class="QLabel" name="labelToolPosePlanB2">
+        <property name="text">
+         <string>2. The last of the 3 points should be the tail direction of the tool</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0" colspan="2">
+       <widget class="QLabel" name="labelToolPosePlanB">
+        <property name="text">
+         <string>Method B (3 points)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="13" column="0" colspan="2">
+       <widget class="ctkCollapsibleGroupBox" name="CollapsibleGroupBox">
+        <property name="title">
+         <string>Manual Adjust</string>
+        </property>
        </widget>
       </item>
      </layout>

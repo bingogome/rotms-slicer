@@ -300,8 +300,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self._parameterNode.GetParameter("GridPlanNum"))
         self.ui.checkPlanBrain.checked = (
             self._parameterNode.GetParameter("PlanOnBrain") == "true")
-        self.ui.checkBoxGridAnatomySurf.checked = (
-            self._parameterNode.GetParameter("PlanGridOnAnatomySurf") == "true")
+        # self.ui.checkBoxGridAnatomySurf.checked = (
+        #     self._parameterNode.GetParameter("PlanGridOnAnatomySurf") == "true")
         self.ui.checkBoxGridPerspPlane.checked = (
             self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true")
 
@@ -365,8 +365,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             "PlanOnBrain", "true" if self.ui.checkPlanBrain.checked else "false")
 
         # Grid plan pair
-        self._parameterNode.SetParameter(
-            "PlanGridOnAnatomySurf", "true" if self.ui.checkBoxGridAnatomySurf.checked else "false")
+        # self._parameterNode.SetParameter(
+        #     "PlanGridOnAnatomySurf", "true" if self.ui.checkBoxGridAnatomySurf.checked else "false")
         self._parameterNode.SetParameter(
             "PlanGridOnPerspPlane", "true" if self.ui.checkBoxGridPerspPlane.checked else "false")
 
@@ -513,10 +513,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             parameterNode.SetParameter("TRECalculating", "false")
         if not parameterNode.GetParameter("PlanOnBrain"):
             parameterNode.SetParameter("PlanOnBrain", "true")
-        if not parameterNode.GetParameter("PlanGridOnAnatomySurf"):
-            parameterNode.SetParameter("PlanGridOnAnatomySurf", "true")
+        # if not parameterNode.GetParameter("PlanGridOnAnatomySurf"):
+        #     parameterNode.SetParameter("PlanGridOnAnatomySurf", "true")
         if not parameterNode.GetParameter("PlanGridOnPerspPlane"):
-            parameterNode.SetParameter("PlanGridOnPerspPlane", "false")
+            parameterNode.SetParameter("PlanGridOnPerspPlane", "true")
 
     def processStartTRECalculation(self):
         """
@@ -958,10 +958,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             slicer.util.errorDisplay("Please plan tool pose first!")
             raise ValueError("Please plan tool pose first!")
 
-        if (self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true") \
-            and (self._parameterNode.GetParameter("PlanGridOnAnatomySurf") == "true"):
-                slicer.util.errorDisplay("Please only check one method!")
-                raise ValueError("Please only check one method!")
+        # if (self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true") \
+        #     and (self._parameterNode.GetParameter("PlanGridOnAnatomySurf") == "true"):
+        #         slicer.util.errorDisplay("Please only check one method!")
+        #         raise ValueError("Please only check one method!")
 
         numOfGrid = int(float(self._parameterNode.GetParameter("GridPlanNum")))
         if numOfGrid > 1:
