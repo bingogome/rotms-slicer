@@ -37,7 +37,7 @@ from slicer.util import VTKObservationMixin
 from MedImgPlanLib.UtilConnections import UtilConnections
 from MedImgPlanLib.UtilConnectionsWtNnBlcRcv import UtilConnectionsWtNnBlcRcv
 from MedImgPlanLib.UtilFormat import utilNumStrFormat
-from MedImgPlanLib.UtilCalculations import mat2quat, utilPosePlan
+from MedImgPlanLib.UtilCalculations import mat2quat, rotx, roty, rotz, utilPosePlan
 from MedImgPlanLib.UtilSlicerFuncs import drawAPlane, getRotAndPFromMatrix, initModelAndTransform, setColorTextByDistance, setRotation, setTransform, setTranslation
 
 """
@@ -152,6 +152,11 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.sliderColorThresh.connect(
             "valueChanged(double)", self.updateParameterNodeFromGUI)
 
+        self.ui.sliderManualToolPos.connect(
+            "valueChanged(double)", self.updateParameterNodeFromGUI)
+        self.ui.sliderManualToolRot.connect(
+            "valueChanged(double)", self.updateParameterNodeFromGUI)
+
         self.ui.sliderGridDistanceApart.connect(
             "valueChanged(double)", self.updateParameterNodeFromGUI)
         self.ui.sliderGridPlanNum.connect(
@@ -184,6 +189,13 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             'clicked(bool)', self.onPushUsePreviousRegistration)
         self.ui.pushToolPosePlan.connect(
             'clicked(bool)', self.onPushToolPosePlan)
+
+        self.ui.pushBackForward.connect('clicked(bool)', self.onPushBackForward)
+        self.ui.pushCloseAway.connect('clicked(bool)', self.onPushCloseAway)
+        self.ui.pushLeftRight.connect('clicked(bool)', self.onPushLeftRight)
+        self.ui.pushPitch.connect('clicked(bool)', self.onPushPitch)
+        self.ui.pushRoll.connect('clicked(bool)', self.onPushRoll)
+        self.ui.pushYaw.connect('clicked(bool)', self.onPushYaw)
 
         self.ui.pushPlanGrid.connect('clicked(bool)', self.onPushPlanGrid)
         self.ui.pushGridSetNext.connect(
@@ -358,6 +370,10 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self._parameterNode.SetParameter(
             "ColorChangeThresh", str(self.ui.sliderColorThresh.value))
         self._parameterNode.SetParameter(
+            "ManualAdjustToolPoseRot", str(self.ui.sliderManualToolRot.value))
+        self._parameterNode.SetParameter(
+            "ManualAdjustToolPosePos", str(self.ui.sliderManualToolPos.value))
+        self._parameterNode.SetParameter(
             "GridDistanceApart", str(self.ui.sliderGridDistanceApart.value))
         self._parameterNode.SetParameter(
             "GridPlanNum", str(self.ui.sliderGridPlanNum.value))
@@ -471,6 +487,30 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 slicer.mrmlScene.RemoveNode(self._parameterNode.GetNodeReference("GridPlanTransformNum"+str(i)))
                 slicer.mrmlScene.RemoveNode(self._parameterNode.GetNodeReference("GridPlanIndicatorNum"+str(i)))
 
+    def onPushBackForward(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPosePos"))
+        self.logic.processManualAdjust([0.0,change,0.0,0.0,0.0,0.0])
+
+    def onPushCloseAway(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPosePos"))
+        self.logic.processManualAdjust([0.0,0.0,change,0.0,0.0,0.0])
+
+    def onPushLeftRight(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPosePos"))
+        self.logic.processManualAdjust([change,0.0,0.0,0.0,0.0,0.0])
+
+    def onPushPitch(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPoseRot"))
+        self.logic.processManualAdjust([0.0,0.0,0.0,change/180.0*math.pi,0.0,0.0])
+
+    def onPushRoll(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPoseRot"))
+        self.logic.processManualAdjust([0.0,0.0,0.0,0.0,change/180.0*math.pi,0.0])
+
+    def onPushYaw(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPoseRot"))
+        self.logic.processManualAdjust([0.0,0.0,0.0,0.0,0.0,change/180.0*math.pi])
+
 #
 # MedImgPlanLogic
 #
@@ -505,6 +545,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         """
         if not parameterNode.GetParameter("ColorChangeThresh"):
             parameterNode.SetParameter("ColorChangeThresh", "4.0")
+        if not parameterNode.GetParameter("ManualAdjustToolPoseRot"):
+            parameterNode.SetParameter("ManualAdjustToolPoseRot", "0.0")
+        if not parameterNode.GetParameter("ManualAdjustToolPosePos"):
+            parameterNode.SetParameter("ManualAdjustToolPosePos", "0.0")
         if not parameterNode.GetParameter("GridDistanceApart"):
             parameterNode.SetParameter("GridDistanceApart", "1.0")
         if not parameterNode.GetParameter("GridPlanNum"):
@@ -806,6 +850,37 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         if curIdx <= numOfFid-1:
             curIdx = curIdx+1
             self.utilSendLandmarks(curIdx)
+
+    def processManualAdjust(self, arr):
+        if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
+            slicer.util.errorDisplay("Please plan tool pose first!")
+            return
+
+        targetPoseTransform = self._parameterNode.GetNodeReference(
+            "TargetPoseTransform").GetMatrixTransformToParent()
+        temp = vtk.vtkMatrix4x4()
+        temp.DeepCopy(targetPoseTransform)
+
+        tempOffset = vtk.vtkMatrix4x4()
+        tempOffset.SetElement(0,3,arr[0])
+        tempOffset.SetElement(1,3,arr[1])
+        tempOffset.SetElement(2,3,arr[2])
+
+        vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+
+        tempOffset = vtk.vtkMatrix4x4()
+        if arr[3]:
+            setRotation(rotx(arr[3]), tempOffset)
+        if arr[4]:
+            setRotation(roty(arr[4]), tempOffset)
+        if arr[5]:
+            setRotation(rotz(arr[5]), tempOffset)
+
+        vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+
+        p, mat = getRotAndPFromMatrix(temp)
+        self.processToolPosePlanVisualization(p, mat)
+        self.processToolPosePlanSend(p, mat)
 
     def processGenerateGridIncrementDir(self, n):
         # Output the direction arr of a squre spiral pattern
