@@ -470,6 +470,10 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
     def onPushToolPosePlanRand(self):
         self.updateParameterNodeFromGUI()
+        if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
+            self.logic.processPushToolPosePlan(
+                self.ui.markupsToolPosePlan.currentNode())
+                
         self.logic.processPushToolPosePlanRand()
 
     def onPushPlanGrid(self):
@@ -649,9 +653,6 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         self.processToolPosePlanSend(p, mat)
 
     def processPushToolPosePlanRand(self):
-        if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
-            slicer.util.errorDisplay("Please plan tool pose first!")
-            return
 
         targetPoseTransform = self._parameterNode.GetNodeReference(
             "TargetPoseTransform").GetMatrixTransformToParent()
