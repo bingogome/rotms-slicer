@@ -26,6 +26,7 @@ import os
 import json
 import logging
 import math
+import random
 
 import vtk
 import qt
@@ -166,29 +167,22 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.checkBoxGridPerspPlane.connect("toggled(bool)", self.updateParameterNodeFromGUI)
 
         # Buttons
-        self.ui.pushModuleTargetViz.connect(
-            'clicked(bool)', self.onPushModuleTargetViz)
-        self.ui.pushModuleRobCtrl.connect(
-            'clicked(bool)', self.onPushModuleRobCtrl)
-        self.ui.pushModuleFreeSurfer.connect(
-            'clicked(bool)', self.onPushModuleFreeSurfer)
+        self.ui.pushModuleTargetViz.connect('clicked(bool)', self.onPushModuleTargetViz)
+        self.ui.pushModuleRobCtrl.connect('clicked(bool)', self.onPushModuleRobCtrl)
+        self.ui.pushModuleFreeSurfer.connect('clicked(bool)', self.onPushModuleFreeSurfer)
 
         self.ui.pushStartTRE.connect('clicked(bool)', self.onPushStartTRE)
         self.ui.pushStopTRE.connect('clicked(bool)', self.onPushStopTRE)
 
-        self.ui.pushPlanLandmarks.connect(
-            'clicked(bool)', self.onPushPlanLandmarks)
-        self.ui.pushDigHighlighted.connect(
-            'clicked(bool)', self.onPushDigHighlighted)
+        self.ui.pushPlanLandmarks.connect('clicked(bool)', self.onPushPlanLandmarks)
+        self.ui.pushDigHighlighted.connect('clicked(bool)', self.onPushDigHighlighted)
         self.ui.pushDigitize.connect('clicked(bool)', self.onPushDigitize)
         self.ui.pushDigPrev.connect('clicked(bool)', self.onPushDigPrev)
-        self.ui.pushDigPrevAndDigHilight.connect(
-            'clicked(bool)', self.onPushDigPrevAndDigHilight)
+        self.ui.pushDigPrevAndDigHilight.connect('clicked(bool)', self.onPushDigPrevAndDigHilight)
         self.ui.pushRegister.connect('clicked(bool)', self.onPushRegistration)
-        self.ui.pushUsePreviousRegistration.connect(
-            'clicked(bool)', self.onPushUsePreviousRegistration)
-        self.ui.pushToolPosePlan.connect(
-            'clicked(bool)', self.onPushToolPosePlan)
+        self.ui.pushUsePreviousRegistration.connect('clicked(bool)', self.onPushUsePreviousRegistration)
+        self.ui.pushToolPosePlan.connect('clicked(bool)', self.onPushToolPosePlan)
+        self.ui.pushToolPosePlanRand.connect('clicked(bool)', self.onPushToolPosePlanRand)
 
         self.ui.pushBackForward.connect('clicked(bool)', self.onPushBackForward)
         self.ui.pushCloseAway.connect('clicked(bool)', self.onPushCloseAway)
@@ -198,10 +192,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.pushYaw.connect('clicked(bool)', self.onPushYaw)
 
         self.ui.pushPlanGrid.connect('clicked(bool)', self.onPushPlanGrid)
-        self.ui.pushGridSetNext.connect(
-            'clicked(bool)', self.onPushGridSetNext)
-        self.ui.pushGridClear.connect(
-            'clicked(bool)', self.onPushGridClear)
+        self.ui.pushGridSetNext.connect('clicked(bool)', self.onPushGridSetNext)
+        self.ui.pushGridClear.connect('clicked(bool)', self.onPushGridClear)
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
@@ -344,9 +336,13 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         if self._parameterNode.GetNodeReference("ToolPoseMarkups"):
             self.ui.pushToolPosePlan.toolTip = "Feed in tool pose"
             self.ui.pushToolPosePlan.enabled = True
+            self.ui.pushToolPosePlanRand.toolTip = "Feed in tool pose"
+            self.ui.pushToolPosePlanRand.enabled = True
         else:
             self.ui.pushToolPosePlan.toolTip = "Select landmark markups node"
             self.ui.pushToolPosePlan.enabled = False
+            self.ui.pushToolPosePlanRand.toolTip = "Select landmark markups node"
+            self.ui.pushToolPosePlanRand.enabled = False
 
         # All the GUI updates are done
         self._updatingGUIFromParameterNode = False
@@ -471,6 +467,10 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.updateParameterNodeFromGUI()
         self.logic.processPushToolPosePlan(
             self.ui.markupsToolPosePlan.currentNode())
+
+    def onPushToolPosePlanRand(self):
+        self.updateParameterNodeFromGUI()
+        self.logic.processPushToolPosePlanRand()
 
     def onPushPlanGrid(self):
         self.updateParameterNodeFromGUI()
@@ -645,6 +645,34 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             raise ValueError("Input number of landmarks are not 2, 3 or 4!")
         
         p, mat = self.processToolPosePlanByNumOfPoints(inputMarkupsNode)
+        self.processToolPosePlanVisualization(p, mat)
+        self.processToolPosePlanSend(p, mat)
+
+    def processPushToolPosePlanRand(self):
+        if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
+            slicer.util.errorDisplay("Please plan tool pose first!")
+            return
+
+        targetPoseTransform = self._parameterNode.GetNodeReference(
+            "TargetPoseTransform").GetMatrixTransformToParent()
+        temp = vtk.vtkMatrix4x4()
+        temp.DeepCopy(targetPoseTransform)
+
+        tempOffset = vtk.vtkMatrix4x4()
+        tempOffset.SetElement(0,3,random.uniform(-5.0,5.0))
+        tempOffset.SetElement(1,3,random.uniform(-5.0,5.0))
+        tempOffset.SetElement(2,3,random.uniform(-5.0,5.0))
+
+        vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+
+        tempOffset = vtk.vtkMatrix4x4()
+        setRotation(rotx(random.uniform(-10.0,10.0)), tempOffset)
+        setRotation(roty(random.uniform(-10.0,10.0)), tempOffset)
+        setRotation(rotz(random.uniform(-10.0,10.0)), tempOffset)
+
+        vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+
+        p, mat = getRotAndPFromMatrix(temp)
         self.processToolPosePlanVisualization(p, mat)
         self.processToolPosePlanSend(p, mat)
 
