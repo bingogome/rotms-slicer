@@ -473,7 +473,7 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
             self.logic.processPushToolPosePlan(
                 self.ui.markupsToolPosePlan.currentNode())
-                
+
         self.logic.processPushToolPosePlanRand()
 
     def onPushPlanGrid(self):
@@ -660,17 +660,20 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         temp.DeepCopy(targetPoseTransform)
 
         tempOffset = vtk.vtkMatrix4x4()
-        tempOffset.SetElement(0,3,random.uniform(-5.0,5.0))
-        tempOffset.SetElement(1,3,random.uniform(-5.0,5.0))
-        tempOffset.SetElement(2,3,random.uniform(-5.0,5.0))
+        pos_range = 15.0
+        tempOffset.SetElement(0,3,random.uniform(-pos_range,pos_range))
+        tempOffset.SetElement(1,3,random.uniform(-pos_range,pos_range))
+        tempOffset.SetElement(2,3,random.uniform(-pos_range,pos_range))
 
         vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
 
         tempOffset = vtk.vtkMatrix4x4()
-        setRotation(rotx(random.uniform(-10.0,10.0)), tempOffset)
-        setRotation(roty(random.uniform(-10.0,10.0)), tempOffset)
-        setRotation(rotz(random.uniform(-10.0,10.0)), tempOffset)
-
+        ang_range = 15.0/180.0*math.pi
+        setRotation(rotx(random.uniform(-ang_range,ang_range)), tempOffset)
+        vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+        setRotation(roty(random.uniform(-ang_range,ang_range)), tempOffset)
+        vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+        setRotation(rotz(random.uniform(-ang_range,ang_range)), tempOffset)
         vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
 
         p, mat = getRotAndPFromMatrix(temp)
