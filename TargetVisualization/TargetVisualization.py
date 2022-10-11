@@ -142,6 +142,9 @@ class TargetVisualizationWidget(ScriptedLoadableModuleWidget, VTKObservationMixi
         self.ui.pushStopTargetViz.connect(
             'clicked(bool)', self.onPushStopTargetViz)
 
+        self.ui.pushSavePlanAndRealPose.connect(
+            'clicked(bool)', self.onPushSavePlanAndRealPose)
+
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
 
@@ -285,6 +288,13 @@ class TargetVisualizationWidget(ScriptedLoadableModuleWidget, VTKObservationMixi
             return
         self.logic.processStopTargetViz()
         self._parameterNode.SetParameter("Visualizing", "false")
+
+    def onPushSavePlanAndRealPose(self):
+        msg = self.logic._commandsData["VISUALIZE_SAVE_PLANANDREAL_POSE"]
+        try:
+            self.logic._connections.utilSendCommand(msg)
+        except:
+            return
 
 
 #
