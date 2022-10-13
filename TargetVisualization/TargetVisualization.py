@@ -239,11 +239,15 @@ class TargetVisualizationWidget(ScriptedLoadableModuleWidget, VTKObservationMixi
             self.ui.pushStartTargetViz.enabled = False
             self.ui.pushStopTargetViz.toolTip = "Stop visualizing"
             self.ui.pushStopTargetViz.enabled = True
+            self.ui.pushSavePlanAndRealPose.toolTip = "Save data"
+            self.ui.pushSavePlanAndRealPose.enabled = True
         else:
             self.ui.pushStartTargetViz.toolTip = "Start visualizing"
             self.ui.pushStartTargetViz.enabled = True
             self.ui.pushStopTargetViz.toolTip = "Visualization not started"
             self.ui.pushStopTargetViz.enabled = False
+            self.ui.pushSavePlanAndRealPose.toolTip = "Start visualization first"
+            self.ui.pushSavePlanAndRealPose.enabled = False
 
         # All the GUI updates are done
         self._updatingGUIFromParameterNode = False
