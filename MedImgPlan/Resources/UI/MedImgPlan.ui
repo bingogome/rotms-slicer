@@ -223,21 +223,52 @@
       <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
-      <item row="12" column="2">
-       <widget class="QPushButton" name="pushToolPosePlanRand">
+      <item row="9" column="0" colspan="3">
+       <widget class="QLabel" name="labelToolPosePlanC2">
         <property name="text">
-         <string>Randomize</string>
+         <string>2. Put another point as the tail direction of the tool</string>
         </property>
        </widget>
       </item>
-      <item row="11" column="0" colspan="3">
-       <widget class="qSlicerSimpleMarkupsWidget" name="markupsToolPosePlan">
-        <property name="defaultNodeColor">
-         <color>
-          <red>255</red>
-          <green>0</green>
-          <blue>0</blue>
-         </color>
+      <item row="2" column="0" colspan="3">
+       <widget class="QLabel" name="labelToolPosePlanA2">
+        <property name="text">
+         <string>2. Put 3 points (counterclockwise) as the contact plane;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="0" colspan="3">
+       <widget class="QLabel" name="labelToolPosePlanC1">
+        <property name="text">
+         <string>1. Put 1 point as the contact point;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="3">
+       <widget class="QLabel" name="labelToolPosePlanA1">
+        <property name="text">
+         <string>1. Put 1 point as the contact point center;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0" colspan="3">
+       <widget class="QLabel" name="labelToolPosePlanA3">
+        <property name="text">
+         <string>3. The last of the 3 points should be the tail direction of the tool</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0" colspan="3">
+       <widget class="QLabel" name="labelToolPosePlanB1">
+        <property name="text">
+         <string>1. Put 3 points (couterclockwise) as the contact plane;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="6" column="0" colspan="3">
+       <widget class="QLabel" name="labelToolPosePlanB2">
+        <property name="text">
+         <string>2. The last of the 3 points should be the tail direction of the tool</string>
         </property>
        </widget>
       </item>
@@ -336,6 +367,31 @@
           </widget>
          </item>
         </layout>
+       </widget>
+      </item>
+      <item row="0" column="0" colspan="3">
+       <widget class="QLabel" name="labelToolPosePlanA">
+        <property name="text">
+         <string>Method A (4 points)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0" colspan="3">
+       <widget class="QLabel" name="labelToolPosePlanC">
+        <property name="text">
+         <string>Method C (2 points)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="11" column="0" colspan="3">
+       <widget class="qSlicerSimpleMarkupsWidget" name="markupsToolPosePlan">
+        <property name="defaultNodeColor">
+         <color>
+          <red>255</red>
+          <green>0</green>
+          <blue>0</blue>
+         </color>
+        </property>
        </widget>
       </item>
       <item row="14" column="0" colspan="3">
@@ -443,34 +499,6 @@
         </layout>
        </widget>
       </item>
-      <item row="0" column="0" colspan="3">
-       <widget class="QLabel" name="labelToolPosePlanA">
-        <property name="text">
-         <string>Method A (4 points)</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0" colspan="3">
-       <widget class="QLabel" name="labelToolPosePlanA1">
-        <property name="text">
-         <string>1. Put 1 point as the contact point center;</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0" colspan="3">
-       <widget class="QLabel" name="labelToolPosePlanA2">
-        <property name="text">
-         <string>2. Put 3 points (counterclockwise) as the contact plane;</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0" colspan="3">
-       <widget class="QLabel" name="labelToolPosePlanA3">
-        <property name="text">
-         <string>3. The last of the 3 points should be the tail direction of the tool</string>
-        </property>
-       </widget>
-      </item>
       <item row="4" column="0" colspan="3">
        <widget class="QLabel" name="labelToolPosePlanB">
         <property name="text">
@@ -478,52 +506,66 @@
         </property>
        </widget>
       </item>
-      <item row="5" column="0" colspan="3">
-       <widget class="QLabel" name="labelToolPosePlanB1">
-        <property name="text">
-         <string>1. Put 3 points (couterclockwise) as the contact plane;</string>
+      <item row="10" column="0" colspan="3">
+       <widget class="ctkCollapsibleGroupBox" name="collapPlanOptions">
+        <property name="title">
+         <string>Plan Options</string>
         </property>
+        <layout class="QGridLayout" name="gridLayout_8">
+         <item row="1" column="0">
+          <widget class="QRadioButton" name="radioButtonToolRotCortex">
+           <property name="text">
+            <string>Cortex Shape</string>
+           </property>
+           <attribute name="buttonGroup">
+            <string notr="true">buttonGroup</string>
+           </attribute>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QCheckBox" name="checkPlanBrain">
+           <property name="text">
+            <string>Plan on Brain?</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QRadioButton" name="radioButtonToolRotSkin">
+           <property name="text">
+            <string>Skin Shape</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+           <attribute name="buttonGroup">
+            <string notr="true">buttonGroup</string>
+           </attribute>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QRadioButton" name="radioButtonToolRotCombined">
+           <property name="text">
+            <string>Combined</string>
+           </property>
+           <attribute name="buttonGroup">
+            <string notr="true">buttonGroup</string>
+           </attribute>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
-      <item row="6" column="0" colspan="3">
-       <widget class="QLabel" name="labelToolPosePlanB2">
-        <property name="text">
-         <string>2. The last of the 3 points should be the tail direction of the tool</string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="0" colspan="3">
-       <widget class="QLabel" name="labelToolPosePlanC">
-        <property name="text">
-         <string>Method C (2 points)</string>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="0" colspan="3">
-       <widget class="QLabel" name="labelToolPosePlanC1">
-        <property name="text">
-         <string>1. Put 1 point as the contact point;</string>
-        </property>
-       </widget>
-      </item>
-      <item row="9" column="0" colspan="3">
-       <widget class="QLabel" name="labelToolPosePlanC2">
-        <property name="text">
-         <string>2. Put another point as the tail direction of the tool</string>
-        </property>
-       </widget>
-      </item>
-      <item row="12" column="0" colspan="2">
+      <item row="12" column="0">
        <widget class="QPushButton" name="pushToolPosePlan">
         <property name="text">
          <string>Plan Coil Pose</string>
         </property>
        </widget>
       </item>
-      <item row="10" column="0" colspan="2">
-       <widget class="QCheckBox" name="checkPlanBrain">
+      <item row="12" column="2">
+       <widget class="QPushButton" name="pushToolPosePlanRand">
         <property name="text">
-         <string>Plan on Brain?</string>
+         <string>Randomize</string>
         </property>
        </widget>
       </item>
@@ -654,6 +696,6 @@
   </connection>
  </connections>
  <buttongroups>
-  <buttongroup name="buttonGroupToolRotOptions"/>
+  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>

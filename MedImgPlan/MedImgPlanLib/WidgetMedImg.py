@@ -115,6 +115,10 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.checkBoxGridAnatomySurf.connect("toggled(bool)", self.updateParameterNodeFromGUI)
         self.ui.checkBoxGridPerspPlane.connect("toggled(bool)", self.updateParameterNodeFromGUI)
 
+        self.ui.radioButtonToolRotSkin.connect("toggled(bool)", self.updateParameterNodeFromGUI)
+        self.ui.radioButtonToolRotCortex.connect("toggled(bool)", self.updateParameterNodeFromGUI)
+        self.ui.radioButtonToolRotCombined.connect("toggled(bool)", self.updateParameterNodeFromGUI)
+
         # Buttons
         self.ui.pushModuleTargetViz.connect('clicked(bool)', self.onPushModuleTargetViz)
         self.ui.pushModuleRobCtrl.connect('clicked(bool)', self.onPushModuleRobCtrl)
