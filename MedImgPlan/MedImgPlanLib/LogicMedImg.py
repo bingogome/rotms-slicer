@@ -84,6 +84,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         #     parameterNode.SetParameter("PlanGridOnAnatomySurf", "true")
         if not parameterNode.GetParameter("PlanGridOnPerspPlane"):
             parameterNode.SetParameter("PlanGridOnPerspPlane", "true")
+        if not parameterNode.GetParameter("PlanGridOnPerspPlane"):
+            parameterNode.SetParameter("PlanGridOnPerspPlane", "false")
+        if not parameterNode.GetParameter("ToolRotOption"):
+            parameterNode.SetParameter("ToolRotOption", "skin")
 
     def processStartTRECalculation(self):
         """

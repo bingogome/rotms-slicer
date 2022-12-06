@@ -293,6 +293,7 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self.ui.pushToolPosePlanRand.toolTip = "Select landmark markups node"
             self.ui.pushToolPosePlanRand.enabled = False
 
+
         # All the GUI updates are done
         self._updatingGUIFromParameterNode = False
 
@@ -330,6 +331,15 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         #     "PlanGridOnAnatomySurf", "true" if self.ui.checkBoxGridAnatomySurf.checked else "false")
         self._parameterNode.SetParameter(
             "PlanGridOnPerspPlane", "true" if self.ui.checkBoxGridPerspPlane.checked else "false")
+            
+        # Tool Orientation Options
+        if self.ui.radioButtonToolRotSkin.checked:
+            self._parameterNode.SetParameter("ToolRotOption", "skin")
+        if self.ui.radioButtonToolRotCortex.checked:
+            self._parameterNode.SetParameter("ToolRotOption", "cortex")
+        if self.ui.radioButtonToolRotCombined.checked:
+            self._parameterNode.SetParameter("ToolRotOption", "combined")
+        print(self._parameterNode.GetParameter("ToolRotOption"))
 
         if self.ui.markupsRegistration.currentNode():
             self._parameterNode.SetNodeReferenceID(
