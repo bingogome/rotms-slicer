@@ -102,6 +102,11 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.sliderColorThresh.connect(
             "valueChanged(double)", self.updateParameterNodeFromGUI)
 
+        self.ui.sliderManualToolPos.connect(
+            "valueChanged(double)", self.updateParameterNodeFromGUI)
+        self.ui.sliderManualToolRot.connect(
+            "valueChanged(double)", self.updateParameterNodeFromGUI)
+
         self.ui.sliderGridDistanceApart.connect(
             "valueChanged(double)", self.updateParameterNodeFromGUI)
         self.ui.sliderGridPlanNum.connect(
@@ -111,35 +116,33 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.ui.checkBoxGridPerspPlane.connect("toggled(bool)", self.updateParameterNodeFromGUI)
 
         # Buttons
-        self.ui.pushModuleTargetViz.connect(
-            'clicked(bool)', self.onPushModuleTargetViz)
-        self.ui.pushModuleRobCtrl.connect(
-            'clicked(bool)', self.onPushModuleRobCtrl)
-        self.ui.pushModuleFreeSurfer.connect(
-            'clicked(bool)', self.onPushModuleFreeSurfer)
+        self.ui.pushModuleTargetViz.connect('clicked(bool)', self.onPushModuleTargetViz)
+        self.ui.pushModuleRobCtrl.connect('clicked(bool)', self.onPushModuleRobCtrl)
+        self.ui.pushModuleFreeSurfer.connect('clicked(bool)', self.onPushModuleFreeSurfer)
 
         self.ui.pushStartTRE.connect('clicked(bool)', self.onPushStartTRE)
         self.ui.pushStopTRE.connect('clicked(bool)', self.onPushStopTRE)
 
-        self.ui.pushPlanLandmarks.connect(
-            'clicked(bool)', self.onPushPlanLandmarks)
-        self.ui.pushDigHighlighted.connect(
-            'clicked(bool)', self.onPushDigHighlighted)
+        self.ui.pushPlanLandmarks.connect('clicked(bool)', self.onPushPlanLandmarks)
+        self.ui.pushDigHighlighted.connect('clicked(bool)', self.onPushDigHighlighted)
         self.ui.pushDigitize.connect('clicked(bool)', self.onPushDigitize)
         self.ui.pushDigPrev.connect('clicked(bool)', self.onPushDigPrev)
-        self.ui.pushDigPrevAndDigHilight.connect(
-            'clicked(bool)', self.onPushDigPrevAndDigHilight)
+        self.ui.pushDigPrevAndDigHilight.connect('clicked(bool)', self.onPushDigPrevAndDigHilight)
         self.ui.pushRegister.connect('clicked(bool)', self.onPushRegistration)
-        self.ui.pushUsePreviousRegistration.connect(
-            'clicked(bool)', self.onPushUsePreviousRegistration)
-        self.ui.pushToolPosePlan.connect(
-            'clicked(bool)', self.onPushToolPosePlan)
+        self.ui.pushUsePreviousRegistration.connect('clicked(bool)', self.onPushUsePreviousRegistration)
+        self.ui.pushToolPosePlan.connect('clicked(bool)', self.onPushToolPosePlan)
+        self.ui.pushToolPosePlanRand.connect('clicked(bool)', self.onPushToolPosePlanRand)
+
+        self.ui.pushBackForward.connect('clicked(bool)', self.onPushBackForward)
+        self.ui.pushCloseAway.connect('clicked(bool)', self.onPushCloseAway)
+        self.ui.pushLeftRight.connect('clicked(bool)', self.onPushLeftRight)
+        self.ui.pushPitch.connect('clicked(bool)', self.onPushPitch)
+        self.ui.pushRoll.connect('clicked(bool)', self.onPushRoll)
+        self.ui.pushYaw.connect('clicked(bool)', self.onPushYaw)
 
         self.ui.pushPlanGrid.connect('clicked(bool)', self.onPushPlanGrid)
-        self.ui.pushGridSetNext.connect(
-            'clicked(bool)', self.onPushGridSetNext)
-        self.ui.pushGridClear.connect(
-            'clicked(bool)', self.onPushGridClear)
+        self.ui.pushGridSetNext.connect('clicked(bool)', self.onPushGridSetNext)
+        self.ui.pushGridClear.connect('clicked(bool)', self.onPushGridClear)
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
@@ -250,8 +253,8 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self._parameterNode.GetParameter("GridPlanNum"))
         self.ui.checkPlanBrain.checked = (
             self._parameterNode.GetParameter("PlanOnBrain") == "true")
-        self.ui.checkBoxGridAnatomySurf.checked = (
-            self._parameterNode.GetParameter("PlanGridOnAnatomySurf") == "true")
+        # self.ui.checkBoxGridAnatomySurf.checked = (
+        #     self._parameterNode.GetParameter("PlanGridOnAnatomySurf") == "true")
         self.ui.checkBoxGridPerspPlane.checked = (
             self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true")
 
@@ -282,9 +285,14 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         if self._parameterNode.GetNodeReference("ToolPoseMarkups"):
             self.ui.pushToolPosePlan.toolTip = "Feed in tool pose"
             self.ui.pushToolPosePlan.enabled = True
+            self.ui.pushToolPosePlanRand.toolTip = "Feed in tool pose"
+            self.ui.pushToolPosePlanRand.enabled = True
         else:
             self.ui.pushToolPosePlan.toolTip = "Select landmark markups node"
             self.ui.pushToolPosePlan.enabled = False
+            self.ui.pushToolPosePlanRand.toolTip = "Select landmark markups node"
+            self.ui.pushToolPosePlanRand.enabled = False
+
 
         # All the GUI updates are done
         self._updatingGUIFromParameterNode = False
@@ -308,12 +316,22 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self._parameterNode.SetParameter(
             "ColorChangeThresh", str(self.ui.sliderColorThresh.value))
         self._parameterNode.SetParameter(
+            "ManualAdjustToolPoseRot", str(self.ui.sliderManualToolRot.value))
+        self._parameterNode.SetParameter(
+            "ManualAdjustToolPosePos", str(self.ui.sliderManualToolPos.value))
+        self._parameterNode.SetParameter(
             "GridDistanceApart", str(self.ui.sliderGridDistanceApart.value))
         self._parameterNode.SetParameter(
             "GridPlanNum", str(self.ui.sliderGridPlanNum.value))
         self._parameterNode.SetParameter(
             "PlanOnBrain", "true" if self.ui.checkPlanBrain.checked else "false")
 
+        # Grid plan pair
+        # self._parameterNode.SetParameter(
+        #     "PlanGridOnAnatomySurf", "true" if self.ui.checkBoxGridAnatomySurf.checked else "false")
+        self._parameterNode.SetParameter(
+            "PlanGridOnPerspPlane", "true" if self.ui.checkBoxGridPerspPlane.checked else "false")
+            
         # Tool Orientation Options
         if self.ui.radioButtonToolRotSkin.checked:
             self._parameterNode.SetParameter("ToolRotOption", "skin")
@@ -322,12 +340,6 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         if self.ui.radioButtonToolRotCombined.checked:
             self._parameterNode.SetParameter("ToolRotOption", "combined")
         print(self._parameterNode.GetParameter("ToolRotOption"))
-
-        # Grid plan pair
-        self._parameterNode.SetParameter(
-            "PlanGridOnAnatomySurf", "true" if self.ui.checkBoxGridAnatomySurf.checked else "false")
-        self._parameterNode.SetParameter(
-            "PlanGridOnPerspPlane", "true" if self.ui.checkBoxGridPerspPlane.checked else "false")
 
         if self.ui.markupsRegistration.currentNode():
             self._parameterNode.SetNodeReferenceID(
@@ -415,6 +427,14 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         self.logic.processPushToolPosePlan(
             self.ui.markupsToolPosePlan.currentNode())
 
+    def onPushToolPosePlanRand(self):
+        self.updateParameterNodeFromGUI()
+        if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
+            self.logic.processPushToolPosePlan(
+                self.ui.markupsToolPosePlan.currentNode())
+
+        self.logic.processPushToolPosePlanRand()
+
     def onPushPlanGrid(self):
         self.updateParameterNodeFromGUI()
         self.logic.processPlanGrid()
@@ -429,4 +449,28 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             for i in range(prevnum):
                 slicer.mrmlScene.RemoveNode(self._parameterNode.GetNodeReference("GridPlanTransformNum"+str(i)))
                 slicer.mrmlScene.RemoveNode(self._parameterNode.GetNodeReference("GridPlanIndicatorNum"+str(i)))
+
+    def onPushBackForward(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPosePos"))
+        self.logic.processManualAdjust([0.0,change,0.0,0.0,0.0,0.0])
+
+    def onPushCloseAway(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPosePos"))
+        self.logic.processManualAdjust([0.0,0.0,change,0.0,0.0,0.0])
+
+    def onPushLeftRight(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPosePos"))
+        self.logic.processManualAdjust([change,0.0,0.0,0.0,0.0,0.0])
+
+    def onPushPitch(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPoseRot"))
+        self.logic.processManualAdjust([0.0,0.0,0.0,change/180.0*math.pi,0.0,0.0])
+
+    def onPushRoll(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPoseRot"))
+        self.logic.processManualAdjust([0.0,0.0,0.0,0.0,change/180.0*math.pi,0.0])
+
+    def onPushYaw(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPoseRot"))
+        self.logic.processManualAdjust([0.0,0.0,0.0,0.0,0.0,change/180.0*math.pi])
 

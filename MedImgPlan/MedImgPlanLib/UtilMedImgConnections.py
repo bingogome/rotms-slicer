@@ -22,13 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import slicer, vtk
+from MedImgPlanLib.UtilSlicerFuncs import setColorTextByDistance, setTranslation
+from MedImgPlanLib.UtilConnectionsWtNnBlcRcv import UtilConnectionsWtNnBlcRcv
+
 #
 # Use UtilConnectionsWtNnBlcRcv and override the data handler
 #
 
-import slicer, vtk
-from MedImgPlanLib.UtilSlicerFuncs import setColorTextByDistance, setTranslation
-from MedImgPlanLib.UtilConnectionsWtNnBlcRcv import UtilConnectionsWtNnBlcRcv
 
 class MedImgConnections(UtilConnectionsWtNnBlcRcv):
 

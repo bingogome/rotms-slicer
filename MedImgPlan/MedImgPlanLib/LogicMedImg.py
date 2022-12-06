@@ -68,6 +68,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         """
         if not parameterNode.GetParameter("ColorChangeThresh"):
             parameterNode.SetParameter("ColorChangeThresh", "4.0")
+        if not parameterNode.GetParameter("ManualAdjustToolPoseRot"):
+            parameterNode.SetParameter("ManualAdjustToolPoseRot", "0.0")
+        if not parameterNode.GetParameter("ManualAdjustToolPosePos"):
+            parameterNode.SetParameter("ManualAdjustToolPosePos", "0.0")
         if not parameterNode.GetParameter("GridDistanceApart"):
             parameterNode.SetParameter("GridDistanceApart", "1.0")
         if not parameterNode.GetParameter("GridPlanNum"):
@@ -76,8 +80,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             parameterNode.SetParameter("TRECalculating", "false")
         if not parameterNode.GetParameter("PlanOnBrain"):
             parameterNode.SetParameter("PlanOnBrain", "true")
-        if not parameterNode.GetParameter("PlanGridOnAnatomySurf"):
-            parameterNode.SetParameter("PlanGridOnAnatomySurf", "true")
+        # if not parameterNode.GetParameter("PlanGridOnAnatomySurf"):
+        #     parameterNode.SetParameter("PlanGridOnAnatomySurf", "true")
+        if not parameterNode.GetParameter("PlanGridOnPerspPlane"):
+            parameterNode.SetParameter("PlanGridOnPerspPlane", "true")
         if not parameterNode.GetParameter("PlanGridOnPerspPlane"):
             parameterNode.SetParameter("PlanGridOnPerspPlane", "false")
         if not parameterNode.GetParameter("ToolRotOption"):
@@ -166,6 +172,34 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             raise ValueError("Input number of landmarks are not 2, 3 or 4!")
         
         p, mat = self.processToolPosePlanByNumOfPoints(inputMarkupsNode)
+        self.processToolPosePlanVisualization(p, mat)
+        self.processToolPosePlanSend(p, mat)
+
+    def processPushToolPosePlanRand(self):
+
+        targetPoseTransform = self._parameterNode.GetNodeReference(
+            "TargetPoseTransform").GetMatrixTransformToParent()
+        temp = vtk.vtkMatrix4x4()
+        temp.DeepCopy(targetPoseTransform)
+
+        tempOffset = vtk.vtkMatrix4x4()
+        pos_range = 15.0
+        tempOffset.SetElement(0,3,random.uniform(-pos_range,pos_range))
+        tempOffset.SetElement(1,3,random.uniform(-pos_range,pos_range))
+        tempOffset.SetElement(2,3,random.uniform(-pos_range,pos_range))
+
+        vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+
+        tempOffset = vtk.vtkMatrix4x4()
+        ang_range = 15.0/180.0*math.pi
+        setRotation(rotx(random.uniform(-ang_range,ang_range)), tempOffset)
+        vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+        setRotation(roty(random.uniform(-ang_range,ang_range)), tempOffset)
+        vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+        setRotation(rotz(random.uniform(-ang_range,ang_range)), tempOffset)
+        vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+
+        p, mat = getRotAndPFromMatrix(temp)
         self.processToolPosePlanVisualization(p, mat)
         self.processToolPosePlanSend(p, mat)
 
@@ -372,6 +406,37 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             curIdx = curIdx+1
             self.utilSendLandmarks(curIdx)
 
+    def processManualAdjust(self, arr):
+        if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
+            slicer.util.errorDisplay("Please plan tool pose first!")
+            return
+
+        targetPoseTransform = self._parameterNode.GetNodeReference(
+            "TargetPoseTransform").GetMatrixTransformToParent()
+        temp = vtk.vtkMatrix4x4()
+        temp.DeepCopy(targetPoseTransform)
+
+        tempOffset = vtk.vtkMatrix4x4()
+        tempOffset.SetElement(0,3,arr[0])
+        tempOffset.SetElement(1,3,arr[1])
+        tempOffset.SetElement(2,3,arr[2])
+
+        vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+
+        tempOffset = vtk.vtkMatrix4x4()
+        if arr[3]:
+            setRotation(rotx(arr[3]), tempOffset)
+        if arr[4]:
+            setRotation(roty(arr[4]), tempOffset)
+        if arr[5]:
+            setRotation(rotz(arr[5]), tempOffset)
+
+        vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+
+        p, mat = getRotAndPFromMatrix(temp)
+        self.processToolPosePlanVisualization(p, mat)
+        self.processToolPosePlanSend(p, mat)
+
     def processGenerateGridIncrementDir(self, n):
         # Output the direction arr of a squre spiral pattern
         # n > 1
@@ -523,10 +588,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             slicer.util.errorDisplay("Please plan tool pose first!")
             raise ValueError("Please plan tool pose first!")
 
-        if (self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true") \
-            and (self._parameterNode.GetParameter("PlanGridOnAnatomySurf") == "true"):
-                slicer.util.errorDisplay("Please only check one method!")
-                raise ValueError("Please only check one method!")
+        # if (self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true") \
+        #     and (self._parameterNode.GetParameter("PlanGridOnAnatomySurf") == "true"):
+        #         slicer.util.errorDisplay("Please only check one method!")
+        #         raise ValueError("Please only check one method!")
 
         numOfGrid = int(float(self._parameterNode.GetParameter("GridPlanNum")))
         if numOfGrid > 1:

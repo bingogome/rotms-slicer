@@ -28,8 +28,6 @@ from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 from MedImgPlanLib.WidgetMedImg import MedImgPlanWidget
 
-
-
 """
 Check CommandsConfig.json to get UDP messages.
 Check Config.json to get program settings.

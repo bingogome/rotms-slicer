@@ -55,6 +55,16 @@ def mat2quat(R):
         return [qx, qy, qz, qw]
 
 
+def rotx(a):
+    return [[1.0,0.0,0.0],[0.0,math.cos(a),-math.sin(a)],[0.0,math.sin(a),math.cos(a)]]
+
+def roty(a):
+    return [[math.cos(a),0.0,math.sin(a)],[0.0,1.0,0.0],[-math.sin(a),0.0,math.cos(a)]]
+
+def rotz(a):
+    return [[math.cos(a),-math.sin(a),0.0],[math.sin(a),math.cos(a),0.0],[0.0,0.0,1.0]]
+
+
 def quat2mat(q):
     qx = q[0]
     qy = q[1]
