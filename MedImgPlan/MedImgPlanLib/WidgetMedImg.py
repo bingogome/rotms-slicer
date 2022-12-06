@@ -1,0 +1,466 @@
+"""
+MIT License
+
+Copyright (c) 2022 Yihao Liu, Johns Hopkins University
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
+import os, json, logging, math
+import vtk, qt, ctk, slicer
+
+from slicer.ScriptedLoadableModule import *
+from slicer.util import VTKObservationMixin
+
+from MedImgPlanLib.LogicMedImg import MedImgPlanLogic
+
+#
+# MedImgPlanWidget
+#
+
+
+class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
+    """Uses ScriptedLoadableModuleWidget base class, available at:
+    https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
+    """
+
+    def __init__(self, parent=None):
+        """
+        Called when the user opens the module the first time and the widget is initialized.
+        """
+        ScriptedLoadableModuleWidget.__init__(self, parent)
+        # needed for parameter node observation
+        VTKObservationMixin.__init__(self)
+        self.logic = None
+        self._parameterNode = None
+        self._updatingGUIFromParameterNode = False
+
+    def setup(self):
+        """
+        Called when the user opens the module the first time and the widget is initialized.
+        """
+        ScriptedLoadableModuleWidget.setup(self)
+
+        # Load widget from .ui file (created by Qt Designer).
+        # Additional widgets can be instantiated manually and added to self.layout.
+        uiWidget = slicer.util.loadUI(self.resourcePath('UI/MedImgPlan.ui'))
+        self.layout.addWidget(uiWidget)
+        self.ui = slicer.util.childWidgetVariables(uiWidget)
+
+        # Set scene in MRML widgets. Make sure that in Qt designer the top-level qMRMLWidget's
+        # "mrmlSceneChanged(vtkMRMLScene*)" signal in is connected to each MRML widget's.
+        # "setMRMLScene(vtkMRMLScene*)" slot.
+        uiWidget.setMRMLScene(slicer.mrmlScene)
+
+        # Create logic class. Logic implements all computations that should be possible to run
+        # in batch mode, without a graphical user interface.
+        self.logic = MedImgPlanLogic(self.resourcePath('Configs/'))
+
+        # Connections
+
+        # These connections ensure that we update parameter node when scene is closed
+        self.addObserver(
+            slicer.mrmlScene, slicer.mrmlScene.StartCloseEvent, self.onSceneStartClose)
+        self.addObserver(slicer.mrmlScene,
+                         slicer.mrmlScene.EndCloseEvent, self.onSceneEndClose)
+
+        # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
+        # (in the selected parameter node).
+
+        self.ui.markupsRegistration.connect(
+            "markupsNodeChanged()", self.updateParameterNodeFromGUI)
+        self.ui.markupsRegistration.markupsPlaceWidget().setPlaceModePersistency(True)
+        self.ui.markupsRegistration.connect(
+            'currentMarkupsControlPointSelectionChanged(int)', self.onLandmarkWidgetHilightChange)
+        self.ui.markupsToolPosePlan.connect(
+            "markupsNodeChanged()", self.updateParameterNodeFromGUI)
+        self.ui.markupsToolPosePlan.markupsPlaceWidget().setPlaceModePersistency(True)
+
+        self.ui.comboMeshSelectorSkin.connect(
+            "currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+        self.ui.comboMeshSelectorBrain.connect(
+            "currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
+
+        self.ui.checkPlanBrain.connect("toggled(bool)", self.updateParameterNodeFromGUI)
+
+        self.ui.sliderColorThresh.connect(
+            "valueChanged(double)", self.updateParameterNodeFromGUI)
+
+        self.ui.sliderManualToolPos.connect(
+            "valueChanged(double)", self.updateParameterNodeFromGUI)
+        self.ui.sliderManualToolRot.connect(
+            "valueChanged(double)", self.updateParameterNodeFromGUI)
+
+        self.ui.sliderGridDistanceApart.connect(
+            "valueChanged(double)", self.updateParameterNodeFromGUI)
+        self.ui.sliderGridPlanNum.connect(
+            "valueChanged(double)", self.updateParameterNodeFromGUI)
+
+        self.ui.checkBoxGridAnatomySurf.connect("toggled(bool)", self.updateParameterNodeFromGUI)
+        self.ui.checkBoxGridPerspPlane.connect("toggled(bool)", self.updateParameterNodeFromGUI)
+
+        # Buttons
+        self.ui.pushModuleTargetViz.connect('clicked(bool)', self.onPushModuleTargetViz)
+        self.ui.pushModuleRobCtrl.connect('clicked(bool)', self.onPushModuleRobCtrl)
+        self.ui.pushModuleFreeSurfer.connect('clicked(bool)', self.onPushModuleFreeSurfer)
+
+        self.ui.pushStartTRE.connect('clicked(bool)', self.onPushStartTRE)
+        self.ui.pushStopTRE.connect('clicked(bool)', self.onPushStopTRE)
+
+        self.ui.pushPlanLandmarks.connect('clicked(bool)', self.onPushPlanLandmarks)
+        self.ui.pushDigHighlighted.connect('clicked(bool)', self.onPushDigHighlighted)
+        self.ui.pushDigitize.connect('clicked(bool)', self.onPushDigitize)
+        self.ui.pushDigPrev.connect('clicked(bool)', self.onPushDigPrev)
+        self.ui.pushDigPrevAndDigHilight.connect('clicked(bool)', self.onPushDigPrevAndDigHilight)
+        self.ui.pushRegister.connect('clicked(bool)', self.onPushRegistration)
+        self.ui.pushUsePreviousRegistration.connect('clicked(bool)', self.onPushUsePreviousRegistration)
+        self.ui.pushToolPosePlan.connect('clicked(bool)', self.onPushToolPosePlan)
+        self.ui.pushToolPosePlanRand.connect('clicked(bool)', self.onPushToolPosePlanRand)
+
+        self.ui.pushBackForward.connect('clicked(bool)', self.onPushBackForward)
+        self.ui.pushCloseAway.connect('clicked(bool)', self.onPushCloseAway)
+        self.ui.pushLeftRight.connect('clicked(bool)', self.onPushLeftRight)
+        self.ui.pushPitch.connect('clicked(bool)', self.onPushPitch)
+        self.ui.pushRoll.connect('clicked(bool)', self.onPushRoll)
+        self.ui.pushYaw.connect('clicked(bool)', self.onPushYaw)
+
+        self.ui.pushPlanGrid.connect('clicked(bool)', self.onPushPlanGrid)
+        self.ui.pushGridSetNext.connect('clicked(bool)', self.onPushGridSetNext)
+        self.ui.pushGridClear.connect('clicked(bool)', self.onPushGridClear)
+
+        # Make sure parameter node is initialized (needed for module reload)
+        self.initializeParameterNode()
+
+    def cleanup(self):
+        """
+        Called when the application closes and the module widget is destroyed.
+        """
+        self.removeObservers()
+        self.logic._connections.clear()
+
+    def enter(self):
+        """
+        Called each time the user opens this module.
+        """
+        # Make sure parameter node exists and observed
+        self.initializeParameterNode()
+
+    def exit(self):
+        """
+        Called each time the user opens a different module.
+        """
+        # Do not react to parameter node changes (GUI wlil be updated when the user enters into the module)
+        self.removeObserver(
+            self._parameterNode, vtk.vtkCommand.ModifiedEvent, self.updateGUIFromParameterNode)
+
+    def onSceneStartClose(self, caller, event):
+        """
+        Called just before the scene is closed.
+        """
+        # Parameter node will be reset, do not use it anymore
+        self.setParameterNode(None)
+
+    def onSceneEndClose(self, caller, event):
+        """
+        Called just after the scene is closed.
+        """
+        # If this module is shown while the scene is closed then recreate a new parameter node immediately
+        if self.parent.isEntered:
+            self.initializeParameterNode()
+
+    def initializeParameterNode(self):
+        """
+        Ensure parameter node exists and observed.
+        """
+        # Parameter node stores all user choices in parameter values, node selections, etc.
+        # so that when the scene is saved and reloaded, these settings are restored.
+
+        self.setParameterNode(self.logic.getParameterNode())
+
+        # Select default input nodes if nothing is selected yet to save a few clicks for the user
+        if not self._parameterNode.GetNodeReference("LandmarksMarkups"):
+            firstMarkupsNode = slicer.mrmlScene.GetFirstNodeByClass(
+                "vtkMRMLMarkupsNode")
+            if firstMarkupsNode:
+                self._parameterNode.SetNodeReferenceID(
+                    "LandmarksMarkups", firstMarkupsNode.GetID())
+
+    def setParameterNode(self, inputParameterNode):
+        """
+        Set and observe parameter node.
+        Observation is needed because when the parameter node is changed then the GUI must be updated immediately.
+        """
+
+        if inputParameterNode:
+            self.logic.setDefaultParameters(inputParameterNode)
+
+        # Unobserve previously selected parameter node and add an observer to the newly selected.
+        # Changes of parameter node are observed so that whenever parameters are changed by a script or any other module
+        # those are reflected immediately in the GUI.
+        if self._parameterNode is not None:
+            self.removeObserver(
+                self._parameterNode, vtk.vtkCommand.ModifiedEvent, self.updateGUIFromParameterNode)
+        self._parameterNode = inputParameterNode
+        if self._parameterNode is not None:
+            self.addObserver(
+                self._parameterNode, vtk.vtkCommand.ModifiedEvent, self.updateGUIFromParameterNode)
+
+        # Initial GUI update
+        self.updateGUIFromParameterNode()
+
+    def updateGUIFromParameterNode(self, caller=None, event=None):
+        """
+        This method is called whenever parameter node is changed.
+        The module GUI is updated to show the current state of the parameter node.
+        """
+
+        if self._parameterNode is None or self._updatingGUIFromParameterNode:
+            return
+
+        # Make sure GUI changes do not call updateParameterNodeFromGUI (it could cause infinite loop)
+        self._updatingGUIFromParameterNode = True
+
+        # Update node selectors and sliders
+        self.ui.markupsRegistration.setCurrentNode(
+            self._parameterNode.GetNodeReference("LandmarksMarkups"))
+        self.ui.markupsToolPosePlan.setCurrentNode(
+            self._parameterNode.GetNodeReference("ToolPoseMarkups"))
+        self.ui.comboMeshSelectorSkin.setCurrentNode(
+            self._parameterNode.GetNodeReference("InputMeshSkin"))
+        self.ui.comboMeshSelectorBrain.setCurrentNode(
+            self._parameterNode.GetNodeReference("InputMeshBrain"))
+        self.ui.sliderColorThresh.value = float(
+            self._parameterNode.GetParameter("ColorChangeThresh"))
+        self.ui.sliderGridDistanceApart.value = float(
+            self._parameterNode.GetParameter("GridDistanceApart"))
+        self.ui.sliderGridPlanNum.value = float(
+            self._parameterNode.GetParameter("GridPlanNum"))
+        self.ui.checkPlanBrain.checked = (
+            self._parameterNode.GetParameter("PlanOnBrain") == "true")
+        # self.ui.checkBoxGridAnatomySurf.checked = (
+        #     self._parameterNode.GetParameter("PlanGridOnAnatomySurf") == "true")
+        self.ui.checkBoxGridPerspPlane.checked = (
+            self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true")
+
+        # Update buttons states and tooltips
+        if self._parameterNode.GetNodeReference("LandmarksMarkups"):
+            self.ui.pushPlanLandmarks.toolTip = "Feed in all the landmarks"
+            self.ui.pushPlanLandmarks.enabled = True
+            self.ui.pushDigitize.toolTip = "Start digitizing"
+            self.ui.pushDigitize.enabled = True
+            self.ui.pushDigHighlighted.toolTip = "Digitize a highlighted landmark"
+            self.ui.pushDigHighlighted.enabled = True
+            self.ui.pushDigPrevAndDigHilight.toolTip = "Use previous digitization, and \n digitize a highlighted landmark"
+            self.ui.pushDigPrevAndDigHilight.enabled = True
+            self.ui.pushRegister.toolTip = "Register"
+            self.ui.pushRegister.enabled = True
+        else:
+            self.ui.pushPlanLandmarks.toolTip = "Select landmark markups node first"
+            self.ui.pushPlanLandmarks.enabled = False
+            self.ui.pushDigitize.toolTip = "Select landmark markups node first"
+            self.ui.pushDigitize.enabled = False
+            self.ui.pushDigHighlighted.toolTip = "Select landmark markups node first"
+            self.ui.pushDigHighlighted.enabled = False
+            self.ui.pushDigPrevAndDigHilight.toolTip = "Select landmark markups node first"
+            self.ui.pushDigPrevAndDigHilight.enabled = False
+            self.ui.pushRegister.toolTip = "Select landmark markups node first"
+            self.ui.pushRegister.enabled = False
+
+        if self._parameterNode.GetNodeReference("ToolPoseMarkups"):
+            self.ui.pushToolPosePlan.toolTip = "Feed in tool pose"
+            self.ui.pushToolPosePlan.enabled = True
+            self.ui.pushToolPosePlanRand.toolTip = "Feed in tool pose"
+            self.ui.pushToolPosePlanRand.enabled = True
+        else:
+            self.ui.pushToolPosePlan.toolTip = "Select landmark markups node"
+            self.ui.pushToolPosePlan.enabled = False
+            self.ui.pushToolPosePlanRand.toolTip = "Select landmark markups node"
+            self.ui.pushToolPosePlanRand.enabled = False
+
+        # All the GUI updates are done
+        self._updatingGUIFromParameterNode = False
+
+    def updateParameterNodeFromGUI(self, caller=None, event=None):
+        """
+        This method is called when the user makes any change in the GUI.
+        The changes are saved into the parameter node (so that they are restored when the scene is saved and loaded).
+        """
+
+        if self._parameterNode is None or self._updatingGUIFromParameterNode:
+            return
+
+        # Modify all properties in a single batch
+        wasModified = self._parameterNode.StartModify()
+
+        self._parameterNode.SetNodeReferenceID(
+            "InputMeshSkin", self.ui.comboMeshSelectorSkin.currentNodeID)
+        self._parameterNode.SetNodeReferenceID(
+            "InputMeshBrain", self.ui.comboMeshSelectorBrain.currentNodeID)
+        self._parameterNode.SetParameter(
+            "ColorChangeThresh", str(self.ui.sliderColorThresh.value))
+        self._parameterNode.SetParameter(
+            "ManualAdjustToolPoseRot", str(self.ui.sliderManualToolRot.value))
+        self._parameterNode.SetParameter(
+            "ManualAdjustToolPosePos", str(self.ui.sliderManualToolPos.value))
+        self._parameterNode.SetParameter(
+            "GridDistanceApart", str(self.ui.sliderGridDistanceApart.value))
+        self._parameterNode.SetParameter(
+            "GridPlanNum", str(self.ui.sliderGridPlanNum.value))
+        self._parameterNode.SetParameter(
+            "PlanOnBrain", "true" if self.ui.checkPlanBrain.checked else "false")
+
+        # Grid plan pair
+        # self._parameterNode.SetParameter(
+        #     "PlanGridOnAnatomySurf", "true" if self.ui.checkBoxGridAnatomySurf.checked else "false")
+        self._parameterNode.SetParameter(
+            "PlanGridOnPerspPlane", "true" if self.ui.checkBoxGridPerspPlane.checked else "false")
+
+        if self.ui.markupsRegistration.currentNode():
+            self._parameterNode.SetNodeReferenceID(
+                "LandmarksMarkups", self.ui.markupsRegistration.currentNode().GetID())
+        else:
+            self._parameterNode.SetNodeReferenceID("LandmarksMarkups", None)
+        if self.ui.markupsToolPosePlan.currentNode():
+            self._parameterNode.SetNodeReferenceID(
+                "ToolPoseMarkups", self.ui.markupsToolPosePlan.currentNode().GetID())
+        else:
+            self._parameterNode.SetNodeReferenceID("ToolPoseMarkups", None)
+
+        self._parameterNode.EndModify(wasModified)
+
+    def onPushModuleRobCtrl(self):
+        slicer.util.selectModule("RobotControl")
+
+    def onPushModuleTargetViz(self):
+        slicer.util.selectModule("TargetVisualization")
+
+    def onPushModuleFreeSurfer(self):
+        slicer.util.selectModule("FreeSurferImporter")
+
+    def onPushStartTRE(self):
+        msg = self.logic._commandsData["START_TRE_CALCULATION_START"]
+        try:
+            self.logic._connections.utilSendCommand(msg)
+        except:
+            return
+        self.logic.processStartTRECalculation()
+        self._parameterNode.SetParameter("TRECalculating", "true")
+
+    def onPushStopTRE(self):
+        msg = self.logic._commandsData["START_TRE_CALCULATION_STOP"]
+        try:
+            self.logic._connections.utilSendCommand(msg)
+        except:
+            return
+        self.logic.processStopTRECalculation()
+        self._parameterNode.SetParameter("TRECalculating", "false")
+
+    def onPushPlanLandmarks(self):
+        self.updateParameterNodeFromGUI()
+        self.logic.processPushPlanLandmarks(
+            self._parameterNode.GetNodeReference("LandmarksMarkups"))
+
+    def onPushDigitize(self):
+        self.updateParameterNodeFromGUI()
+        msg = self.logic._commandsData["START_AUTO_DIGITIZE"]
+        self.logic._connections.utilSendCommand(msg)
+
+    def onPushDigHighlighted(self):
+        self.updateParameterNodeFromGUI()
+        self.logic.processDigHilight()
+
+    def onPushDigPrevAndDigHilight(self):
+        self.logic.processDigPrevAndDigHilight()
+
+    def onPushDigPrev(self):
+        msg = self.logic._commandsData["START_LANDMARK_DIG_PREV"]
+        self.logic._connections.utilSendCommand(msg)
+
+    def onLandmarkWidgetHilightChange(self, idx):
+        self._parameterNode.SetParameter("LandmarkWidgetHilightIdx", str(idx))
+        print("Highlighted the " + str(idx+1) + "th landmark")
+
+    def onPushRegistration(self):
+        self.updateParameterNodeFromGUI()
+        msg = self.logic._commandsData["START_REGISTRATION"]
+        self.logic._connections.utilSendCommand(msg)
+        data = self.logic._connections.receiveMsg()
+        print("Registration residual: " + str(data) + "mm")
+        slicer.util.infoDisplay("Registration residual: " + str(data) + "mm")
+
+    def onPushUsePreviousRegistration(self):
+        self.updateParameterNodeFromGUI()
+        msg = self.logic._commandsData["START_USE_PREV_REGISTRATION"]
+        self.logic._connections.utilSendCommand(msg)
+        data = self.logic._connections.receiveMsg()
+        print("Registration residual: " + str(data) + "mm")
+        slicer.util.infoDisplay("Registration residual: " + str(data) + "mm")
+
+    def onPushToolPosePlan(self):
+        self.updateParameterNodeFromGUI()
+        self.logic.processPushToolPosePlan(
+            self.ui.markupsToolPosePlan.currentNode())
+
+    def onPushToolPosePlanRand(self):
+        self.updateParameterNodeFromGUI()
+        if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
+            self.logic.processPushToolPosePlan(
+                self.ui.markupsToolPosePlan.currentNode())
+
+        self.logic.processPushToolPosePlanRand()
+
+    def onPushPlanGrid(self):
+        self.updateParameterNodeFromGUI()
+        self.logic.processPlanGrid()
+
+    def onPushGridSetNext(self):
+        self.updateParameterNodeFromGUI()
+        self.logic.processGridSetNext()
+
+    def onPushGridClear(self):
+        if self._parameterNode.GetParameter("GridPlanIndicatorNumPrev"):
+            prevnum = int(float(self._parameterNode.GetParameter("GridPlanIndicatorNumPrev")))
+            for i in range(prevnum):
+                slicer.mrmlScene.RemoveNode(self._parameterNode.GetNodeReference("GridPlanTransformNum"+str(i)))
+                slicer.mrmlScene.RemoveNode(self._parameterNode.GetNodeReference("GridPlanIndicatorNum"+str(i)))
+
+    def onPushBackForward(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPosePos"))
+        self.logic.processManualAdjust([0.0,change,0.0,0.0,0.0,0.0])
+
+    def onPushCloseAway(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPosePos"))
+        self.logic.processManualAdjust([0.0,0.0,change,0.0,0.0,0.0])
+
+    def onPushLeftRight(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPosePos"))
+        self.logic.processManualAdjust([change,0.0,0.0,0.0,0.0,0.0])
+
+    def onPushPitch(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPoseRot"))
+        self.logic.processManualAdjust([0.0,0.0,0.0,change/180.0*math.pi,0.0,0.0])
+
+    def onPushRoll(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPoseRot"))
+        self.logic.processManualAdjust([0.0,0.0,0.0,0.0,change/180.0*math.pi,0.0])
+
+    def onPushYaw(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustToolPoseRot"))
+        self.logic.processManualAdjust([0.0,0.0,0.0,0.0,0.0,change/180.0*math.pi])
+
