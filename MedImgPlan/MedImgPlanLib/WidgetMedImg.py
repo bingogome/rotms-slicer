@@ -22,55 +22,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import os, json, logging, math
-import vtk, qt, ctk, slicer
+import slicer, os, json, logging, math, vtk, qt, ctk
+from MedImgPlanLib.WidgetMedImgBase import MedImgPlanWidgetBase
 
-from slicer.ScriptedLoadableModule import *
-from slicer.util import VTKObservationMixin
-
-from MedImgPlanLib.LogicMedImg import MedImgPlanLogic
-
-#
-# MedImgPlanWidget
-#
-
-
-class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
-    """Uses ScriptedLoadableModuleWidget base class, available at:
-    https://github.com/Slicer/Slicer/blob/master/Base/Python/slicer/ScriptedLoadableModule.py
-    """
+class MedImgPlanWidget(MedImgPlanWidgetBase):
 
     def __init__(self, parent=None):
-        """
-        Called when the user opens the module the first time and the widget is initialized.
-        """
-        ScriptedLoadableModuleWidget.__init__(self, parent)
-        # needed for parameter node observation
-        VTKObservationMixin.__init__(self)
-        self.logic = None
-        self._parameterNode = None
-        self._updatingGUIFromParameterNode = False
+        super().__init__(parent)
 
     def setup(self):
-        """
-        Called when the user opens the module the first time and the widget is initialized.
-        """
-        ScriptedLoadableModuleWidget.setup(self)
-
-        # Load widget from .ui file (created by Qt Designer).
-        # Additional widgets can be instantiated manually and added to self.layout.
-        uiWidget = slicer.util.loadUI(self.resourcePath('UI/MedImgPlan.ui'))
-        self.layout.addWidget(uiWidget)
-        self.ui = slicer.util.childWidgetVariables(uiWidget)
-
-        # Set scene in MRML widgets. Make sure that in Qt designer the top-level qMRMLWidget's
-        # "mrmlSceneChanged(vtkMRMLScene*)" signal in is connected to each MRML widget's.
-        # "setMRMLScene(vtkMRMLScene*)" slot.
-        uiWidget.setMRMLScene(slicer.mrmlScene)
-
-        # Create logic class. Logic implements all computations that should be possible to run
-        # in batch mode, without a graphical user interface.
-        self.logic = MedImgPlanLogic(self.resourcePath('Configs/'))
+        super().setup()
 
         # Connections
 
@@ -150,83 +111,6 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
-
-    def cleanup(self):
-        """
-        Called when the application closes and the module widget is destroyed.
-        """
-        self.removeObservers()
-        self.logic._connections.clear()
-
-    def enter(self):
-        """
-        Called each time the user opens this module.
-        """
-        # Make sure parameter node exists and observed
-        self.initializeParameterNode()
-
-    def exit(self):
-        """
-        Called each time the user opens a different module.
-        """
-        # Do not react to parameter node changes (GUI wlil be updated when the user enters into the module)
-        self.removeObserver(
-            self._parameterNode, vtk.vtkCommand.ModifiedEvent, self.updateGUIFromParameterNode)
-
-    def onSceneStartClose(self, caller, event):
-        """
-        Called just before the scene is closed.
-        """
-        # Parameter node will be reset, do not use it anymore
-        self.setParameterNode(None)
-
-    def onSceneEndClose(self, caller, event):
-        """
-        Called just after the scene is closed.
-        """
-        # If this module is shown while the scene is closed then recreate a new parameter node immediately
-        if self.parent.isEntered:
-            self.initializeParameterNode()
-
-    def initializeParameterNode(self):
-        """
-        Ensure parameter node exists and observed.
-        """
-        # Parameter node stores all user choices in parameter values, node selections, etc.
-        # so that when the scene is saved and reloaded, these settings are restored.
-
-        self.setParameterNode(self.logic.getParameterNode())
-
-        # Select default input nodes if nothing is selected yet to save a few clicks for the user
-        if not self._parameterNode.GetNodeReference("LandmarksMarkups"):
-            firstMarkupsNode = slicer.mrmlScene.GetFirstNodeByClass(
-                "vtkMRMLMarkupsNode")
-            if firstMarkupsNode:
-                self._parameterNode.SetNodeReferenceID(
-                    "LandmarksMarkups", firstMarkupsNode.GetID())
-
-    def setParameterNode(self, inputParameterNode):
-        """
-        Set and observe parameter node.
-        Observation is needed because when the parameter node is changed then the GUI must be updated immediately.
-        """
-
-        if inputParameterNode:
-            self.logic.setDefaultParameters(inputParameterNode)
-
-        # Unobserve previously selected parameter node and add an observer to the newly selected.
-        # Changes of parameter node are observed so that whenever parameters are changed by a script or any other module
-        # those are reflected immediately in the GUI.
-        if self._parameterNode is not None:
-            self.removeObserver(
-                self._parameterNode, vtk.vtkCommand.ModifiedEvent, self.updateGUIFromParameterNode)
-        self._parameterNode = inputParameterNode
-        if self._parameterNode is not None:
-            self.addObserver(
-                self._parameterNode, vtk.vtkCommand.ModifiedEvent, self.updateGUIFromParameterNode)
-
-        # Initial GUI update
-        self.updateGUIFromParameterNode()
 
     def updateGUIFromParameterNode(self, caller=None, event=None):
         """
@@ -343,7 +227,6 @@ class MedImgPlanWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
             self._parameterNode.SetParameter("ToolRotOption", "cortex")
         if self.ui.radioButtonToolRotCombined.checked:
             self._parameterNode.SetParameter("ToolRotOption", "combined")
-        print(self._parameterNode.GetParameter("ToolRotOption"))
 
         if self.ui.markupsRegistration.currentNode():
             self._parameterNode.SetNodeReferenceID(

@@ -220,7 +220,7 @@
       <string>Tool Pose Plan</string>
      </property>
      <property name="collapsed">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_2">
       <item row="9" column="0" colspan="3">
