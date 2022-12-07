@@ -145,6 +145,12 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         #     self._parameterNode.GetParameter("PlanGridOnAnatomySurf") == "true")
         self.ui.checkBoxGridPerspPlane.checked = (
             self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true")
+        self.ui.radioButtonToolRotSkin.checked = (
+            self._parameterNode.GetParameter("ToolRotOption") == "skin")
+        self.ui.radioButtonToolRotCortex.checked = (
+            self._parameterNode.GetParameter("ToolRotOption") == "cortex")
+        self.ui.radioButtonToolRotCombined.checked = (
+            self._parameterNode.GetParameter("ToolRotOption") == "combined")
 
         # Update buttons states and tooltips
         if self._parameterNode.GetNodeReference("LandmarksMarkups"):
@@ -181,6 +187,12 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
             self.ui.pushToolPosePlanRand.toolTip = "Select landmark markups node"
             self.ui.pushToolPosePlanRand.enabled = False
 
+        if (self._parameterNode.GetParameter("PlanOnBrain") == "false"):
+            self.ui.radioButtonToolRotCombined.enabled = False
+            self.ui.radioButtonToolRotCortex.enabled = False
+        else:
+            self.ui.radioButtonToolRotCombined.enabled = True
+            self.ui.radioButtonToolRotCortex.enabled = True
 
         # All the GUI updates are done
         self._updatingGUIFromParameterNode = False
@@ -223,10 +235,13 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         # Tool Orientation Options
         if self.ui.radioButtonToolRotSkin.checked:
             self._parameterNode.SetParameter("ToolRotOption", "skin")
-        if self.ui.radioButtonToolRotCortex.checked:
-            self._parameterNode.SetParameter("ToolRotOption", "cortex")
-        if self.ui.radioButtonToolRotCombined.checked:
-            self._parameterNode.SetParameter("ToolRotOption", "combined")
+        if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
+            if self.ui.radioButtonToolRotCortex.checked:
+                self._parameterNode.SetParameter("ToolRotOption", "cortex")
+            if self.ui.radioButtonToolRotCombined.checked:
+                self._parameterNode.SetParameter("ToolRotOption", "combined")
+        else:
+            self._parameterNode.SetParameter("ToolRotOption", "skin")
 
         if self.ui.markupsRegistration.currentNode():
             self._parameterNode.SetNodeReferenceID(

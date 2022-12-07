@@ -518,7 +518,7 @@
             <string>Cortex Shape</string>
            </property>
            <attribute name="buttonGroup">
-            <string notr="true">buttonGroup</string>
+            <string notr="true">buttonGroupToolRotOptions</string>
            </attribute>
           </widget>
          </item>
@@ -538,7 +538,7 @@
             <bool>true</bool>
            </property>
            <attribute name="buttonGroup">
-            <string notr="true">buttonGroup</string>
+            <string notr="true">buttonGroupToolRotOptions</string>
            </attribute>
           </widget>
          </item>
@@ -548,7 +548,7 @@
             <string>Combined</string>
            </property>
            <attribute name="buttonGroup">
-            <string notr="true">buttonGroup</string>
+            <string notr="true">buttonGroupToolRotOptions</string>
            </attribute>
           </widget>
          </item>
@@ -696,6 +696,6 @@
   </connection>
  </connections>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
+  <buttongroup name="buttonGroupToolRotOptions"/>
  </buttongroups>
 </ui>

@@ -22,14 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import os, json, logging, math
+import os, json, logging, math, random
 import vtk, qt, ctk, slicer
 
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
 from MedImgPlanLib.UtilFormat import utilNumStrFormat
-from MedImgPlanLib.UtilCalculations import mat2quat, utilPosePlan
+from MedImgPlanLib.UtilCalculations import mat2quat, utilPosePlan, rotx, roty, rotz
 from MedImgPlanLib.UtilMedImgConnections import MedImgConnections
 
 from MedImgPlanLib.UtilSlicerFuncs import drawAPlane, getRotAndPFromMatrix, initModelAndTransform, setRotation, setTransform, setTranslation
@@ -171,7 +171,27 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 "Input number of landmarks are not 2, 3 or 4!")
             raise ValueError("Input number of landmarks are not 2, 3 or 4!")
         
+        # Get the position and orientation of the planned tool pose on skin
+        # (If planned on skin, then skin search; if planned on cortex, then 
+        # projected on skin)
         p, mat = self.processToolPosePlanByNumOfPoints(inputMarkupsNode)
+
+        # Considering the shape mismatch of the skin and cortex (brain), use
+        # different ways of orientation calculation
+        # 1. Depend only on cortex: the orientation is the cortex shape
+        # 2. Depend only on skin: the orientation is the skin shape, at the point
+        #   projected from the previously planned point
+        # 3. Depend on a weighted combination
+        # Note, if the pose was planned on skin, then option 2 is the only valid option
+        if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
+            if self._parameterNode.GetParameter("ToolRotOption") == "cortex":
+                pass # If ToolRotOption is cortex, then PlannOnBrain is true
+            elif self._parameterNode.GetParameter("ToolRotOption") == "combined":
+                slicer.util.errorDisplay("Not implemented yet!")
+            else: # Default is the skin
+                matSkin = self.processSearchForSkinRot(p, self._override_y)
+                mat = matSkin
+
         self.processToolPosePlanVisualization(p, mat)
         self.processToolPosePlanSend(p, mat)
 
@@ -273,6 +293,27 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             self._override_y = override_y
         
         return p, mat
+
+    def processSearchForSkinRot(self, p, override_y):
+        a, b, c = [0, 0, 0], [0, 0, 0], [0, 0, 0]
+        inModel = self._parameterNode.GetNodeReference("InputMeshSkin")
+        cellLocator1 = vtk.vtkCellLocator()
+        cellLocator1.SetDataSet(inModel)
+        cellLocator1.BuildLocator()
+        closestPoint = [0.0, 0.0, 0.0]
+        cellObj = vtk.vtkGenericCell()
+        cellId, subId, dist2 = vtk.mutable(
+            0), vtk.mutable(0), vtk.mutable(0.0)
+        cellLocator1.FindClosestPoint(
+            p, closestPoint, cellObj, cellId, subId, dist2)
+
+        cellObj.GetPoints().GetPoint(0, a)
+        cellObj.GetPoints().GetPoint(1, b)
+        cellObj.GetPoints().GetPoint(2, c)
+
+        mat = utilPosePlan(a, b, c, p, override_y)
+        return mat
+
 
     def processToolPosePlanVisualizationInit(self):
 
@@ -569,6 +610,22 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             cellObj.GetPoints().GetPoint(2, c)
 
             mat = utilPosePlan(a, b, c, p, self._override_y)
+
+            # Considering the shape mismatch of the skin and cortex (brain), use
+            # different ways of orientation calculation
+            # 1. Depend only on cortex: the orientation is the cortex shape
+            # 2. Depend only on skin: the orientation is the skin shape, at the point
+            #   projected from the previously planned point
+            # 3. Depend on a weighted combination
+            # Note, if the pose was planned on skin, then option 2 is the only valid option
+            if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
+                if self._parameterNode.GetParameter("ToolRotOption") == "cortex":
+                    pass # If ToolRotOption is cortex, then PlannOnBrain is true
+                elif self._parameterNode.GetParameter("ToolRotOption") == "combined":
+                    slicer.util.errorDisplay("Not implemented yet!")
+                else: # Default is the skin
+                    matSkin = self.processSearchForSkinRot(p, self._override_y)
+                    mat = matSkin
 
             setTranslation(p,i)
             setRotation(mat,i)
