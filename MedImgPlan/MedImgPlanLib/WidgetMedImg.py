@@ -24,6 +24,7 @@ SOFTWARE.
 
 import slicer, os, json, logging, math, vtk, qt, ctk
 from MedImgPlanLib.WidgetMedImgBase import MedImgPlanWidgetBase
+from MedImgPlanLib.UtilSlicerFuncs import getRotAndPFromMatrix
 
 class MedImgPlanWidget(MedImgPlanWidgetBase):
 
@@ -76,9 +77,9 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         self.ui.checkBoxGridAnatomySurf.connect("toggled(bool)", self.updateParameterNodeFromGUI)
         self.ui.checkBoxGridPerspPlane.connect("toggled(bool)", self.updateParameterNodeFromGUI)
 
-        self.ui.radioButtonToolRotSkin.connect("toggled(bool)", self.updateParameterNodeFromGUI)
-        self.ui.radioButtonToolRotCortex.connect("toggled(bool)", self.updateParameterNodeFromGUI)
-        self.ui.radioButtonToolRotCombined.connect("toggled(bool)", self.updateParameterNodeFromGUI)
+        self.ui.radioButtonToolRotSkin.connect("toggled(bool)", self.onRadioToolRotOptions)
+        self.ui.radioButtonToolRotCortex.connect("toggled(bool)", self.onRadioToolRotOptions)
+        self.ui.radioButtonToolRotCombined.connect("toggled(bool)", self.onRadioToolRotOptions)
 
         # Buttons
         self.ui.pushModuleTargetViz.connect('clicked(bool)', self.onPushModuleTargetViz)
@@ -375,4 +376,14 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
     def onPushYaw(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustToolPoseRot"))
         self.logic.processManualAdjust([0.0,0.0,0.0,0.0,0.0,change/180.0*math.pi])
+
+    def onRadioToolRotOptions(self):
+        self.updateParameterNodeFromGUI()
+        if self._parameterNode.GetNodeReference("TargetPoseTransform"):
+            targetPoseTransform = self._parameterNode.GetNodeReference(
+                "TargetPoseTransform").GetMatrixTransformToParent()
+            temp = vtk.vtkMatrix4x4()
+            temp.DeepCopy(targetPoseTransform)
+            p, mat = getRotAndPFromMatrix(temp)
+            self.logic.processToolPosePlanMeshCheck(p, mat)
 

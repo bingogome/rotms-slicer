@@ -171,32 +171,69 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 "Input number of landmarks are not 2, 3 or 4!")
             raise ValueError("Input number of landmarks are not 2, 3 or 4!")
         
-        # Get the position and orientation of the planned tool pose on skin
-        # (If planned on skin, then skin search; if planned on cortex, then 
-        # projected on skin)
+        # Get the position and orientation of the planned tool pose on skin or cortex
         p, mat = self.processToolPosePlanByNumOfPoints(inputMarkupsNode)
+        drawAPlane(mat, p, self._configPath, "PlaneOnMeshIndicator",
+            "PlaneOnMeshTransform", self._parameterNode)
+        self.processToolPosePlanMeshCheck(p, mat)
 
-        # Considering the shape mismatch of the skin and cortex (brain), use
-        # different ways of orientation calculation
-        # 1. Depend only on cortex: the orientation is the cortex shape
-        # 2. Depend only on skin: the orientation is the skin shape, at the point
-        #   projected from the previously planned point
-        # 3. Depend on a weighted combination
-        # Note, if the pose was planned on skin, then option 2 is the only valid option
+    def processToolPosePlanMeshCheck(self, p, mat):
+        # If planned on skin, then skin search; if planned on cortex, then project on skin
         if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
+            self.processToolPoseParameterNodeSet("TargetPoseTransformCortex", p, mat)
+            pSkin, matSkin = self.processSearchForSkinProjection(p, mat)
+            drawAPlane(matSkin, pSkin, self._configPath, "PlaneOnMeshSkinIndicator",
+                "PlaneOnMeshSkinTransform", self._parameterNode)
+            # Considering the shape mismatch of the skin and cortex (brain), use
+            # different ways of orientation calculation
+            # 1. Depend only on cortex: the orientation is the cortex shape
+            # 2. Depend only on skin: the orientation is the skin shape, at the point
+            #   projected from the previously planned point
+            # 3. Depend on a weighted combination
+            # Note, if the pose was planned on skin, then option 2 is the only valid option
             if self._parameterNode.GetParameter("ToolRotOption") == "cortex":
-                pass # If ToolRotOption is cortex, then PlannOnBrain is true
+                pass 
             elif self._parameterNode.GetParameter("ToolRotOption") == "combined":
                 slicer.util.errorDisplay("Not implemented yet!")
             else: # Default is the skin
-                matSkin = self.processSearchForSkinRot(p, self._override_y)
+                self.processToolPoseParameterNodeSet("TargetPoseTransformSkin", pSkin, matSkin)
+                p = pSkin
                 mat = matSkin
-
-        self.processToolPosePlanVisualization(p, mat)
+                
+        self.processToolPoseParameterNodeSet("TargetPoseTransform", p, mat)
+        self.processToolPosePlanVisualization()
         self.processToolPosePlanSend(p, mat)
 
-    def processPushToolPosePlanRand(self):
+    def processToolPoseParameterNodeSet(self, nodename, p, mat):
 
+        if not self._parameterNode.GetNodeReference(nodename):
+            transformNode = slicer.vtkMRMLTransformNode()
+            transformNodeSingleton = slicer.vtkMRMLTransformNode()
+            slicer.mrmlScene.AddNode(transformNode)
+            slicer.mrmlScene.AddNode(transformNodeSingleton)
+            transformNodeSingleton.SetSingletonTag(
+                "MedImgPlan." + nodename)
+            self._parameterNode.SetNodeReferenceID(
+                nodename, transformNode.GetID())
+            self._parameterNode.SetNodeReferenceID(
+                nodename + "Singleton", transformNodeSingleton.GetID())
+
+        transformMatrix = vtk.vtkMatrix4x4()
+        transformMatrixSingleton = vtk.vtkMatrix4x4()
+        setTransform(mat, p, transformMatrix)
+        setTransform(mat, p, transformMatrixSingleton)
+        targetPoseTransform = self._parameterNode.GetNodeReference(
+            nodename)
+        targetPoseTransformSingleton = self._parameterNode.GetNodeReference(
+            nodename + "Singleton")
+        targetPoseTransform.SetMatrixTransformToParent(transformMatrix)
+        targetPoseTransformSingleton.SetMatrixTransformToParent(
+            transformMatrixSingleton)
+
+    def processPushToolPosePlanRand(self):
+        if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
+            slicer.util.errorDisplay("Please plan tool pose first!")
+            return
         targetPoseTransform = self._parameterNode.GetNodeReference(
             "TargetPoseTransform").GetMatrixTransformToParent()
         temp = vtk.vtkMatrix4x4()
@@ -294,41 +331,48 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         
         return p, mat
 
-    def processSearchForSkinRot(self, p, override_y):
-        a, b, c = [0, 0, 0], [0, 0, 0], [0, 0, 0]
+    def processSearchForSkinProjection(self, pcortex, matcortex):
+        """
+        Find the projection pose (pos & rot) on the skin. The rot will be 
+        the tangential plane on theskin.
+        """
         inModel = self._parameterNode.GetNodeReference("InputMeshSkin")
-        cellLocator1 = vtk.vtkCellLocator()
-        cellLocator1.SetDataSet(inModel)
-        cellLocator1.BuildLocator()
-        closestPoint = [0.0, 0.0, 0.0]
-        cellObj = vtk.vtkGenericCell()
-        cellId, subId, dist2 = vtk.mutable(
-            0), vtk.mutable(0), vtk.mutable(0.0)
-        cellLocator1.FindClosestPoint(
-            p, closestPoint, cellObj, cellId, subId, dist2)
 
+        # Construct cell locator 
+        cellLocator = vtk.vtkCellLocator()
+        cellLocator.SetDataSet(inModel.GetPolyData())
+        cellLocator.BuildLocator()
+
+        # Construct a ray from cortex target point, along the perpendicular direction of cortex
+        # at the cortex target point.
+        ray_point, ray_length = [0.0, 0.0, 0.0], 10000.0
+        ray_point[0], ray_point[1], ray_point[2] = \
+            pcortex[0]+ray_length*matcortex[0][2], pcortex[1]+ray_length * \
+            matcortex[1][2], pcortex[2]+ray_length*matcortex[2][2]
+
+        # Init some needed parameters.
+        cl_pIntSect, cl_pcoords = [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]
+        cl_t, cl_sub_id = vtk.mutable(0), vtk.mutable(0)
+        a, b, c = [0, 0, 0], [0, 0, 0], [0, 0, 0]
+        cellObj = vtk.vtkGenericCell()
+        cellId, subId, dist2 = vtk.mutable(0), vtk.mutable(0), vtk.mutable(0.0)
+        closestPoint = [0.0, 0.0, 0.0]
+
+        # Search for the projected point on the skin.
+        cellLocator.IntersectWithLine(
+            pcortex, ray_point, 1e-6, cl_t, cl_pIntSect, cl_pcoords, cl_sub_id)
+        pSkin = [cl_pIntSect[0], cl_pIntSect[1], cl_pIntSect[2]]
+
+        # Search for the tangential plane on the skin
+        cellLocator.FindClosestPoint(pSkin, closestPoint, cellObj, cellId, subId, dist2)
         cellObj.GetPoints().GetPoint(0, a)
         cellObj.GetPoints().GetPoint(1, b)
         cellObj.GetPoints().GetPoint(2, c)
+        matSkin = utilPosePlan(a, b, c, pSkin, self.override_y)
 
-        mat = utilPosePlan(a, b, c, p, override_y)
-        return mat
-
+        return pSkin, matSkin
 
     def processToolPosePlanVisualizationInit(self):
-
-        if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
-            transformNode = slicer.vtkMRMLTransformNode()
-            transformNodeSingleton = slicer.vtkMRMLTransformNode()
-            slicer.mrmlScene.AddNode(transformNode)
-            slicer.mrmlScene.AddNode(transformNodeSingleton)
-            transformNodeSingleton.SetSingletonTag(
-                "MedImgPlan.TargetPoseTransform")
-            self._parameterNode.SetNodeReferenceID(
-                "TargetPoseTransform", transformNode.GetID())
-            self._parameterNode.SetNodeReferenceID(
-                "TargetPoseTransformSingleton", transformNodeSingleton.GetID())
-
         if not self._parameterNode.GetNodeReference("TargetPoseIndicator"):
             with open(self._configPath+"Config.json") as f:
                 configData = json.load(f)
@@ -338,81 +382,27 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 "TargetPoseIndicator", inputModel.GetID())
             inputModel.GetDisplayNode().SetColor(0, 1, 0)
 
-    def processToolPosePlanProjectTransformOnSkin(self, p, mat):
-
-        if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
-
-            inModel = self._parameterNode.GetNodeReference("InputMeshSkin")
-
-            cellLocator2 = vtk.vtkCellLocator()
-            cellLocator2.SetDataSet(inModel.GetPolyData())
-            cellLocator2.BuildLocator()
-
-            ray_point = [0.0, 0.0, 0.0]
-            ray_length = 10000.0
-            ray_point[0], ray_point[1], ray_point[2] = \
-                p[0]+ray_length*mat[0][2], p[1]+ray_length * \
-                mat[1][2], p[2]+ray_length*mat[2][2]
-
-            cl_pIntSect, cl_pcoords = [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]
-            cl_t, cl_sub_id = vtk.mutable(0), vtk.mutable(0)
-            cellLocator2.IntersectWithLine(
-                p, ray_point, 1e-6, cl_t, cl_pIntSect, cl_pcoords, cl_sub_id)
-
-            p[0], p[1], p[2] = cl_pIntSect[0], cl_pIntSect[1], cl_pIntSect[2]
-
-        return p
-
     def processToolPosePlanVisualization(self, p, mat):
-
-        drawAPlane(mat, p, self._configPath, "PlaneOnMeshIndicator",
-            "PlaneOnMeshTransform", self._parameterNode)
-
         self.processToolPosePlanVisualizationInit()
-        p = self.processToolPosePlanProjectTransformOnSkin(p, mat)
-
-        transformMatrix = vtk.vtkMatrix4x4()
-        transformMatrixSingleton = vtk.vtkMatrix4x4()
-
-        setTransform(mat, p, transformMatrix)
-        setTransform(mat, p, transformMatrixSingleton)
-
-        targetPoseTransform = self._parameterNode.GetNodeReference(
-            "TargetPoseTransform")
-        targetPoseTransformSingleton = self._parameterNode.GetNodeReference(
-            "TargetPoseTransformSingleton")
         targetPoseIndicator = self._parameterNode.GetNodeReference(
             "TargetPoseIndicator")
-
-        targetPoseTransform.SetMatrixTransformToParent(transformMatrix)
-        targetPoseTransformSingleton.SetMatrixTransformToParent(
-            transformMatrixSingleton)
         targetPoseIndicator.SetAndObserveTransformNodeID(
-            targetPoseTransform.GetID())
-
+            self._parameterNode.GetNodeReference("TargetPoseTransform").GetID())
         slicer.app.processEvents()
 
-    def processToolPosePlanSend(self, p, mat):
-
-        p = self.processToolPosePlanProjectTransformOnSkin(p, mat)
-        
+    def processToolPosePlanSend(self, p, mat):        
         quat = mat2quat(mat)
-
         msg = self._commandsData["TARGET_POSE_ORIENTATION"] + \
             "_" + utilNumStrFormat(quat[0], 15, 17) + \
             "_" + utilNumStrFormat(quat[1], 15, 17) + \
             "_" + utilNumStrFormat(quat[2], 15, 17) + \
             "_" + utilNumStrFormat(quat[3], 15, 17)
-
         self._connections.utilSendCommand(msg)
-
         msg = self._commandsData["TARGET_POSE_TRANSLATION"] + \
             "_" + utilNumStrFormat(p[0]/1000, 15, 17) + \
             "_" + utilNumStrFormat(p[1]/1000, 15, 17) + \
             "_" + utilNumStrFormat(p[2]/1000, 15, 17)
-
         self._connections.utilSendCommand(msg)
-
 
     def utilSendLandmarks(self, curIdx):
         """
