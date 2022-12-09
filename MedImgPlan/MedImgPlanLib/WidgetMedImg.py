@@ -380,10 +380,5 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
     def onRadioToolRotOptions(self):
         self.updateParameterNodeFromGUI()
         if self._parameterNode.GetNodeReference("TargetPoseTransform"):
-            targetPoseTransform = self._parameterNode.GetNodeReference(
-                "TargetPoseTransform").GetMatrixTransformToParent()
-            temp = vtk.vtkMatrix4x4()
-            temp.DeepCopy(targetPoseTransform)
-            p, mat = getRotAndPFromMatrix(temp)
-            self.logic.processToolPosePlanMeshCheck(p, mat)
+            self.logic.processToolPosePlanMeshReCheck()
 

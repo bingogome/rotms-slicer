@@ -182,6 +182,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
             self.processToolPoseParameterNodeSet("TargetPoseTransformCortex", p, mat)
             pSkin, matSkin = self.processSearchForSkinProjection(p, mat)
+            self.processToolPoseParameterNodeSet("TargetPoseTransformSkin", pSkin, matSkin)
             drawAPlane(matSkin, pSkin, self._configPath, "PlaneOnMeshSkinIndicator",
                 "PlaneOnMeshSkinTransform", self._parameterNode)
             # Considering the shape mismatch of the skin and cortex (brain), use
@@ -192,17 +193,36 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             # 3. Depend on a weighted combination
             # Note, if the pose was planned on skin, then option 2 is the only valid option
             if self._parameterNode.GetParameter("ToolRotOption") == "cortex":
-                pass 
+                p = pSkin 
             elif self._parameterNode.GetParameter("ToolRotOption") == "combined":
                 slicer.util.errorDisplay("Not implemented yet!")
             else: # Default is the skin
-                self.processToolPoseParameterNodeSet("TargetPoseTransformSkin", pSkin, matSkin)
                 p = pSkin
                 mat = matSkin
                 
         self.processToolPoseParameterNodeSet("TargetPoseTransform", p, mat)
         self.processToolPosePlanVisualization()
         self.processToolPosePlanSend(p, mat)
+    
+    def processToolPosePlanMeshReCheck(self):
+        if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
+            targetPoseTransform = self._parameterNode.GetNodeReference(
+                "TargetPoseTransformCortex").GetMatrixTransformToParent()
+            p, mat = getRotAndPFromMatrix(targetPoseTransform)
+            targetPoseTransform = self._parameterNode.GetNodeReference(
+                "TargetPoseTransformSkin").GetMatrixTransformToParent()
+            pSkin, matSkin = getRotAndPFromMatrix(targetPoseTransform)
+            if self._parameterNode.GetParameter("ToolRotOption") == "cortex":
+                p = pSkin 
+            elif self._parameterNode.GetParameter("ToolRotOption") == "combined":
+                slicer.util.errorDisplay("Not implemented yet!")
+            else: # Default is the skin
+                p = pSkin
+                mat = matSkin
+            self.processToolPoseParameterNodeSet("TargetPoseTransform", p, mat)
+            self.processToolPosePlanVisualization()
+            self.processToolPosePlanSend(p, mat)
+
 
     def processToolPoseParameterNodeSet(self, nodename, p, mat):
 
@@ -257,7 +277,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
 
         p, mat = getRotAndPFromMatrix(temp)
-        self.processToolPosePlanVisualization(p, mat)
+        self.processToolPosePlanVisualization()
         self.processToolPosePlanSend(p, mat)
 
     def processToolPosePlanByNumOfPoints(self, inputMarkupsNode):
@@ -368,7 +388,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         cellObj.GetPoints().GetPoint(0, a)
         cellObj.GetPoints().GetPoint(1, b)
         cellObj.GetPoints().GetPoint(2, c)
-        matSkin = utilPosePlan(a, b, c, pSkin, self.override_y)
+        matSkin = utilPosePlan(a, b, c, pSkin, self._override_y)
 
         return pSkin, matSkin
 
@@ -382,7 +402,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 "TargetPoseIndicator", inputModel.GetID())
             inputModel.GetDisplayNode().SetColor(0, 1, 0)
 
-    def processToolPosePlanVisualization(self, p, mat):
+    def processToolPosePlanVisualization(self):
         self.processToolPosePlanVisualizationInit()
         targetPoseIndicator = self._parameterNode.GetNodeReference(
             "TargetPoseIndicator")
@@ -465,7 +485,8 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
 
         p, mat = getRotAndPFromMatrix(temp)
-        self.processToolPosePlanVisualization(p, mat)
+        self.processToolPoseParameterNodeSet("TargetPoseTransform", p, mat)
+        self.processToolPosePlanVisualization()
         self.processToolPosePlanSend(p, mat)
 
     def processGenerateGridIncrementDir(self, n):
@@ -497,8 +518,12 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         dist = float(self._parameterNode.GetParameter("GridDistanceApart"))
         arr = self.processGenerateGridIncrementDir(numOfGrid)
 
-        targetPoseTransform = self._parameterNode.GetNodeReference(
-            "TargetPoseTransform").GetMatrixTransformToParent()
+        if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
+            targetPoseTransform = self._parameterNode.GetNodeReference(
+                "TargetPoseTransformCortex").GetMatrixTransformToParent()
+        else:
+            targetPoseTransform = self._parameterNode.GetNodeReference(
+                "TargetPoseTransform").GetMatrixTransformToParent()
 
         temp1, temp = vtk.vtkMatrix4x4(), vtk.vtkMatrix4x4()
         temp1.DeepCopy(targetPoseTransform)
@@ -614,7 +639,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 elif self._parameterNode.GetParameter("ToolRotOption") == "combined":
                     slicer.util.errorDisplay("Not implemented yet!")
                 else: # Default is the skin
-                    matSkin = self.processSearchForSkinRot(p, self._override_y)
+                    pSkin, matSkin = self.processSearchForSkinProjection(p, mat)
                     mat = matSkin
 
             setTranslation(p,i)
@@ -662,6 +687,9 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
 
             p, mat = getRotAndPFromMatrix(self._parameterNode.GetNodeReference(
                 "GridPlanTransformNum"+str(cur)).GetMatrixTransformToParent())
-            self.processToolPosePlanVisualization(p, mat)
+            drawAPlane(mat, p, self._configPath, "PlaneOnMeshIndicator",
+                "PlaneOnMeshTransform", self._parameterNode)
+            self.processToolPosePlanMeshCheck(p, mat)
+            self.processToolPosePlanVisualization()
             self.processToolPosePlanSend(p, mat)    
 
