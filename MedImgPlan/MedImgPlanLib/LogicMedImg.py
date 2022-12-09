@@ -626,22 +626,6 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
 
             mat = utilPosePlan(a, b, c, p, self._override_y)
 
-            # Considering the shape mismatch of the skin and cortex (brain), use
-            # different ways of orientation calculation
-            # 1. Depend only on cortex: the orientation is the cortex shape
-            # 2. Depend only on skin: the orientation is the skin shape, at the point
-            #   projected from the previously planned point
-            # 3. Depend on a weighted combination
-            # Note, if the pose was planned on skin, then option 2 is the only valid option
-            if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
-                if self._parameterNode.GetParameter("ToolRotOption") == "cortex":
-                    pass # If ToolRotOption is cortex, then PlannOnBrain is true
-                elif self._parameterNode.GetParameter("ToolRotOption") == "combined":
-                    slicer.util.errorDisplay("Not implemented yet!")
-                else: # Default is the skin
-                    pSkin, matSkin = self.processSearchForSkinProjection(p, mat)
-                    mat = matSkin
-
             setTranslation(p,i)
             setRotation(mat,i)
 
