@@ -330,7 +330,7 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         if self._parameterNode.GetNodeReference("AlignedLandmarks"):
             markupsNode = self._parameterNode.GetNodeReference("AlignedLandmarks")
             slicer.mrmlScene.RemoveNode(markupsNode)
-        markupsNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsFiducialNode")
+        markupsNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsFiducialNode", "Aligned")
         self._parameterNode.SetNodeReferenceID("AlignedLandmarks", markupsNode.GetID())
         slicer.modules.markups.logic().SetActiveList(markupsNode)
 
@@ -361,7 +361,7 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
             if self._parameterNode.GetNodeReference("AlignedLandmarksPlanned"):
                 markupsNode = self._parameterNode.GetNodeReference("AlignedLandmarksPlanned")
                 slicer.mrmlScene.RemoveNode(markupsNode)
-            markupsNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsFiducialNode")
+            markupsNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsFiducialNode", "Plan")
             self._parameterNode.SetNodeReferenceID("AlignedLandmarksPlanned", markupsNode.GetID())
             slicer.modules.markups.logic().SetActiveList(markupsNode)
             for i in plan_.transpose():
