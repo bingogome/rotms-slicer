@@ -196,6 +196,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 p = pSkin 
             elif self._parameterNode.GetParameter("ToolRotOption") == "combined":
                 slicer.util.errorDisplay("Not implemented yet!")
+                return
             else: # Default is the skin
                 p = pSkin
                 mat = matSkin
@@ -216,6 +217,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 p = pSkin 
             elif self._parameterNode.GetParameter("ToolRotOption") == "combined":
                 slicer.util.errorDisplay("Not implemented yet!")
+                return
             else: # Default is the skin
                 p = pSkin
                 mat = matSkin

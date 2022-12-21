@@ -94,20 +94,6 @@
       <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="3" column="0">
-       <widget class="QPushButton" name="pushDigitize">
-        <property name="text">
-         <string>Start Auto-Digitize</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="1">
-       <widget class="QPushButton" name="pushUsePreviousRegistration">
-        <property name="text">
-         <string>Use Prev Registration</string>
-        </property>
-       </widget>
-      </item>
       <item row="3" column="1">
        <widget class="QPushButton" name="pushDigPrev">
         <property name="text">
@@ -115,10 +101,138 @@
         </property>
        </widget>
       </item>
+      <item row="5" column="0">
+       <widget class="QPushButton" name="pushRegister">
+        <property name="text">
+         <string>Register</string>
+        </property>
+       </widget>
+      </item>
+      <item row="8" column="0" colspan="2">
+       <widget class="ctkCollapsibleGroupBox" name="collapTRE">
+        <property name="title">
+         <string>Estimate Registration Error</string>
+        </property>
+        <property name="collapsed">
+         <bool>true</bool>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_7">
+         <item row="0" column="0">
+          <widget class="QTabWidget" name="tabRE">
+           <property name="whatsThis">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="currentIndex">
+            <number>1</number>
+           </property>
+           <widget class="QWidget" name="tabTRE">
+            <attribute name="title">
+             <string>TRE</string>
+            </attribute>
+            <layout class="QGridLayout" name="gridLayout_9">
+             <item row="0" column="0">
+              <widget class="QLabel" name="labelColorThresh">
+               <property name="text">
+                <string>Color Change Threshold: (mm)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="ctkSliderWidget" name="sliderColorThresh">
+               <property name="minimum">
+                <double>1.000000000000000</double>
+               </property>
+               <property name="maximum">
+                <double>20.000000000000000</double>
+               </property>
+               <property name="value">
+                <double>4.000000000000000</double>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QPushButton" name="pushStartTRE">
+               <property name="text">
+                <string>Start</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0">
+              <widget class="QPushButton" name="pushStopTRE">
+               <property name="text">
+                <string>Stop</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" name="tabFRE">
+            <attribute name="title">
+             <string>FRE</string>
+            </attribute>
+            <layout class="QGridLayout" name="gridLayout_10">
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_2">
+               <property name="text">
+                <string>Planned Landmarks</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="ctkPathLineEdit" name="pathDigLandmarks"/>
+             </item>
+             <item row="3" column="0" colspan="2">
+              <widget class="QPushButton" name="pushVisFRE">
+               <property name="text">
+                <string>Show Planned and Digitized Landmarks</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label">
+               <property name="text">
+                <string>Digitized Landmarks</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="ctkPathLineEdit" name="pathPlanLandmarks"/>
+             </item>
+             <item row="2" column="1">
+              <widget class="ctkPathLineEdit" name="pathRegResult"/>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_3">
+               <property name="text">
+                <string>Registration Result</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="2">
+       <widget class="QPushButton" name="pushPlanLandmarks">
+        <property name="text">
+         <string>All Landmarks Planned</string>
+        </property>
+       </widget>
+      </item>
       <item row="4" column="0">
        <widget class="QPushButton" name="pushDigHighlighted">
         <property name="text">
          <string>Digitize Highlighted</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QPushButton" name="pushDigitize">
+        <property name="text">
+         <string>Start Auto-Digitize</string>
         </property>
        </widget>
       </item>
@@ -133,64 +247,11 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0" colspan="2">
-       <widget class="QPushButton" name="pushPlanLandmarks">
+      <item row="5" column="1">
+       <widget class="QPushButton" name="pushUsePreviousRegistration">
         <property name="text">
-         <string>All Landmarks Planned</string>
+         <string>Use Prev Registration</string>
         </property>
-       </widget>
-      </item>
-      <item row="5" column="0">
-       <widget class="QPushButton" name="pushRegister">
-        <property name="text">
-         <string>Register</string>
-        </property>
-       </widget>
-      </item>
-      <item row="7" column="0" colspan="2">
-       <widget class="ctkCollapsibleGroupBox" name="collapTRE">
-        <property name="title">
-         <string>Check Target Registration Error</string>
-        </property>
-        <property name="collapsed">
-         <bool>true</bool>
-        </property>
-        <layout class="QGridLayout" name="gridLayout_7">
-         <item row="1" column="0">
-          <widget class="ctkSliderWidget" name="sliderColorThresh">
-           <property name="minimum">
-            <double>1.000000000000000</double>
-           </property>
-           <property name="maximum">
-            <double>20.000000000000000</double>
-           </property>
-           <property name="value">
-            <double>4.000000000000000</double>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QPushButton" name="pushStartTRE">
-           <property name="text">
-            <string>Start</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="labelColorThresh">
-           <property name="text">
-            <string>Color Change Threshold: (mm)</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
-          <widget class="QPushButton" name="pushStopTRE">
-           <property name="text">
-            <string>Stop</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
        </widget>
       </item>
       <item row="4" column="1">
@@ -599,6 +660,11 @@
    <extends>QGroupBox</extends>
    <header>ctkCollapsibleGroupBox.h</header>
    <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ctkPathLineEdit</class>
+   <extends>QWidget</extends>
+   <header>ctkPathLineEdit.h</header>
   </customwidget>
   <customwidget>
    <class>ctkSliderWidget</class>
