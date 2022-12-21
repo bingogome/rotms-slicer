@@ -296,7 +296,7 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
             slicer.util.errorDisplay("Please select digitized landmarks file first!")
             return
         else:
-            with open(self.ui.pathDigLandmarks.currentPath, "r") as stream:
+            with open(self.ui.pathDigLandmarks.currentPath.strip(), "r") as stream:
                 try:
                     dig = yaml.safe_load(stream)
                 except yaml.YAMLError as exc:
@@ -314,7 +314,7 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
             slicer.util.errorDisplay("Please select registration result file first!")
             return
         else:
-            with open(self.ui.pathRegResult.currentPath, "r") as stream:
+            with open(self.ui.pathRegResult.currentPath.strip(), "r") as stream:
                 try:
                     reg = yaml.safe_load(stream)
                 except yaml.YAMLError as exc:
@@ -341,7 +341,7 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         if not self.ui.pathPlanLandmarks.currentPath:
             return
         else:
-            with open(self.ui.pathPlanLandmarks.currentPath, "r") as stream:
+            with open(self.ui.pathPlanLandmarks.currentPath.strip(), "r") as stream:
                 try:
                     plan = yaml.safe_load(stream)
                 except yaml.YAMLError as exc:
@@ -365,8 +365,10 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
             self._parameterNode.SetNodeReferenceID("AlignedLandmarksPlanned", markupsNode.GetID())
             slicer.modules.markups.logic().SetActiveList(markupsNode)
             for i in plan_.transpose():
-                print(i[0], i[1], i[2])
                 slicer.modules.markups.logic().AddControlPoint(i[0], i[1], i[2])
+
+        # Print FRE
+        slicer.util.infoDisplay("FRE of each landmark: " + str(numpy.linalg.norm(res - plan_, axis=0)))
 
     def onPushPlanLandmarks(self):
         self.updateParameterNodeFromGUI()
