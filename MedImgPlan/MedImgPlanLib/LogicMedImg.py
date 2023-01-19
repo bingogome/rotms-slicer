@@ -22,14 +22,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
-import os, json, logging, math, random
+import os, json, logging, math, random, yaml, numpy
 import vtk, qt, ctk, slicer
 
 from slicer.ScriptedLoadableModule import *
 from slicer.util import VTKObservationMixin
 
 from MedImgPlanLib.UtilFormat import utilNumStrFormat
-from MedImgPlanLib.UtilCalculations import mat2quat, utilPosePlan, rotx, roty, rotz
+from MedImgPlanLib.UtilCalculations import mat2quat, utilPosePlan, rotx, roty, rotz, quat2mat
 from MedImgPlanLib.UtilMedImgConnections import MedImgConnections
 
 from MedImgPlanLib.UtilSlicerFuncs import drawAPlane, getRotAndPFromMatrix, initModelAndTransform, setRotation, setTransform, setTranslation
@@ -123,6 +123,80 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     def processStopTRECalculation(self):
 
         self._connections._flag_receiving_nnblc = False
+
+    def processVisFRE(self, pathDigLandmarks, pathPlanLandmarks, pathRegResult):
+        """
+        Visualization of the planned landmarks and the digitized landmarks
+        """
+
+        # Load digitized landmarks. Convert ROS units to Slicer units
+        with open(pathDigLandmarks, "r") as stream:
+            try:
+                dig = yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
+        numDig, dig_ = dig["NUM"], []
+        for i in range(numDig):
+            dig_.append(\
+                [dig["DIGITIZED"]["d"+str(i)]["x"] * 1000.0, \
+                dig["DIGITIZED"]["d"+str(i)]["y"] * 1000.0, \
+                dig["DIGITIZED"]["d"+str(i)]["z"] * 1000.0])
+        dig_ = numpy.array(dig_).transpose()
+
+        # Load registered results. Convert ROS units to Slicer units
+        with open(pathRegResult, "r") as stream:
+            try:
+                reg = yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
+        rot = [reg["ROTATION"]["x"],reg["ROTATION"]["y"],reg["ROTATION"]["z"],reg["ROTATION"]["w"]]
+        rot = quat2mat(rot)
+        p = [reg["TRANSLATION"]["x"],reg["TRANSLATION"]["y"],reg["TRANSLATION"]["z"]]
+        rot_ = numpy.array(rot).transpose()
+        p_ = -numpy.matmul(rot_, numpy.array(p).reshape((3,1))) * 1000.0
+
+        # Get aligned point cloud and visualize
+        res = numpy.matmul(rot_, dig_) + p_
+        if self._parameterNode.GetNodeReference("AlignedLandmarks"):
+            markupsNode = self._parameterNode.GetNodeReference("AlignedLandmarks")
+            slicer.mrmlScene.RemoveNode(markupsNode)
+        markupsNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsFiducialNode", "Aligned")
+        self._parameterNode.SetNodeReferenceID("AlignedLandmarks", markupsNode.GetID())
+        slicer.modules.markups.logic().SetActiveList(markupsNode)
+
+        for i in res.transpose():
+            slicer.modules.markups.logic().AddControlPoint(i[0], i[1], i[2])
+
+        # Load planned landmarks. Convert ROS units to Slicer units
+        if pathDigLandmarks:
+            with open(pathPlanLandmarks, "r") as stream:
+                try:
+                    plan = yaml.safe_load(stream)
+                except yaml.YAMLError as exc:
+                    print(exc)
+            numPlan, plan_ = plan["NUM"], []
+            if numDig!=numPlan:
+                slicer.util.errorDisplay("The number of digitized landmarks does not match the number of planned landmarks!")
+                return
+            for i in range(numPlan):
+                plan_.append(\
+                    [plan["PLANNED"]["p"+str(i)]["x"] * 1000.0, \
+                    plan["PLANNED"]["p"+str(i)]["y"] * 1000.0, \
+                    plan["PLANNED"]["p"+str(i)]["z"] * 1000.0])
+            plan_ = numpy.array(plan_).transpose()
+
+            # visualize
+            if self._parameterNode.GetNodeReference("AlignedLandmarksPlanned"):
+                markupsNode = self._parameterNode.GetNodeReference("AlignedLandmarksPlanned")
+                slicer.mrmlScene.RemoveNode(markupsNode)
+            markupsNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsFiducialNode", "Plan")
+            self._parameterNode.SetNodeReferenceID("AlignedLandmarksPlanned", markupsNode.GetID())
+            slicer.modules.markups.logic().SetActiveList(markupsNode)
+            for i in plan_.transpose():
+                slicer.modules.markups.logic().AddControlPoint(i[0], i[1], i[2])
+
+        # Print FRE
+        slicer.util.infoDisplay("FRE of each landmark: " + str(numpy.linalg.norm(res - plan_, axis=0)))
 
     def processPushPlanLandmarks(self, inputMarkupsNode):
         """

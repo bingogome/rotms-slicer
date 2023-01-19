@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>420</width>
-    <height>1205</height>
+    <width>416</width>
+    <height>1187</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
@@ -91,30 +91,16 @@
       <string>Registration</string>
      </property>
      <property name="collapsed">
-      <bool>true</bool>
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="3" column="1">
-       <widget class="QPushButton" name="pushDigPrev">
-        <property name="text">
-         <string>Use Prev Dig</string>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="0">
-       <widget class="QPushButton" name="pushRegister">
-        <property name="text">
-         <string>Register</string>
-        </property>
-       </widget>
-      </item>
-      <item row="8" column="0" colspan="2">
+      <item row="4" column="0" colspan="2">
        <widget class="ctkCollapsibleGroupBox" name="collapTRE">
         <property name="title">
          <string>Estimate Registration Error</string>
         </property>
         <property name="collapsed">
-         <bool>true</bool>
+         <bool>false</bool>
         </property>
         <layout class="QGridLayout" name="gridLayout_7">
          <item row="0" column="0">
@@ -123,7 +109,7 @@
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="currentIndex">
-            <number>1</number>
+            <number>2</number>
            </property>
            <widget class="QWidget" name="tabTRE">
             <attribute name="title">
@@ -210,63 +196,188 @@
              </item>
             </layout>
            </widget>
+           <widget class="QWidget" name="tab">
+            <attribute name="title">
+             <string>ICP</string>
+            </attribute>
+            <layout class="QGridLayout" name="gridLayout_13">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_5">
+               <property name="text">
+                <string>ICP Point Clouds</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="ctkPathLineEdit" name="PathLineEdit"/>
+             </item>
+             <item row="1" column="0" colspan="2">
+              <widget class="QPushButton" name="pushButton_5">
+               <property name="text">
+                <string>Show Curves after Alignment</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
           </widget>
          </item>
         </layout>
        </widget>
       </item>
-      <item row="2" column="0" colspan="2">
-       <widget class="QPushButton" name="pushPlanLandmarks">
-        <property name="text">
-         <string>All Landmarks Planned</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="0">
-       <widget class="QPushButton" name="pushDigHighlighted">
-        <property name="text">
-         <string>Digitize Highlighted</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QPushButton" name="pushDigitize">
-        <property name="text">
-         <string>Start Auto-Digitize</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0" colspan="2">
-       <widget class="qSlicerSimpleMarkupsWidget" name="markupsRegistration">
-        <property name="defaultNodeColor">
-         <color>
-          <red>0</red>
-          <green>255</green>
-          <blue>0</blue>
-         </color>
-        </property>
-       </widget>
-      </item>
-      <item row="5" column="1">
-       <widget class="QPushButton" name="pushUsePreviousRegistration">
-        <property name="text">
-         <string>Use Prev Registration</string>
-        </property>
-       </widget>
-      </item>
-      <item row="4" column="1">
-       <widget class="QPushButton" name="pushDigPrevAndDigHilight">
-        <property name="text">
-         <string>Use Prev Dig
- And Dig Highlighted</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="0" colspan="2">
-       <widget class="QLabel" name="labelRegistration">
-        <property name="text">
-         <string>Collect at least 3 landmarks.</string>
+       <widget class="QTabWidget" name="tabRegistration">
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>400</height>
+         </size>
         </property>
+        <property name="currentIndex">
+         <number>1</number>
+        </property>
+        <widget class="QWidget" name="tabPairPoint">
+         <attribute name="title">
+          <string>Pair-point Registration</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_11">
+          <item row="0" column="0" colspan="2">
+           <widget class="QLabel" name="labelRegistration">
+            <property name="text">
+             <string>Collect at least 3 landmarks.</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0" colspan="2">
+           <widget class="qSlicerSimpleMarkupsWidget" name="markupsRegistration">
+            <property name="defaultNodeColor">
+             <color>
+              <red>0</red>
+              <green>255</green>
+              <blue>0</blue>
+             </color>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" colspan="2">
+           <widget class="QPushButton" name="pushPlanLandmarks">
+            <property name="text">
+             <string>All Landmarks Planned</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QPushButton" name="pushDigitize">
+            <property name="text">
+             <string>Start Auto-Digitize</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QPushButton" name="pushDigPrev">
+            <property name="text">
+             <string>Use Prev Dig</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QPushButton" name="pushDigHighlighted">
+            <property name="text">
+             <string>Digitize Highlighted</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QPushButton" name="pushDigPrevAndDigHilight">
+            <property name="text">
+             <string>Use Prev Dig
+ And Dig Highlighted</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QPushButton" name="pushRegister">
+            <property name="text">
+             <string>Register</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QPushButton" name="pushUsePreviousRegistration">
+            <property name="text">
+             <string>Use Prev Registration</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tabICP">
+         <attribute name="title">
+          <string>ICP (Fine Tune)</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_12">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_4">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Number of Point Clouds:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="0">
+           <widget class="QPushButton" name="pushButton_2">
+            <property name="text">
+             <string>Clear All Digitized Point Clouds</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLineEdit" name="lineEdit"/>
+          </item>
+          <item row="4" column="0">
+           <widget class="QPushButton" name="pushButton">
+            <property name="text">
+             <string>Start Digitization of a Point Cloud</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0">
+           <widget class="QPushButton" name="pushButton_4">
+            <property name="text">
+             <string>Clear Previous Point Cloud</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_6">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>30</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Point Cloud Path:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="7" column="0">
+           <widget class="QPushButton" name="pushButton_3">
+            <property name="text">
+             <string>Register</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLineEdit" name="lineEdit_2"/>
+          </item>
+         </layout>
+        </widget>
        </widget>
       </item>
      </layout>
