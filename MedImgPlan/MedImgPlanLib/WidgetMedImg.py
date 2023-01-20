@@ -112,11 +112,11 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         self.ui.pushGridSetNext.connect('clicked(bool)', self.onPushGridSetNext)
         self.ui.pushGridClear.connect('clicked(bool)', self.onPushGridClear)
 
-        self.ui.pushICPDigitize('clicked(bool)', self.onPushICPDigitize)
-        self.ui.pushICPClearPrev('clicked(bool)', self.onPushICPClearPrev)
-        self.ui.pushICPClearPoints('clicked(bool)', self.onPushICPClearPoints)
-        self.ui.pushICPRegister('clicked(bool)', self.onPushICPRegister)
-        self.ui.pushShowICPPoints('clicked(bool)', self.onPushShowICPPoints)
+        self.ui.pushICPDigitize.connect('clicked(bool)', self.onPushICPDigitize)
+        self.ui.pushICPClearPrev.connect('clicked(bool)', self.onPushICPClearPrev)
+        self.ui.pushICPClearPoints.connect('clicked(bool)', self.onPushICPClearPoints)
+        self.ui.pushICPRegister.connect('clicked(bool)', self.onPushICPRegister)
+        self.ui.pushShowICPPoints.connect('clicked(bool)', self.onPushShowICPPoints)
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
