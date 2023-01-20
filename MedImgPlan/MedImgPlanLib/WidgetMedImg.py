@@ -112,6 +112,12 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         self.ui.pushGridSetNext.connect('clicked(bool)', self.onPushGridSetNext)
         self.ui.pushGridClear.connect('clicked(bool)', self.onPushGridClear)
 
+        self.ui.pushICPDigitize('clicked(bool)', self.onPushICPDigitize)
+        self.ui.pushICPClearPrev('clicked(bool)', self.onPushICPClearPrev)
+        self.ui.pushICPClearPoints('clicked(bool)', self.onPushICPClearPoints)
+        self.ui.pushICPRegister('clicked(bool)', self.onPushICPRegister)
+        self.ui.pushShowICPPoints('clicked(bool)', self.onPushShowICPPoints)
+
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
 
@@ -338,6 +344,25 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         data = self.logic._connections.receiveMsg()
         print("Registration residual: " + str(data) + "mm")
         slicer.util.infoDisplay("Registration residual: " + str(data) + "mm")
+
+    def onPushICPDigitize(self):
+        msg = self.logic._commandsData["ICP_DIGITIZE"]
+        self.logic._connections.utilSendCommand(msg)
+
+    def onPushICPClearPrev(self):
+        msg = self.logic._commandsData["ICP_CLEAR_PREV"]
+        self.logic._connections.utilSendCommand(msg)
+    
+    def onPushICPClearPoints(self):
+        msg = self.logic._commandsData["ICP_CLEAR_ALL"]
+        self.logic._connections.utilSendCommand(msg)
+    
+    def onPushICPRegister(self):
+        msg = self.logic._commandsData["ICP_REGISTER"]
+        self.logic._connections.utilSendCommand(msg)
+    
+    def onPushShowICPPoints(self):
+        return
 
     def onPushToolPosePlan(self):
         self.updateParameterNodeFromGUI()
