@@ -359,7 +359,8 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
     
     def onPushICPRegister(self):
         msg = self.logic._commandsData["ICP_REGISTER"]
-        self.logic._connections.utilSendCommand(msg)
+        self.logic._connections.utilSendCommand(msg) + "_" + \
+            self.ui.pathICPMesh.currentPath.strip()
     
     def onPushShowICPPoints(self):
         return
