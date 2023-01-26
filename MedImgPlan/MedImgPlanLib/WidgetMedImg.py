@@ -358,9 +358,12 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         self.logic._connections.utilSendCommand(msg)
     
     def onPushICPRegister(self):
+        if not self.ui.pathICPMesh.currentPath:
+            slicer.util.errorDisplay("Please select mesh file first!")
+            return
         msg = self.logic._commandsData["ICP_REGISTER"]
-        self.logic._connections.utilSendCommand(msg) + "_" + \
-            self.ui.pathICPMesh.currentPath.strip()
+        self.logic._connections.utilSendCommand(msg + "_" + \
+            self.ui.pathICPMesh.currentPath.strip())
     
     def onPushShowICPPoints(self):
         return
