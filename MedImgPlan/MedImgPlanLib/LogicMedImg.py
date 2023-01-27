@@ -135,6 +135,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 dig = yaml.safe_load(stream)
             except yaml.YAMLError as exc:
                 print(exc)
+                return
         numDig, dig_ = dig["NUM"], []
         for i in range(numDig):
             dig_.append(\
@@ -149,6 +150,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 reg = yaml.safe_load(stream)
             except yaml.YAMLError as exc:
                 print(exc)
+                return
         rot = [reg["ROTATION"]["x"],reg["ROTATION"]["y"],reg["ROTATION"]["z"],reg["ROTATION"]["w"]]
         rot = quat2mat(rot)
         p = [reg["TRANSLATION"]["x"],reg["TRANSLATION"]["y"],reg["TRANSLATION"]["z"]]
@@ -167,6 +169,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         for i in res.transpose():
             slicer.modules.markups.logic().AddControlPoint(i[0], i[1], i[2])
 
+        markupsNode.GetDisplayNode().SetSelectedColor(0,1,0) 
+        markupsNode.GetDisplayNode().SetTextScale(0)
+
+
         # Load planned landmarks. Convert ROS units to Slicer units
         if pathDigLandmarks:
             with open(pathPlanLandmarks, "r") as stream:
@@ -174,6 +180,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                     plan = yaml.safe_load(stream)
                 except yaml.YAMLError as exc:
                     print(exc)
+                    return
             numPlan, plan_ = plan["NUM"], []
             if numDig!=numPlan:
                 slicer.util.errorDisplay("The number of digitized landmarks does not match the number of planned landmarks!")
@@ -194,9 +201,68 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             slicer.modules.markups.logic().SetActiveList(markupsNode)
             for i in plan_.transpose():
                 slicer.modules.markups.logic().AddControlPoint(i[0], i[1], i[2])
+            markupsNode.GetDisplayNode().SetSelectedColor(0,0,1) 
+            markupsNode.GetDisplayNode().SetTextScale(0)
 
         # Print FRE
         slicer.util.infoDisplay("FRE of each landmark: " + str(numpy.linalg.norm(res - plan_, axis=0)))
+
+        # Disable control point placement
+        slicer.mrmlScene.GetNodeByID("vtkMRMLInteractionNodeSingleton").SetPlaceModePersistence(0)
+
+    def processVisICP(self, pathICPPoints, pathICPReg):
+        """
+        Visualization of the ICP digitization points 
+        """
+
+        with open(pathICPPoints, "r") as stream:
+            try:
+                dig_dict = yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
+                return
+
+        dig = []
+        for k in dig_dict.keys():
+            # convert ROS m unit to mm
+            dig.extend([float(i) * 1000.0 for i in dig_dict[k].strip().split(',')[:-1]])
+            
+        dig_ = numpy.array(dig).reshape((-1,3)).transpose()
+
+        # Load registered results. Convert ROS units to Slicer units
+        with open(pathICPReg, "r") as stream:
+            try:
+                reg = yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
+                return
+        if int(reg["FLAG_ICP"]) != 1:
+            slicer.util.errorDisplay("ICP was not done yet!")
+            return 
+
+        rot = [reg["ROTATION"]["x"],reg["ROTATION"]["y"],reg["ROTATION"]["z"],reg["ROTATION"]["w"]]
+        rot = quat2mat(rot)
+        p = [reg["TRANSLATION"]["x"],reg["TRANSLATION"]["y"],reg["TRANSLATION"]["z"]]
+        rot_ = numpy.array(rot).transpose()
+        p_ = -numpy.matmul(rot_, numpy.array(p).reshape((3,1))) * 1000.0
+
+        # Get aligned point cloud and visualize
+        res = numpy.matmul(rot_, dig_) + p_
+        if self._parameterNode.GetNodeReference("AlignedICPPointClouds"):
+            markupsNode = self._parameterNode.GetNodeReference("AlignedICPPointClouds")
+            slicer.mrmlScene.RemoveNode(markupsNode)
+        markupsNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsFiducialNode", "AlignedICP")
+        self._parameterNode.SetNodeReferenceID("AlignedICPPointClouds", markupsNode.GetID())
+        slicer.modules.markups.logic().SetActiveList(markupsNode)
+
+        for i in res.transpose():
+            slicer.modules.markups.logic().AddControlPoint(i[0], i[1], i[2])
+        
+        markupsNode.GetDisplayNode().SetSelectedColor(0,1,0) 
+        markupsNode.GetDisplayNode().SetTextScale(0)
+
+        # Disable control point placement
+        slicer.mrmlScene.GetNodeByID("vtkMRMLInteractionNodeSingleton").SetPlaceModePersistence(0)
 
     def processPushPlanLandmarks(self, inputMarkupsNode):
         """

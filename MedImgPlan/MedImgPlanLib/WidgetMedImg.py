@@ -366,7 +366,15 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
             self.ui.pathICPMesh.currentPath.strip())
     
     def onPushShowICPPoints(self):
-        return
+        if not self.ui.pathICPPoints.currentPath:
+            slicer.util.errorDisplay("Please select digitized landmarks file first!")
+            return
+        if not self.ui.pathICPReg.currentPath:
+            slicer.util.errorDisplay("Please select registration result file first!")
+            return
+        self.logic.processVisICP( \
+            self.ui.pathICPPoints.currentPath.strip(), \
+            self.ui.pathICPReg.currentPath.strip())
 
     def onPushToolPosePlan(self):
         self.updateParameterNodeFromGUI()
