@@ -199,10 +199,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             markupsNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsFiducialNode", "Plan")
             self._parameterNode.SetNodeReferenceID("AlignedLandmarksPlanned", markupsNode.GetID())
             slicer.modules.markups.logic().SetActiveList(markupsNode)
-            for i in plan_.transpose():
-                slicer.modules.markups.logic().AddControlPoint(i[0], i[1], i[2])
             markupsNode.GetDisplayNode().SetSelectedColor(0,0,1) 
             markupsNode.GetDisplayNode().SetTextScale(0)
+            for i in plan_.transpose():
+                slicer.modules.markups.logic().AddControlPoint(i[0], i[1], i[2])
 
         # Print FRE
         slicer.util.infoDisplay("FRE of each landmark: " + str(numpy.linalg.norm(res - plan_, axis=0)))
@@ -257,13 +257,12 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         markupsNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsFiducialNode", "AlignedICP")
         self._parameterNode.SetNodeReferenceID("AlignedICPPointClouds", markupsNode.GetID())
         slicer.modules.markups.logic().SetActiveList(markupsNode)
-
+        markupsNode.GetDisplayNode().SetSelectedColor(0,1,0) 
+        markupsNode.GetDisplayNode().SetTextScale(0)
+        
         for i in res.transpose():
             slicer.modules.markups.logic().AddControlPoint(i[0], i[1], i[2])
         
-        markupsNode.GetDisplayNode().SetSelectedColor(0,1,0) 
-        markupsNode.GetDisplayNode().SetTextScale(0)
-
         # Disable control point placement
         slicer.mrmlScene.GetNodeByID("vtkMRMLInteractionNodeSingleton").SetPlaceModePersistence(0)
 
