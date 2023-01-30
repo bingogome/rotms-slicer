@@ -374,7 +374,8 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
             return
         self.logic.processVisICP( \
             self.ui.pathICPPoints.currentPath.strip(), \
-            self.ui.pathICPReg.currentPath.strip())
+            self.ui.pathICPReg.currentPath.strip(), \
+            self.ui.checkIgnoreICP.checked)
 
     def onPushToolPosePlan(self):
         self.updateParameterNodeFromGUI()

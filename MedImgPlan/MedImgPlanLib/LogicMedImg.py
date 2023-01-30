@@ -210,7 +210,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         # Disable control point placement
         slicer.mrmlScene.GetNodeByID("vtkMRMLInteractionNodeSingleton").SetPlaceModePersistence(0)
 
-    def processVisICP(self, pathICPPoints, pathICPReg):
+    def processVisICP(self, pathICPPoints, pathICPReg, ignoreICP):
         """
         Visualization of the ICP digitization points 
         """
@@ -237,8 +237,11 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 print(exc)
                 return
         if int(reg["FLAG_ICP"]) != 1:
-            slicer.util.errorDisplay("ICP was not done yet!")
-            return 
+            if ignoreICP:
+                pass
+            else:
+                slicer.util.errorDisplay("ICP was not done yet!")
+                return 
 
         rot = [reg["ROTATION"]["x"],reg["ROTATION"]["y"],reg["ROTATION"]["z"],reg["ROTATION"]["w"]]
         rot = quat2mat(rot)
