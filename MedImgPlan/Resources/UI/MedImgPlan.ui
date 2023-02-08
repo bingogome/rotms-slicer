@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>416</width>
+    <width>402</width>
     <height>1187</height>
    </rect>
   </property>
@@ -109,7 +109,7 @@
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="currentIndex">
-            <number>2</number>
+            <number>1</number>
            </property>
            <widget class="QWidget" name="tabTRE">
             <attribute name="title">
@@ -164,15 +164,25 @@
                </property>
               </widget>
              </item>
-             <item row="0" column="1">
-              <widget class="ctkPathLineEdit" name="pathDigLandmarks"/>
-             </item>
              <item row="3" column="0" colspan="2">
               <widget class="QPushButton" name="pushVisFRE">
                <property name="text">
                 <string>Show Planned and Digitized Landmarks</string>
                </property>
               </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_3">
+               <property name="text">
+                <string>Registration Result</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="ctkPathLineEdit" name="pathDigLandmarks"/>
+             </item>
+             <item row="1" column="1">
+              <widget class="ctkPathLineEdit" name="pathPlanLandmarks"/>
              </item>
              <item row="0" column="0">
               <widget class="QLabel" name="label">
@@ -181,18 +191,8 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="1">
-              <widget class="ctkPathLineEdit" name="pathPlanLandmarks"/>
-             </item>
              <item row="2" column="1">
               <widget class="ctkPathLineEdit" name="pathRegResult"/>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="label_3">
-               <property name="text">
-                <string>Registration Result</string>
-               </property>
-              </widget>
              </item>
             </layout>
            </widget>
@@ -251,11 +251,11 @@
          </size>
         </property>
         <property name="currentIndex">
-         <number>1</number>
+         <number>2</number>
         </property>
         <widget class="QWidget" name="tabPairPoint">
          <attribute name="title">
-          <string>Pair-point Registration</string>
+          <string>Pair-point</string>
          </attribute>
          <layout class="QGridLayout" name="gridLayout_11">
           <item row="0" column="0" colspan="2">
@@ -330,7 +330,7 @@
         </widget>
         <widget class="QWidget" name="tabICP">
          <attribute name="title">
-          <string>ICP (Fine Tune)</string>
+          <string>ICP</string>
          </attribute>
          <layout class="QGridLayout" name="gridLayout_12">
           <item row="0" column="0">
@@ -338,7 +338,7 @@
             <property name="maximumSize">
              <size>
               <width>16777215</width>
-              <height>30</height>
+              <height>25</height>
              </size>
             </property>
             <property name="text">
@@ -346,22 +346,15 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
+          <item row="0" column="1">
            <widget class="QLineEdit" name="textICPNumPointCloud"/>
           </item>
-          <item row="4" column="0">
-           <widget class="QPushButton" name="pushICPDigitize">
-            <property name="text">
-             <string>Start Digitization of a Point Cloud</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
+          <item row="1" column="0">
            <widget class="QLabel" name="label_6">
             <property name="maximumSize">
              <size>
               <width>16777215</width>
-              <height>30</height>
+              <height>25</height>
              </size>
             </property>
             <property name="text">
@@ -369,29 +362,156 @@
             </property>
            </widget>
           </item>
-          <item row="6" column="0">
-           <widget class="QPushButton" name="pushICPClearPoints">
+          <item row="3" column="0" colspan="2">
+           <widget class="QPushButton" name="pushICPDigitize">
             <property name="text">
-             <string>Clear All Digitized Point Clouds</string>
+             <string>Start Digitization of a Point Cloud</string>
             </property>
            </widget>
           </item>
-          <item row="7" column="0">
-           <widget class="QPushButton" name="pushICPRegister">
-            <property name="text">
-             <string>Register</string>
-            </property>
-           </widget>
-          </item>
-          <item row="5" column="0">
+          <item row="4" column="0" colspan="2">
            <widget class="QPushButton" name="pushICPClearPrev">
             <property name="text">
              <string>Clear Previous Point Cloud</string>
             </property>
            </widget>
           </item>
-          <item row="3" column="0">
+          <item row="5" column="0" colspan="2">
+           <widget class="QPushButton" name="pushICPClearPoints">
+            <property name="text">
+             <string>Clear All Digitized Point Clouds</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
            <widget class="ctkPathLineEdit" name="pathICPMesh"/>
+          </item>
+          <item row="6" column="0" colspan="2">
+           <widget class="QPushButton" name="pushICPRegister">
+            <property name="text">
+             <string>Register</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+        <widget class="QWidget" name="tabManualAlign">
+         <attribute name="title">
+          <string>Manual</string>
+         </attribute>
+         <layout class="QGridLayout" name="gridLayout_14">
+          <item row="0" column="0" colspan="3">
+           <widget class="QPushButton" name="pushConfirmAlignReg">
+            <property name="text">
+             <string>Confirm Alignment</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0" colspan="3">
+           <widget class="QLabel" name="label_8">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>25</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Translation Increment (mm)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" colspan="3">
+           <widget class="qMRMLSliderWidget" name="sliderTranslationReg">
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+            <property name="pageStep">
+             <double>1.000000000000000</double>
+            </property>
+            <property name="minimum">
+             <double>-10.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>10.000000000000000</double>
+            </property>
+            <property name="quantity">
+             <string notr="true"/>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QPushButton" name="pushBackForwardReg">
+            <property name="text">
+             <string>Back Forward</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QPushButton" name="pushLeftRightReg">
+            <property name="text">
+             <string>Left Right</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
+           <widget class="QPushButton" name="pushCloserFartherReg">
+            <property name="text">
+             <string>Close Away</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0" colspan="3">
+           <widget class="QLabel" name="label_9">
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>25</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Rotation Increment (degree)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="0" colspan="3">
+           <widget class="qMRMLSliderWidget" name="sliderRotationReg">
+            <property name="singleStep">
+             <double>0.100000000000000</double>
+            </property>
+            <property name="pageStep">
+             <double>1.000000000000000</double>
+            </property>
+            <property name="minimum">
+             <double>-90.000000000000000</double>
+            </property>
+            <property name="maximum">
+             <double>90.000000000000000</double>
+            </property>
+            <property name="quantity">
+             <string notr="true"/>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="0">
+           <widget class="QPushButton" name="pushRollReg">
+            <property name="text">
+             <string>Row</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="1">
+           <widget class="QPushButton" name="pushYawReg">
+            <property name="text">
+             <string>Yaw</string>
+            </property>
+           </widget>
+          </item>
+          <item row="6" column="2">
+           <widget class="QPushButton" name="pushPitchReg">
+            <property name="text">
+             <string>Pitch</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -803,6 +923,11 @@
    <class>qMRMLNodeComboBox</class>
    <extends>QWidget</extends>
    <header>qMRMLNodeComboBox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>qMRMLSliderWidget</class>
+   <extends>ctkSliderWidget</extends>
+   <header>qMRMLSliderWidget.h</header>
   </customwidget>
   <customwidget>
    <class>qMRMLWidget</class>

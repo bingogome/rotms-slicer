@@ -46,14 +46,13 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         # These connections ensure that whenever user changes some settings on the GUI, that is saved in the MRML scene
         # (in the selected parameter node).
 
-        self.ui.markupsRegistration.connect(
-            "markupsNodeChanged()", self.updateParameterNodeFromGUI)
-        self.ui.markupsRegistration.markupsPlaceWidget().setPlaceModePersistency(True)
-        self.ui.markupsRegistration.connect(
-            'currentMarkupsControlPointSelectionChanged(int)', self.onLandmarkWidgetHilightChange)
-        self.ui.markupsToolPosePlan.connect(
-            "markupsNodeChanged()", self.updateParameterNodeFromGUI)
+        self.ui.markupsRegistration.connect("markupsNodeChanged()", self.updateParameterNodeFromGUI)
+        self.ui.markupsToolPosePlan.connect("markupsNodeChanged()", self.updateParameterNodeFromGUI)
+        self.ui.markupsRegistration.connect("currentMarkupsControlPointSelectionChanged(int)", 
+            self.onLandmarkWidgetHilightChange)
+        
         self.ui.markupsToolPosePlan.markupsPlaceWidget().setPlaceModePersistency(True)
+        self.ui.markupsRegistration.markupsPlaceWidget().setPlaceModePersistency(True)
 
         self.ui.comboMeshSelectorSkin.connect(
             "currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI)
@@ -64,33 +63,44 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
 
         self.ui.sliderColorThresh.connect(
             "valueChanged(double)", self.updateParameterNodeFromGUI)
-
         self.ui.sliderManualToolPos.connect(
             "valueChanged(double)", self.updateParameterNodeFromGUI)
         self.ui.sliderManualToolRot.connect(
             "valueChanged(double)", self.updateParameterNodeFromGUI)
-
+        self.ui.sliderManualRegPos.connect(
+            "valueChanged(double)", self.updateParameterNodeFromGUI)
+        self.ui.sliderManualRegRot.connect(
+            "valueChanged(double)", self.updateParameterNodeFromGUI)
         self.ui.sliderGridDistanceApart.connect(
             "valueChanged(double)", self.updateParameterNodeFromGUI)
         self.ui.sliderGridPlanNum.connect(
             "valueChanged(double)", self.updateParameterNodeFromGUI)
 
-        self.ui.checkBoxGridAnatomySurf.connect("toggled(bool)", self.updateParameterNodeFromGUI)
-        self.ui.checkBoxGridPerspPlane.connect("toggled(bool)", self.updateParameterNodeFromGUI)
+        self.ui.checkBoxGridAnatomySurf.connect(
+            "toggled(bool)", self.updateParameterNodeFromGUI)
+        self.ui.checkBoxGridPerspPlane.connect(
+            "toggled(bool)", self.updateParameterNodeFromGUI)
 
-        self.ui.radioButtonToolRotSkin.connect("toggled(bool)", self.onRadioToolRotOptions)
-        self.ui.radioButtonToolRotCortex.connect("toggled(bool)", self.onRadioToolRotOptions)
-        self.ui.radioButtonToolRotCombined.connect("toggled(bool)", self.onRadioToolRotOptions)
+        self.ui.radioButtonToolRotSkin.connect(
+            "toggled(bool)", self.onRadioToolRotOptions)
+        self.ui.radioButtonToolRotCortex.connect(
+            "toggled(bool)", self.onRadioToolRotOptions)
+        self.ui.radioButtonToolRotCombined.connect(
+            "toggled(bool)", self.onRadioToolRotOptions)
 
         # Buttons
+
+        # Jump to other modules
         self.ui.pushModuleTargetViz.connect('clicked(bool)', self.onPushModuleTargetViz)
         self.ui.pushModuleRobCtrl.connect('clicked(bool)', self.onPushModuleRobCtrl)
         self.ui.pushModuleFreeSurfer.connect('clicked(bool)', self.onPushModuleFreeSurfer)
 
+        # Registration error estimation
         self.ui.pushStartTRE.connect('clicked(bool)', self.onPushStartTRE)
         self.ui.pushStopTRE.connect('clicked(bool)', self.onPushStopTRE)
         self.ui.pushVisFRE.connect('clicked(bool)', self.onPushVisFRE)
 
+        # Pair-point registration
         self.ui.pushPlanLandmarks.connect('clicked(bool)', self.onPushPlanLandmarks)
         self.ui.pushDigHighlighted.connect('clicked(bool)', self.onPushDigHighlighted)
         self.ui.pushDigitize.connect('clicked(bool)', self.onPushDigitize)
@@ -98,9 +108,27 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         self.ui.pushDigPrevAndDigHilight.connect('clicked(bool)', self.onPushDigPrevAndDigHilight)
         self.ui.pushRegister.connect('clicked(bool)', self.onPushRegistration)
         self.ui.pushUsePreviousRegistration.connect('clicked(bool)', self.onPushUsePreviousRegistration)
+
+        # ICP registration
+        self.ui.pushICPDigitize.connect('clicked(bool)', self.onPushICPDigitize)
+        self.ui.pushICPClearPrev.connect('clicked(bool)', self.onPushICPClearPrev)
+        self.ui.pushICPClearPoints.connect('clicked(bool)', self.onPushICPClearPoints)
+        self.ui.pushICPRegister.connect('clicked(bool)', self.onPushICPRegister)
+        self.ui.pushShowICPPoints.connect('clicked(bool)', self.onPushShowICPPoints)
+
+        # Manual alignment registrtion
+        self.ui.pushBackForwardReg.connect('clicked(bool)', self.onPushBackForwardReg)
+        self.ui.pushCloseAwayReg.connect('clicked(bool)', self.onPushCloseAwayReg)
+        self.ui.pushLeftRightReg.connect('clicked(bool)', self.onPushLeftRightReg)
+        self.ui.pushPitchReg.connect('clicked(bool)', self.onPushPitchReg)
+        self.ui.pushRollReg.connect('clicked(bool)', self.onPushRollReg)
+        self.ui.pushYawReg.connect('clicked(bool)', self.onPushYawReg)
+
+        # Tool plan
         self.ui.pushToolPosePlan.connect('clicked(bool)', self.onPushToolPosePlan)
         self.ui.pushToolPosePlanRand.connect('clicked(bool)', self.onPushToolPosePlanRand)
 
+        # Tool plan manual adjustment
         self.ui.pushBackForward.connect('clicked(bool)', self.onPushBackForward)
         self.ui.pushCloseAway.connect('clicked(bool)', self.onPushCloseAway)
         self.ui.pushLeftRight.connect('clicked(bool)', self.onPushLeftRight)
@@ -108,15 +136,10 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         self.ui.pushRoll.connect('clicked(bool)', self.onPushRoll)
         self.ui.pushYaw.connect('clicked(bool)', self.onPushYaw)
 
+        # Grid plan
         self.ui.pushPlanGrid.connect('clicked(bool)', self.onPushPlanGrid)
         self.ui.pushGridSetNext.connect('clicked(bool)', self.onPushGridSetNext)
         self.ui.pushGridClear.connect('clicked(bool)', self.onPushGridClear)
-
-        self.ui.pushICPDigitize.connect('clicked(bool)', self.onPushICPDigitize)
-        self.ui.pushICPClearPrev.connect('clicked(bool)', self.onPushICPClearPrev)
-        self.ui.pushICPClearPoints.connect('clicked(bool)', self.onPushICPClearPoints)
-        self.ui.pushICPRegister.connect('clicked(bool)', self.onPushICPRegister)
-        self.ui.pushShowICPPoints.connect('clicked(bool)', self.onPushShowICPPoints)
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
@@ -228,6 +251,10 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
             "ManualAdjustToolPoseRot", str(self.ui.sliderManualToolRot.value))
         self._parameterNode.SetParameter(
             "ManualAdjustToolPosePos", str(self.ui.sliderManualToolPos.value))
+        self._parameterNode.SetParameter(
+            "ManualAdjustRegPoseRot", str(self.ui.sliderManualRegRot.value))
+        self._parameterNode.SetParameter(
+            "ManualAdjustRegPosePos", str(self.ui.sliderManualRegPos.value))
         self._parameterNode.SetParameter(
             "GridDistanceApart", str(self.ui.sliderGridDistanceApart.value))
         self._parameterNode.SetParameter(
@@ -427,6 +454,30 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
 
     def onPushYaw(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustToolPoseRot"))
+        self.logic.processManualAdjust([0.0,0.0,0.0,0.0,0.0,change/180.0*math.pi])
+
+    def onPushBackForwardReg(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustRegPosePos"))
+        self.logic.processManualAdjust([0.0,change,0.0,0.0,0.0,0.0])
+
+    def onPushCloseAwayReg(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustRegPosePos"))
+        self.logic.processManualAdjust([0.0,0.0,change,0.0,0.0,0.0])
+
+    def onPushLeftRightReg(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustRegPosePos"))
+        self.logic.processManualAdjust([change,0.0,0.0,0.0,0.0,0.0])
+
+    def onPushPitchReg(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustRegPoseRot"))
+        self.logic.processManualAdjust([0.0,0.0,0.0,change/180.0*math.pi,0.0,0.0])
+
+    def onPushRollReg(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustRegPoseRot"))
+        self.logic.processManualAdjust([0.0,0.0,0.0,0.0,change/180.0*math.pi,0.0])
+
+    def onPushYawReg(self):
+        change = float(self._parameterNode.GetParameter("ManualAdjustRegPoseRot"))
         self.logic.processManualAdjust([0.0,0.0,0.0,0.0,0.0,change/180.0*math.pi])
 
     def onRadioToolRotOptions(self):
