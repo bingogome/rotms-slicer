@@ -434,51 +434,51 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
 
     def onPushBackForward(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustToolPosePos"))
-        self.logic.processManualAdjust([0.0,change,0.0,0.0,0.0,0.0])
+        self.logic.processManualAdjustTool([0.0,change,0.0,0.0,0.0,0.0])
 
     def onPushCloseAway(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustToolPosePos"))
-        self.logic.processManualAdjust([0.0,0.0,change,0.0,0.0,0.0])
+        self.logic.processManualAdjustTool([0.0,0.0,change,0.0,0.0,0.0])
 
     def onPushLeftRight(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustToolPosePos"))
-        self.logic.processManualAdjust([change,0.0,0.0,0.0,0.0,0.0])
+        self.logic.processManualAdjustTool([change,0.0,0.0,0.0,0.0,0.0])
 
     def onPushPitch(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustToolPoseRot"))
-        self.logic.processManualAdjust([0.0,0.0,0.0,change/180.0*math.pi,0.0,0.0])
+        self.logic.processManualAdjustTool([0.0,0.0,0.0,change/180.0*math.pi,0.0,0.0])
 
     def onPushRoll(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustToolPoseRot"))
-        self.logic.processManualAdjust([0.0,0.0,0.0,0.0,change/180.0*math.pi,0.0])
+        self.logic.processManualAdjustTool([0.0,0.0,0.0,0.0,change/180.0*math.pi,0.0])
 
     def onPushYaw(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustToolPoseRot"))
-        self.logic.processManualAdjust([0.0,0.0,0.0,0.0,0.0,change/180.0*math.pi])
+        self.logic.processManualAdjustTool([0.0,0.0,0.0,0.0,0.0,change/180.0*math.pi])
 
     def onPushBackForwardReg(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustRegPosePos"))
-        self.logic.processManualAdjust([0.0,change,0.0,0.0,0.0,0.0])
+        self.logic.processManualAdjustReg([0.0,change,0.0,0.0,0.0,0.0])
 
     def onPushCloseAwayReg(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustRegPosePos"))
-        self.logic.processManualAdjust([0.0,0.0,change,0.0,0.0,0.0])
+        self.logic.processManualAdjustReg([0.0,0.0,change,0.0,0.0,0.0])
 
     def onPushLeftRightReg(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustRegPosePos"))
-        self.logic.processManualAdjust([change,0.0,0.0,0.0,0.0,0.0])
+        self.logic.processManualAdjustReg([change,0.0,0.0,0.0,0.0,0.0])
 
     def onPushPitchReg(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustRegPoseRot"))
-        self.logic.processManualAdjust([0.0,0.0,0.0,change/180.0*math.pi,0.0,0.0])
+        self.logic.processManualAdjustReg([0.0,0.0,0.0,change/180.0*math.pi,0.0,0.0])
 
     def onPushRollReg(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustRegPoseRot"))
-        self.logic.processManualAdjust([0.0,0.0,0.0,0.0,change/180.0*math.pi,0.0])
+        self.logic.processManualAdjustReg([0.0,0.0,0.0,0.0,change/180.0*math.pi,0.0])
 
     def onPushYawReg(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustRegPoseRot"))
-        self.logic.processManualAdjust([0.0,0.0,0.0,0.0,0.0,change/180.0*math.pi])
+        self.logic.processManualAdjustReg([0.0,0.0,0.0,0.0,0.0,change/180.0*math.pi])
 
     def onRadioToolRotOptions(self):
         self.updateParameterNodeFromGUI()

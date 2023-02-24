@@ -249,6 +249,18 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         rot_ = numpy.array(rot).transpose()
         p_ = -numpy.matmul(rot_, numpy.array(p).reshape((3,1))) * 1000.0
 
+        if not self._parameterNode.GetNodeReference("TransformICPReg"):
+            transformNode = slicer.vtkMRMLTransformNode()
+            slicer.mrmlScene.AddNode(transformNode)
+            self._parameterNode.SetNodeReferenceID(
+                "TransformICPReg", transformNode.GetID())
+
+        transformMatrix = vtk.vtkMatrix4x4()
+        setTransform(rot_, p_, transformMatrix)
+        targetPoseTransform = self._parameterNode.GetNodeReference(
+            "TransformICPReg")
+        targetPoseTransform.SetMatrixTransformToParent(transformMatrix)
+
         # Get aligned point cloud and visualize
         res = numpy.matmul(rot_, dig_) + p_
         if self._parameterNode.GetNodeReference("AlignedICPPointClouds"):
@@ -366,7 +378,6 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             self.processToolPoseParameterNodeSet("TargetPoseTransform", p, mat)
             self.processToolPosePlanVisualization()
             self.processToolPosePlanSend(p, mat)
-
 
     def processToolPoseParameterNodeSet(self, nodename, p, mat):
 
@@ -601,9 +612,41 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             curIdx = curIdx+1
             self.utilSendLandmarks(curIdx)
 
-    def processManualAdjust(self, arr):
+    def processManualAdjustTool(self, arr):
         if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
             slicer.util.errorDisplay("Please plan tool pose first!")
+            return
+
+        targetPoseTransform = self._parameterNode.GetNodeReference(
+            "TargetPoseTransform").GetMatrixTransformToParent()
+        temp = vtk.vtkMatrix4x4()
+        temp.DeepCopy(targetPoseTransform)
+
+        tempOffset = vtk.vtkMatrix4x4()
+        tempOffset.SetElement(0,3,arr[0])
+        tempOffset.SetElement(1,3,arr[1])
+        tempOffset.SetElement(2,3,arr[2])
+
+        vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+
+        tempOffset = vtk.vtkMatrix4x4()
+        if arr[3]:
+            setRotation(rotx(arr[3]), tempOffset)
+        if arr[4]:
+            setRotation(roty(arr[4]), tempOffset)
+        if arr[5]:
+            setRotation(rotz(arr[5]), tempOffset)
+
+        vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
+
+        p, mat = getRotAndPFromMatrix(temp)
+        self.processToolPoseParameterNodeSet("TargetPoseTransform", p, mat)
+        self.processToolPosePlanVisualization()
+        self.processToolPosePlanSend(p, mat)
+
+    def processManualAdjustReg(self, arr):
+        if not self._parameterNode.GetNodeReference("TransformICPReg"):
+            slicer.util.errorDisplay("Please show ICP results first!")
             return
 
         targetPoseTransform = self._parameterNode.GetNodeReference(

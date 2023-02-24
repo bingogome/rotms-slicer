@@ -91,7 +91,7 @@
       <string>Registration</string>
      </property>
      <property name="collapsed">
-      <bool>false</bool>
+      <bool>true</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="4" column="0" colspan="2">
@@ -100,7 +100,7 @@
          <string>Estimate Registration Error</string>
         </property>
         <property name="collapsed">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <layout class="QGridLayout" name="gridLayout_7">
          <item row="0" column="0">
@@ -109,7 +109,7 @@
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="currentIndex">
-            <number>1</number>
+            <number>0</number>
            </property>
            <widget class="QWidget" name="tabTRE">
             <attribute name="title">
@@ -421,7 +421,7 @@
            </widget>
           </item>
           <item row="2" column="0" colspan="3">
-           <widget class="qMRMLSliderWidget" name="sliderTranslationReg">
+           <widget class="qMRMLSliderWidget" name="sliderManualRegPos">
             <property name="singleStep">
              <double>0.100000000000000</double>
             </property>
@@ -454,7 +454,7 @@
            </widget>
           </item>
           <item row="3" column="2">
-           <widget class="QPushButton" name="pushCloserFartherReg">
+           <widget class="QPushButton" name="pushCloseAwayReg">
             <property name="text">
              <string>Close Away</string>
             </property>
@@ -474,7 +474,7 @@
            </widget>
           </item>
           <item row="5" column="0" colspan="3">
-           <widget class="qMRMLSliderWidget" name="sliderRotationReg">
+           <widget class="qMRMLSliderWidget" name="sliderManualRegRot">
             <property name="singleStep">
              <double>0.100000000000000</double>
             </property>
