@@ -436,8 +436,8 @@ class TargetVizConnections(UtilConnectionsWtNnBlcRcv):
 
         if self._transformNodeTargetPoseSingleton:
 
-            targetTransform = \
-                self._transformNodeTargetPoseSingleton.GetMatrixTransformToParent()
+            targetTransform = vtk.vtkMatrix4x4
+            self._transformNodeTargetPoseSingleton.GetMatrixTransformToParent(targetTransform)
             setColorByDistance(
                 self._currentPoseIndicator, targetTransform, self._transformMatrixCurrentPose, self._colorchangethresh)
 

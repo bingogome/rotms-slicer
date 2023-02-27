@@ -361,11 +361,13 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     
     def processToolPosePlanMeshReCheck(self):
         if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
-            targetPoseTransform = self._parameterNode.GetNodeReference(
-                "TargetPoseTransformCortex").GetMatrixTransformToParent()
+            targetPoseTransform = vtk.vtkMatrix4x4()
+            self._parameterNode.GetNodeReference(
+                "TargetPoseTransformCortex").GetMatrixTransformToParent(targetPoseTransform)
             p, mat = getRotAndPFromMatrix(targetPoseTransform)
-            targetPoseTransform = self._parameterNode.GetNodeReference(
-                "TargetPoseTransformSkin").GetMatrixTransformToParent()
+            targetPoseTransform = vtk.vtkMatrix4x4()
+            self._parameterNode.GetNodeReference(
+                "TargetPoseTransformSkin").GetMatrixTransformToParent(targetPoseTransform)
             pSkin, matSkin = getRotAndPFromMatrix(targetPoseTransform)
             if self._parameterNode.GetParameter("ToolRotOption") == "cortex":
                 p = pSkin 
@@ -409,8 +411,9 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
             slicer.util.errorDisplay("Please plan tool pose first!")
             return
-        targetPoseTransform = self._parameterNode.GetNodeReference(
-            "TargetPoseTransform").GetMatrixTransformToParent()
+        targetPoseTransform = vtk.vtkMatrix4x4()
+        self._parameterNode.GetNodeReference(
+            "TargetPoseTransform").GetMatrixTransformToParent(targetPoseTransform)
         temp = vtk.vtkMatrix4x4()
         temp.DeepCopy(targetPoseTransform)
 
@@ -472,8 +475,9 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                     inModel.GetParentTransformNode().GetID())
                 transformFilter = vtk.vtkTransformPolyDataFilter()
                 transformFilterTransform = vtk.vtkTransform()
-                transformFilterTransform.SetMatrix(
-                    self._parameterNode.GetNodeReference("BrainMeshOffsetTransform").GetMatrixTransformToParent())
+                transformFilterTransformMatrix = vtk.vtkMatrix4x4()
+                self._parameterNode.GetNodeReference("BrainMeshOffsetTransform").GetMatrixTransformToParent(transformFilterTransformMatrix)
+                transformFilterTransform.SetMatrix(transformFilterTransformMatrix)
                 transformFilter.SetTransform(transformFilterTransform)
                 transformFilter.SetInputData(inModel.GetPolyData())
                 transformFilter.Update()
@@ -644,23 +648,35 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         self.processToolPosePlanVisualization()
         self.processToolPosePlanSend(p, mat)
 
-    def processManualAdjustReg(self, arr):
+    def processManualAdjustReg(self, arr, pathICPPoints):
+
+        ### This method hasn't been completed. 
+        ### Need:
+        ### 1. Send to ROS after finish
+        ### 2. Validate error each time it is done
+
+        # check if registration result exists
         if not self._parameterNode.GetNodeReference("TransformICPReg"):
             slicer.util.errorDisplay("Please show ICP results first!")
             return
 
-        targetPoseTransform = self._parameterNode.GetNodeReference(
-            "TargetPoseTransform").GetMatrixTransformToParent()
+        # get the original registration result
+        targetPoseTransform = vtk.vtkMatrix4x4()
+        self._parameterNode.GetNodeReference(
+            "TransformICPReg").GetMatrixTransformToParent(targetPoseTransform)
+        
+        # initialize an offset matrix
         temp = vtk.vtkMatrix4x4()
         temp.DeepCopy(targetPoseTransform)
 
+        # apply offset - translation
         tempOffset = vtk.vtkMatrix4x4()
         tempOffset.SetElement(0,3,arr[0])
         tempOffset.SetElement(1,3,arr[1])
         tempOffset.SetElement(2,3,arr[2])
-
         vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
 
+        # apply offset - rotation
         tempOffset = vtk.vtkMatrix4x4()
         if arr[3]:
             setRotation(rotx(arr[3]), tempOffset)
@@ -668,13 +684,55 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             setRotation(roty(arr[4]), tempOffset)
         if arr[5]:
             setRotation(rotz(arr[5]), tempOffset)
-
         vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
 
         p, mat = getRotAndPFromMatrix(temp)
-        self.processToolPoseParameterNodeSet("TargetPoseTransform", p, mat)
-        self.processToolPosePlanVisualization()
-        self.processToolPosePlanSend(p, mat)
+
+        # Update transformation parameter
+        self._parameterNode.GetNodeReference(
+            "TransformICPReg").SetMatrixTransformToParent(temp)
+
+        # load digitized points
+        with open(pathICPPoints, "r") as stream:
+            try:
+                dig_dict = yaml.safe_load(stream)
+            except yaml.YAMLError as exc:
+                print(exc)
+                return
+        dig = []
+        for k in dig_dict.keys():
+            # convert ROS m unit to mm
+            dig.extend([float(i) * 1000.0 for i in dig_dict[k].strip().split(',')[:-1]])
+        dig_ = numpy.array(dig).reshape((-1,3)).transpose()
+
+        # apply new position of the points
+
+        p = numpy.array(p).reshape((3,1))
+        mat = numpy.array(mat)
+        res = numpy.matmul(mat, dig_) + p
+
+        # Method 1: change position point by point. Very slow
+        # markupsNode = self._parameterNode.GetNodeReference("AlignedICPPointClouds")
+        # for idx, i in enumerate(res.transpose()):
+        #     markupsNode.SetNthControlPointPosition(idx, i[0], i[1], i[2])
+
+        # Method 2: Remove old and visualize again
+        if self._parameterNode.GetNodeReference("AlignedICPPointClouds"):
+            markupsNode = self._parameterNode.GetNodeReference("AlignedICPPointClouds")
+            slicer.mrmlScene.RemoveNode(markupsNode)
+        markupsNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsFiducialNode", "AlignedICP")
+        self._parameterNode.SetNodeReferenceID("AlignedICPPointClouds", markupsNode.GetID())
+        slicer.modules.markups.logic().SetActiveList(markupsNode)
+        markupsNode.GetDisplayNode().SetSelectedColor(0,1,0) 
+        markupsNode.GetDisplayNode().SetTextScale(0)
+        
+        for i in res.transpose():
+            slicer.modules.markups.logic().AddControlPoint(i[0], i[1], i[2])
+        
+        # Disable control point placement
+        slicer.mrmlScene.GetNodeByID("vtkMRMLInteractionNodeSingleton").SetPlaceModePersistence(0)
+
+        slicer.util.infoDisplay("Alignment change complete")
 
     def processGenerateGridIncrementDir(self, n):
         # Output the direction arr of a squre spiral pattern
@@ -706,11 +764,13 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         arr = self.processGenerateGridIncrementDir(numOfGrid)
 
         if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
-            targetPoseTransform = self._parameterNode.GetNodeReference(
-                "TargetPoseTransformCortex").GetMatrixTransformToParent()
+            targetPoseTransform = vtk.vtkMatrix4x4()
+            self._parameterNode.GetNodeReference(
+                "TargetPoseTransformCortex").GetMatrixTransformToParent(targetPoseTransform)
         else:
-            targetPoseTransform = self._parameterNode.GetNodeReference(
-                "TargetPoseTransform").GetMatrixTransformToParent()
+            targetPoseTransform = vtk.vtkMatrix4x4()
+            self._parameterNode.GetNodeReference(
+                "TargetPoseTransform").GetMatrixTransformToParent(targetPoseTransform)
 
         temp1, temp = vtk.vtkMatrix4x4(), vtk.vtkMatrix4x4()
         temp1.DeepCopy(targetPoseTransform)
@@ -767,8 +827,9 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 inModel.GetParentTransformNode().GetID())
             transformFilter = vtk.vtkTransformPolyDataFilter()
             transformFilterTransform = vtk.vtkTransform()
-            transformFilterTransform.SetMatrix(
-                self._parameterNode.GetNodeReference("BrainMeshOffsetTransform").GetMatrixTransformToParent())
+            transformFilterTransformMatrix = vtk.vtkMatrix4x4
+            self._parameterNode.GetNodeReference("BrainMeshOffsetTransform").GetMatrixTransformToParent(transformFilterTransformMatrix)
+            transformFilterTransform.SetMatrix(transformFilterTransformMatrix)
             transformFilter.SetTransform(transformFilterTransform)
             transformFilter.SetInputData(inModel.GetPolyData())
             transformFilter.Update()
@@ -855,9 +916,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             else:
                 cur += 1
             self._parameterNode.SetParameter("GridPlanCurrentAt", str(cur))
-
-            p, mat = getRotAndPFromMatrix(self._parameterNode.GetNodeReference(
-                "GridPlanTransformNum"+str(cur)).GetMatrixTransformToParent())
+            transformMatrix = vtk.vtkMatrix4x4
+            self._parameterNode.GetNodeReference(
+                "GridPlanTransformNum"+str(cur)).GetMatrixTransformToParent(transformMatrix)
+            p, mat = getRotAndPFromMatrix(transformMatrix)
             drawAPlane(mat, p, self._configPath, "PlaneOnMeshIndicator",
                 "PlaneOnMeshTransform", self._parameterNode)
             self.processToolPosePlanMeshCheck(p, mat)

@@ -458,27 +458,39 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
 
     def onPushBackForwardReg(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustRegPosePos"))
-        self.logic.processManualAdjustReg([0.0,change,0.0,0.0,0.0,0.0])
+        self.logic.processManualAdjustReg( \
+            [0.0,change,0.0,0.0,0.0,0.0], \
+            self.ui.pathICPPoints.currentPath.strip())
 
     def onPushCloseAwayReg(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustRegPosePos"))
-        self.logic.processManualAdjustReg([0.0,0.0,change,0.0,0.0,0.0])
+        self.logic.processManualAdjustReg( \
+            [0.0,0.0,change,0.0,0.0,0.0], \
+            self.ui.pathICPPoints.currentPath.strip())
 
     def onPushLeftRightReg(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustRegPosePos"))
-        self.logic.processManualAdjustReg([change,0.0,0.0,0.0,0.0,0.0])
+        self.logic.processManualAdjustReg( \
+            [change,0.0,0.0,0.0,0.0,0.0], \
+            self.ui.pathICPPoints.currentPath.strip())
 
     def onPushPitchReg(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustRegPoseRot"))
-        self.logic.processManualAdjustReg([0.0,0.0,0.0,change/180.0*math.pi,0.0,0.0])
+        self.logic.processManualAdjustReg( \
+            [0.0,0.0,0.0,change/180.0*math.pi,0.0,0.0], \
+            self.ui.pathICPPoints.currentPath.strip())
 
     def onPushRollReg(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustRegPoseRot"))
-        self.logic.processManualAdjustReg([0.0,0.0,0.0,0.0,change/180.0*math.pi,0.0])
+        self.logic.processManualAdjustReg( \
+            [0.0,0.0,0.0,0.0,change/180.0*math.pi,0.0], \
+            self.ui.pathICPPoints.currentPath.strip())
 
     def onPushYawReg(self):
         change = float(self._parameterNode.GetParameter("ManualAdjustRegPoseRot"))
-        self.logic.processManualAdjustReg([0.0,0.0,0.0,0.0,0.0,change/180.0*math.pi])
+        self.logic.processManualAdjustReg( \
+            [0.0,0.0,0.0,0.0,0.0,change/180.0*math.pi], \
+            self.ui.pathICPPoints.currentPath.strip())
 
     def onRadioToolRotOptions(self):
         self.updateParameterNodeFromGUI()
