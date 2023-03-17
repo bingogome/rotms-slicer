@@ -87,6 +87,8 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
             "toggled(bool)", self.onRadioToolRotOptions)
         self.ui.radioButtonToolRotCombined.connect(
             "toggled(bool)", self.onRadioToolRotOptions)
+        self.ui.radioButtonToolRotSkinClosest.connect(
+            "toggled(bool)", self.onRadioToolRotOptions)
 
         # Buttons
 
@@ -179,6 +181,8 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
             self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true")
         self.ui.radioButtonToolRotSkin.checked = (
             self._parameterNode.GetParameter("ToolRotOption") == "skin")
+        self.ui.radioButtonToolRotSkinClosest.checked = (
+            self._parameterNode.GetParameter("ToolRotOption") == "skinclosest")
         self.ui.radioButtonToolRotCortex.checked = (
             self._parameterNode.GetParameter("ToolRotOption") == "cortex")
         self.ui.radioButtonToolRotCombined.checked = (
@@ -222,9 +226,11 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         if (self._parameterNode.GetParameter("PlanOnBrain") == "false"):
             self.ui.radioButtonToolRotCombined.enabled = False
             self.ui.radioButtonToolRotCortex.enabled = False
+            self.ui.radioButtonToolRotSkinClosest.enabled = False
         else:
             self.ui.radioButtonToolRotCombined.enabled = True
             self.ui.radioButtonToolRotCortex.enabled = True
+            self.ui.radioButtonToolRotSkinClosest.enabled = True
 
         # All the GUI updates are done
         self._updatingGUIFromParameterNode = False
@@ -276,6 +282,8 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
                 self._parameterNode.SetParameter("ToolRotOption", "cortex")
             if self.ui.radioButtonToolRotCombined.checked:
                 self._parameterNode.SetParameter("ToolRotOption", "combined")
+            if self.ui.radioButtonToolRotSkinClosest.checked:
+                self._parameterNode.SetParameter("ToolRotOption", "skinclosest")
         else:
             self._parameterNode.SetParameter("ToolRotOption", "skin")
 

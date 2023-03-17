@@ -87,7 +87,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         if not parameterNode.GetParameter("PlanGridOnPerspPlane"):
             parameterNode.SetParameter("PlanGridOnPerspPlane", "false")
         if not parameterNode.GetParameter("ToolRotOption"):
-            parameterNode.SetParameter("ToolRotOption", "skin")
+            parameterNode.SetParameter("ToolRotOption", "skinclosest")
 
     def processStartTRECalculation(self):
         """
@@ -334,26 +334,41 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     def processToolPosePlanMeshCheck(self, p, mat):
         # If planned on skin, then skin search; if planned on cortex, then project on skin
         if (self._parameterNode.GetParameter("PlanOnBrain") == "true"):
+            # 1. Cortex option
             self.processToolPoseParameterNodeSet("TargetPoseTransformCortex", p, mat)
+            # 2. Skin option (projected using cortex rot)
             pSkin, matSkin = self.processSearchForSkinProjection(p, mat)
+            print(pSkin, matSkin)
             self.processToolPoseParameterNodeSet("TargetPoseTransformSkin", pSkin, matSkin)
             drawAPlane(matSkin, pSkin, self._configPath, "PlaneOnMeshSkinIndicator",
                 "PlaneOnMeshSkinTransform", self._parameterNode)
+            # 3. Skin option (Closest. project using the closest on skin)
+            pSkinClosest, matSkinClosest = self.processSearchForSkinClosestProjection(p)
+            print(pSkinClosest, matSkinClosest)
+            self.processToolPoseParameterNodeSet("TargetPoseTransformSkinClosest", pSkinClosest, matSkinClosest)
+            drawAPlane(matSkinClosest, pSkinClosest, self._configPath, "PlaneOnMeshSkinClosestIndicator",
+                "PlaneOnMeshSkinClosestTransform", self._parameterNode)
+            
             # Considering the shape mismatch of the skin and cortex (brain), use
             # different ways of orientation calculation
             # 1. Depend only on cortex: the orientation is the cortex shape
             # 2. Depend only on skin: the orientation is the skin shape, at the point
             #   projected from the previously planned point
-            # 3. Depend on a weighted combination
+            # 3. Depend on skin: the orientation is the skin shape, at the closest point on skin
+            # 4. Depend on a weighted combination
             # Note, if the pose was planned on skin, then option 2 is the only valid option
+            print(self._parameterNode.GetParameter("ToolRotOption"))
             if self._parameterNode.GetParameter("ToolRotOption") == "cortex":
                 p = pSkin 
             elif self._parameterNode.GetParameter("ToolRotOption") == "combined":
                 slicer.util.errorDisplay("Not implemented yet!")
                 return
-            else: # Default is the skin
+            elif self._parameterNode.GetParameter("ToolRotOption") == "skin":
                 p = pSkin
                 mat = matSkin
+            else: # Default is the skinclosest
+                p = pSkinClosest
+                mat = matSkinClosest
                 
         self.processToolPoseParameterNodeSet("TargetPoseTransform", p, mat)
         self.processToolPosePlanVisualization()
@@ -367,14 +382,20 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             targetPoseTransform = self._parameterNode.GetNodeReference(
                 "TargetPoseTransformSkin").GetMatrixTransformToParent()
             pSkin, matSkin = getRotAndPFromMatrix(targetPoseTransform)
+            targetPoseTransform = self._parameterNode.GetNodeReference(
+                "TargetPoseTransformSkinClosest").GetMatrixTransformToParent()
+            pSkinClosest, matSkinClosest = getRotAndPFromMatrix(targetPoseTransform)
             if self._parameterNode.GetParameter("ToolRotOption") == "cortex":
                 p = pSkin 
             elif self._parameterNode.GetParameter("ToolRotOption") == "combined":
                 slicer.util.errorDisplay("Not implemented yet!")
                 return
-            else: # Default is the skin
+            elif self._parameterNode.GetParameter("ToolRotOption") == "skin":
                 p = pSkin
                 mat = matSkin
+            else: # Default is the skinclosest
+                p = pSkinClosest
+                mat = matSkinClosest
             self.processToolPoseParameterNodeSet("TargetPoseTransform", p, mat)
             self.processToolPosePlanVisualization()
             self.processToolPosePlanSend(p, mat)
@@ -546,6 +567,33 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         matSkin = utilPosePlan(a, b, c, pSkin, self._override_y)
 
         return pSkin, matSkin
+    
+    def processSearchForSkinClosestProjection(self, pcortex):
+        """
+        Find the closest point on the skin. The rot will be 
+        the tangential plane on the skin.
+        """
+        inModel = self._parameterNode.GetNodeReference("InputMeshSkin")
+
+        # Construct cell locator 
+        cellLocator = vtk.vtkCellLocator()
+        cellLocator.SetDataSet(inModel.GetPolyData())
+        cellLocator.BuildLocator()
+
+        # Init some needed parameters.
+        a, b, c = [0, 0, 0], [0, 0, 0], [0, 0, 0]
+        cellObj = vtk.vtkGenericCell()
+        cellId, subId, dist2 = vtk.mutable(0), vtk.mutable(0), vtk.mutable(0.0)
+        closestPoint = [0.0, 0.0, 0.0]
+
+        # Search for the tangential plane on the skin
+        cellLocator.FindClosestPoint(pcortex, closestPoint, cellObj, cellId, subId, dist2)
+        cellObj.GetPoints().GetPoint(0, a)
+        cellObj.GetPoints().GetPoint(1, b)
+        cellObj.GetPoints().GetPoint(2, c)
+        matSkinClosest = utilPosePlan(a, b, c, closestPoint, self._override_y)
+
+        return closestPoint, matSkinClosest
 
     def processToolPosePlanVisualizationInit(self):
         if not self._parameterNode.GetNodeReference("TargetPoseIndicator"):
@@ -913,6 +961,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             drawAPlane(mat, p, self._configPath, "PlaneOnMeshIndicator",
                 "PlaneOnMeshTransform", self._parameterNode)
             self.processToolPosePlanMeshCheck(p, mat)
+            # following 3 lines might be redundant. check!
             self.processToolPosePlanVisualization()
             self.processToolPosePlanSend(p, mat)    
+            self.processToolPosePlanMeshReCheck()
+
+        
 
