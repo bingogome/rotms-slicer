@@ -604,6 +604,8 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             self._parameterNode.SetNodeReferenceID(
                 "TargetPoseIndicator", inputModel.GetID())
             inputModel.GetDisplayNode().SetColor(0, 1, 0)
+        if not self._parameterNode.GetNodeReference("TargetPoseIndicatingLine"):
+            slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsLineNode", "TargetPoseIndicatingLine")
 
     def processToolPosePlanVisualization(self):
         self.processToolPosePlanVisualizationInit()
@@ -611,6 +613,16 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             "TargetPoseIndicator")
         targetPoseIndicator.SetAndObserveTransformNodeID(
             self._parameterNode.GetNodeReference("TargetPoseTransform").GetID())
+        lineNode = self._parameterNode.GetNodeReference("TargetPoseIndicatingLine")
+        transf = self._parameterNode.GetNodeReference("TargetPoseTransform").GetMatrixTransformToParent()
+        lineNode.SetNthControlPointPosition(0, \
+            transf.GetElement(0,3), \
+            transf.GetElement(1,3), \
+            transf.GetElement(2,3))
+        lineNode.SetNthControlPointPosition(1, \
+            transf.GetElement(0,3) - transf.GetElement(0,2), \
+            transf.GetElement(1,3) - transf.GetElement(1,2), \
+            transf.GetElement(2,3) - transf.GetElement(2,2))
         slicer.app.processEvents()
 
     def processToolPosePlanSend(self, p, mat):        
