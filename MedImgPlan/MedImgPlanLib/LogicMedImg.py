@@ -453,6 +453,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         vtk.vtkMatrix4x4.Multiply4x4(temp,tempOffset,temp)
 
         p, mat = getRotAndPFromMatrix(temp)
+        self.processToolPoseParameterNodeSet("TargetPoseTransform", p, mat)
         self.processToolPosePlanVisualization()
         self.processToolPosePlanSend(p, mat)
 
