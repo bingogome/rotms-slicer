@@ -338,13 +338,13 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             self.processToolPoseParameterNodeSet("TargetPoseTransformCortex", p, mat)
             # 2. Skin option (projected using cortex rot)
             pSkin, matSkin = self.processSearchForSkinProjection(p, mat)
-            print(pSkin, matSkin)
+            # print(pSkin, matSkin)
             self.processToolPoseParameterNodeSet("TargetPoseTransformSkin", pSkin, matSkin)
             drawAPlane(matSkin, pSkin, self._configPath, "PlaneOnMeshSkinIndicator",
                 "PlaneOnMeshSkinTransform", self._parameterNode)
             # 3. Skin option (Closest. project using the closest on skin)
             pSkinClosest, matSkinClosest = self.processSearchForSkinClosestProjection(p)
-            print(pSkinClosest, matSkinClosest)
+            # print(pSkinClosest, matSkinClosest)
             self.processToolPoseParameterNodeSet("TargetPoseTransformSkinClosest", pSkinClosest, matSkinClosest)
             drawAPlane(matSkinClosest, pSkinClosest, self._configPath, "PlaneOnMeshSkinClosestIndicator",
                 "PlaneOnMeshSkinClosestTransform", self._parameterNode)
@@ -357,7 +357,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             # 3. Depend on skin: the orientation is the skin shape, at the closest point on skin
             # 4. Depend on a weighted combination
             # Note, if the pose was planned on skin, then option 2 is the only valid option
-            print(self._parameterNode.GetParameter("ToolRotOption"))
+            # print(self._parameterNode.GetParameter("ToolRotOption"))
             if self._parameterNode.GetParameter("ToolRotOption") == "cortex":
                 p = pSkin 
             elif self._parameterNode.GetParameter("ToolRotOption") == "combined":
@@ -605,7 +605,8 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 "TargetPoseIndicator", inputModel.GetID())
             inputModel.GetDisplayNode().SetColor(0, 1, 0)
         if not self._parameterNode.GetNodeReference("TargetPoseIndicatingLine"):
-            slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsLineNode", "TargetPoseIndicatingLine")
+            lineNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsLineNode", "TargetPoseIndicatingLine")
+            self._parameterNode.SetNodeReferenceID("TargetPoseIndicatingLine", lineNode.GetID())
 
     def processToolPosePlanVisualization(self):
         self.processToolPosePlanVisualizationInit()
@@ -615,14 +616,19 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             self._parameterNode.GetNodeReference("TargetPoseTransform").GetID())
         lineNode = self._parameterNode.GetNodeReference("TargetPoseIndicatingLine")
         transf = self._parameterNode.GetNodeReference("TargetPoseTransform").GetMatrixTransformToParent()
+        if lineNode.GetNumberOfControlPoints() == 0:
+            lineNode.AddControlPoint(0, 0, 0)
+            lineNode.AddControlPoint(0, 0, 0)
         lineNode.SetNthControlPointPosition(0, \
             transf.GetElement(0,3), \
             transf.GetElement(1,3), \
             transf.GetElement(2,3))
         lineNode.SetNthControlPointPosition(1, \
-            transf.GetElement(0,3) - transf.GetElement(0,2), \
-            transf.GetElement(1,3) - transf.GetElement(1,2), \
-            transf.GetElement(2,3) - transf.GetElement(2,2))
+            transf.GetElement(0,3) - transf.GetElement(0,2) * 50, \
+            transf.GetElement(1,3) - transf.GetElement(1,2) * 50, \
+            transf.GetElement(2,3) - transf.GetElement(2,2) * 50)
+        # lineNode.GetDisplayNode().SetSelectedColor(1,0,0) 
+        lineNode.GetDisplayNode().SetTextScale(0)
         slicer.app.processEvents()
 
     def processToolPosePlanSend(self, p, mat):        
