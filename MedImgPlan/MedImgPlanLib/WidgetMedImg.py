@@ -143,6 +143,9 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         self.ui.pushGridSetNext.connect('clicked(bool)', self.onPushGridSetNext)
         self.ui.pushGridClear.connect('clicked(bool)', self.onPushGridClear)
 
+        # Data inspection
+        self.ui.pushRetrieveToolPose.connect('clicked(bool)', self.onPushRetrieveToolPose)
+
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
 
@@ -505,3 +508,9 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         if self._parameterNode.GetNodeReference("TargetPoseTransform"):
             self.logic.processToolPosePlanMeshReCheck()
 
+
+    def onPushRetrieveToolPose(self):
+        if self.ui.pathToolPose.currentPath:
+            self.logic.processRetrieveToolPose(self.ui.pathToolPose.currentPath)
+        else:
+            slicer.util.errorDisplay("Please select a file first!")

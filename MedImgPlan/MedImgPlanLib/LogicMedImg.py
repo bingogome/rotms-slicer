@@ -985,5 +985,21 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             self.processToolPosePlanSend(p, mat)    
             self.processToolPosePlanMeshReCheck()
 
-        
-
+    def processRetrieveToolPose(self, path):
+        if path.endswith(".yaml"):
+            with open(path, "r") as stream:
+                try:
+                    file = yaml.safe_load(stream)
+                    mat = [file["ROTATION"]["x"],file["ROTATION"]["y"],file["ROTATION"]["z"],file["ROTATION"]["w"]]
+                    mat = quat2mat(mat)
+                    p = [file["TRANSLATION"]["x"]*1000.0,file["TRANSLATION"]["y"]*1000.0,file["TRANSLATION"]["z"]*1000.0]
+                    drawAPlane(mat, p, self._configPath, "PlaneOnMeshIndicator",
+                        "PlaneOnMeshTransform", self._parameterNode)
+                    self.processToolPoseParameterNodeSet("TargetPoseTransform", p, mat)
+                    self.processToolPosePlanVisualization()
+                    self.processToolPosePlanSend(p, mat)
+                except yaml.YAMLError as exc:
+                    print(exc)
+                    return
+        else:
+            slicer.util.errorDisplay("File invalid!")
