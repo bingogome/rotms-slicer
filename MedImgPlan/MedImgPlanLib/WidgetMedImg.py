@@ -129,6 +129,8 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         # Tool plan
         self.ui.pushToolPosePlan.connect('clicked(bool)', self.onPushToolPosePlan)
         self.ui.pushToolPosePlanRand.connect('clicked(bool)', self.onPushToolPosePlanRand)
+        self.ui.pushToolPoseExternalStart.connect('clicked(bool)', self.onPushToolPoseExternalStart)
+        self.ui.pushToolPoseExternalEnd.connect('clicked(bool)', self.onPushToolPoseExternalEnd)
 
         # Tool plan manual adjustment
         self.ui.pushBackForward.connect('clicked(bool)', self.onPushBackForward)
@@ -419,6 +421,14 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         self.updateParameterNodeFromGUI()
         self.logic.processPushToolPosePlan(
             self.ui.markupsToolPosePlan.currentNode())
+        
+    def onPushToolPoseExternalStart(self):
+        self.logic._connections._flag_receiving_nnblc = True
+        self._parameterNode.SetParameter("TRECalculating", "true")
+
+    def onPushToolPoseExternalEnd(self):
+        self.logic._connections._flag_receiving_nnblc = False
+        self._parameterNode.SetParameter("TRECalculating", "false")
 
     def onPushToolPosePlanRand(self):
         self.updateParameterNodeFromGUI()

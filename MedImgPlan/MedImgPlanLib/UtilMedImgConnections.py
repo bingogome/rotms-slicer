@@ -52,24 +52,38 @@ class MedImgConnections(UtilConnectionsWtNnBlcRcv):
         """
         Override the parent class function
         """
-        p = self.utilMsgParse()
-        self.utilPointMsgCallback(p)
+        self.utilMsgParse()
 
     def utilMsgParse(self):
         """
-        Msg format: "__msg_point_0000.00000_0000.00000_0000.00000"
-            x, y, z
-            in mm
+        Msg format: 
+            1. TRE check
+                "__msg_point_0000.00000_0000.00000_0000.00000"
+                x, y, z in mm
+            2. plan tool pose points
+                "__msg_toolpose_0000.00000_0000.00000_0000.00000_0000.00000_0000.00000_0000.00000"
+                x1, y1, z1 in mm
+                x2, y2, z2 in mm
         """
         data = self._data_buff.decode("UTF-8")
-        msg = data[12:]
-        num_str = msg.split("_")
-        num = []
-        for i in num_str:
-            num.append(float(i))
-        return num
+        if data.startswith('__msg_point_'):
+            msg = data[12:]
+            num_str = msg.split("_")
+            num = []
+            for i in num_str:
+                num.append(float(i))
+            self.utilTRECheckCallback(num)
+        if data.startswith('__msg_toolpose_'):
+            msg = data[15:]
+            num_str = msg.split("_")
+            p1 = [float(num_str[0]),float(num_str[1]),float(num_str[2])]
+            p2 = [float(num_str[3]),float(num_str[4]),float(num_str[5])]
+            point_list_node = slicer.mrmlScene.AddNewNodeByClass('vtkMRMLMarkupsFiducialNode')
+            point_list_node.AddFiducial(p1[0], p1[1], p1[2])
+            point_list_node.AddFiducial(p2[0], p2[1], p2[2])
+            point_list_node.SetName('Received')
 
-    def utilPointMsgCallback(self, p):
+    def utilTRECheckCallback(self, p):
         """
         Called each time when a valid point message is received
         """
