@@ -74,13 +74,14 @@ class MedImgConnections(UtilConnectionsWtNnBlcRcv):
                 num.append(float(i))
             self.utilTRECheckCallback(num)
         if data.startswith('__msg_toolpose_'):
+            print(data)
             msg = data[15:]
             num_str = msg.split("_")
             p1 = [float(num_str[0]),float(num_str[1]),float(num_str[2])]
             p2 = [float(num_str[3]),float(num_str[4]),float(num_str[5])]
             point_list_node = slicer.mrmlScene.AddNewNodeByClass('vtkMRMLMarkupsFiducialNode')
-            point_list_node.AddFiducial(p1[0], p1[1], p1[2])
-            point_list_node.AddFiducial(p2[0], p2[1], p2[2])
+            point_list_node.AddControlPoint(p1[0], p1[1], p1[2], 't1')
+            point_list_node.AddControlPoint(p2[0], p2[1], p2[2], 't2')
             point_list_node.SetName('Received')
 
     def utilTRECheckCallback(self, p):

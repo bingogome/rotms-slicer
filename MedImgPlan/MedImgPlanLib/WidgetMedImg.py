@@ -424,6 +424,7 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         
     def onPushToolPoseExternalStart(self):
         self.logic._connections._flag_receiving_nnblc = True
+        self.logic._connections.receiveTimerCallBack()
         self._parameterNode.SetParameter("TRECalculating", "true")
 
     def onPushToolPoseExternalEnd(self):
