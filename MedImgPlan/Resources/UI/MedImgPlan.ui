@@ -928,20 +928,10 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="ctkPathLineEdit" name="pathToolPose"/>
-      </item>
       <item row="0" column="0">
        <widget class="QLabel" name="label_10">
         <property name="text">
          <string>Tool Pose Data Path:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0" colspan="2">
-       <widget class="QPushButton" name="pushOverlayHeatMap">
-        <property name="text">
-         <string>Overlay</string>
         </property>
        </widget>
       </item>
@@ -951,6 +941,26 @@
          <string>Overlay Heatmap on Planned Pose</string>
         </property>
        </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="ctkPathLineEdit" name="pathToolPose"/>
+      </item>
+      <item row="5" column="0" colspan="2">
+       <widget class="QPushButton" name="pushOverlayHeatMap">
+        <property name="text">
+         <string>Overlay</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_13">
+        <property name="text">
+         <string>MEP Value</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QLineEdit" name="textMEPValueHeatMapOverlay"/>
       </item>
      </layout>
     </widget>

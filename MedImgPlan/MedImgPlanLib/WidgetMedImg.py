@@ -528,6 +528,10 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
             slicer.util.errorDisplay("Please select a file first!")
 
     def onPushOverlayHeatMap(self):
+        if not self.ui.textMEPValueHeatMapOverlay.text:
+            slicer.util.errorDisplay("Please enter MEP value first!")
+            return
+        mep = float(self.ui.textMEPValueHeatMapOverlay.text)
         if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
             slicer.util.errorDisplay("Please plan tool pose first!")
             return
@@ -537,5 +541,5 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
             slicer.util.errorDisplay("Please select brain mesh first!")
             return
         inmodel = self._parameterNode.GetNodeReference("InputMeshBrain").GetPolyData()
-
-        # processHeatMapOnBrain(targetPoseTransform, inmodel)
+        
+        # processHeatMapOnBrain(mep, targetPoseTransform, inmodel)
