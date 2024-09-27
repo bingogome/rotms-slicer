@@ -147,6 +147,7 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
 
         # Data inspection
         self.ui.pushRetrieveToolPose.connect('clicked(bool)', self.onPushRetrieveToolPose)
+        self.ui.pushOverlayHeatMap.connect('clicked(bool)', self.onPushOverlayHeatMap)
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
@@ -525,3 +526,16 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
             self.logic.processRetrieveToolPose(self.ui.pathToolPose.currentPath)
         else:
             slicer.util.errorDisplay("Please select a file first!")
+
+    def onPushOverlayHeatMap(self):
+        if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
+            slicer.util.errorDisplay("Please plan tool pose first!")
+            return
+        targetPoseTransform = self._parameterNode.GetNodeReference(
+            "TargetPoseTransform").GetMatrixTransformToParent()
+        if not self._parameterNode.GetNodeReference("InputMeshBrain"):
+            slicer.util.errorDisplay("Please select brain mesh first!")
+            return
+        inmodel = self._parameterNode.GetNodeReference("InputMeshBrain").GetPolyData()
+
+        # processHeatMapOnBrain(targetPoseTransform, inmodel)
