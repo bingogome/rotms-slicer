@@ -1217,19 +1217,28 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
     def processHeatMapOnBrain(self, mep, targetPoseTransform, inmodel):
 
         def computeScalarFromDistance(distance):
+
+            # sanity check
+            if distance < 0.0:
+                slicer.util.errorDisplay("Distance cannot be negative!")
+                return 0.0
+
+            dist_threshold = 50.0
             # fade out the scalar value as the distance increases
-            if distance < 100.0 and distance > 0.0:
-                return math.exp(-distance / 100.0)
+            if distance < dist_threshold:
+                return math.exp(-distance / dist_threshold)
             else:
                 return 0.0
 
         poly_data = inmodel.GetPolyData()
+        scalar_values = poly_data.GetPointData().GetScalars()
 
-        scalar_values = vtk.vtkDoubleArray()
-        scalar_values.SetNumberOfComponents(1)
-        scalar_values.SetName("MEPHeatMapScalars")
-
-        print("Generating heatmap...")
+        if not scalar_values:
+            scalar_values = vtk.vtkDoubleArray()
+            scalar_values.SetNumberOfComponents(1)
+            scalar_values.SetName("MEPHeatMapScalars")
+        else:
+            print("scalar values already exist, adding new values ...")
 
         for i in range(poly_data.GetNumberOfPoints()):
             point = poly_data.GetPoint(i)
@@ -1243,11 +1252,23 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             )
             # Map distance or any other metric to scalar values
             scalar_value = computeScalarFromDistance(distance)
-            scalar_values.InsertNextValue(scalar_value)
-            # Add the scalar values to the polydata
+            # scalar_value = math.exp(-distance / 100.0)
+
+            if not scalar_values:
+                scalar_values.InsertNextValue(mep * scalar_value)
+
+            elif scalar_values.GetNumberOfTuples() < i + 1:
+                scalar_values.InsertNextValue(mep * scalar_value)
+            else:
+                # add the new scalar value to the existing array
+                curr_value = scalar_values.GetValue(i)
+                scalar_values.SetValue(i, 0.5 * (curr_value + mep * scalar_value))
 
         poly_data.GetPointData().SetScalars(scalar_values)
         inmodel.GetDisplayNode().SetActiveScalarName("MEPHeatMapScalars")
         inmodel.GetDisplayNode().SetScalarVisibility(True)
+        inmodel.GetDisplayNode().SetScalarRange(0.0, 1.0)
 
-
+        # Update the model in the scene
+        slicer.app.processEvents()
+        slicer.util.setSliceViewerLayers(background=inmodel)
