@@ -1223,14 +1223,30 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 slicer.util.errorDisplay("Distance cannot be negative!")
                 return 0.0
 
-            dist_threshold = 50.0
+            dist_threshold = 250
             # fade out the scalar value as the distance increases
             if distance < dist_threshold:
                 return math.exp(-distance / dist_threshold)
             else:
                 return 0.0
 
-        poly_data = inmodel.GetPolyData()
+        self._parameterNode.SetNodeReferenceID(
+            "BrainMeshOffsetTransform", inmodel.GetParentTransformNode().GetID()
+        )
+        transformFilter = vtk.vtkTransformPolyDataFilter()
+        transformFilterTransform = vtk.vtkTransform()
+        transformFilterTransform.SetMatrix(
+            self._parameterNode.GetNodeReference(
+                "BrainMeshOffsetTransform"
+            ).GetMatrixTransformToParent()
+        )
+        transformFilter.SetTransform(transformFilterTransform)
+        transformFilter.SetInputData(inmodel.GetPolyData())
+        transformFilter.Update()
+        poly_data = transformFilter.GetOutput()
+        # poly_data = inmodel.GetPolyData()
+
+        print(poly_data.GetNumberOfPoints())
         scalar_values = poly_data.GetPointData().GetScalars()
 
         if not scalar_values:
@@ -1239,6 +1255,8 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             scalar_values.SetName("MEPHeatMapScalars")
         else:
             print("scalar values already exist, adding new values ...")
+
+        distance_min = 1e6
 
         for i in range(poly_data.GetNumberOfPoints()):
             point = poly_data.GetPoint(i)
@@ -1250,6 +1268,9 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 ),
                 point,
             )
+            if distance < distance_min:
+                distance_min = distance
+                print("Closest point: ", point, " Distance: ", distance)
             # Map distance or any other metric to scalar values
             scalar_value = computeScalarFromDistance(distance)
             # scalar_value = math.exp(-distance / 100.0)
@@ -1264,7 +1285,8 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 curr_value = scalar_values.GetValue(i)
                 scalar_values.SetValue(i, 0.5 * (curr_value + mep * scalar_value))
 
-        poly_data.GetPointData().SetScalars(scalar_values)
+        # poly_data.GetPointData().SetScalars(scalar_values)
+        inmodel.GetPolyData().GetPointData().SetScalars(scalar_values)
         inmodel.GetDisplayNode().SetActiveScalarName("MEPHeatMapScalars")
         inmodel.GetDisplayNode().SetScalarVisibility(True)
         inmodel.GetDisplayNode().SetScalarRange(0.0, 1.0)
