@@ -23,6 +23,7 @@ SOFTWARE.
 """
 
 import math
+import numpy
 
 def mat2quat(R):
     if R[0][0]+R[1][1]+R[2][2] > 0:
@@ -113,3 +114,27 @@ def utilPosePlan(a,b,c,p,override_y=None):
     nrm = normvec3(y)
     y = [y[0]/nrm,y[1]/nrm,y[2]/nrm]
     return transp([x, y, n])
+
+def computeScalarFromDistance(distances, mep, MAX_MEP):
+    """
+    Compute a scalar value from a distance value based on the maximum distance.
+    The scalar value is normalized to the range [0, 1].
+
+    Parameters:
+    ---
+    distances (numpy.ndarray): The distance values.
+    mep (float): The current MEP responce.
+    MAX_MEP (float): The maximum poissible MEP response.
+
+    Returns:
+    ---
+    scalars (numpy.ndarray): The normalized scalar values.
+    """
+    cutoff_distance = 1.0 # set a cutoff distance as 5 mm above the minimum distance
+    distances = distances - numpy.min(distances)
+
+    scalars = (mep / MAX_MEP) * numpy.exp( - distances**2 / (2 * (cutoff_distance/2)**2) )
+    # for the out-of-range distances, set the scalar to 0
+    scalars[distances > cutoff_distance] = 0.0
+
+    return scalars
