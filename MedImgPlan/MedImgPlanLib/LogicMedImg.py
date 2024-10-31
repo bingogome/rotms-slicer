@@ -36,6 +36,7 @@ from MedImgPlanLib.UtilCalculations import (
     roty,
     rotz,
     quat2mat,
+    computeScalarFromDistance,
 )
 from MedImgPlanLib.UtilMedImgConnections import MedImgConnections
 
@@ -1216,58 +1217,92 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
 
     def processHeatMapOnBrain(self, mep, targetPoseTransform, inmodel):
 
-        def computeScalarFromDistance(distance):
+        self._parameterNode.SetNodeReferenceID(
+            "BrainMeshOffsetTransform", inmodel.GetParentTransformNode().GetID()
+        )
+        transformFilter = vtk.vtkTransformPolyDataFilter()
+        transformFilterTransform = vtk.vtkTransform()
+        transformFilterTransform.SetMatrix(
+            self._parameterNode.GetNodeReference(
+                "BrainMeshOffsetTransform"
+            ).GetMatrixTransformToParent()
+        )
+        transformFilter.SetTransform(transformFilterTransform)
+        transformFilter.SetInputData(inmodel.GetPolyData())
+        transformFilter.Update()
+        poly_data = transformFilter.GetOutput()
 
-            # sanity check
-            if distance < 0.0:
-                slicer.util.errorDisplay("Distance cannot be negative!")
-                return 0.0
+        POINT_COUNT = poly_data.GetNumberOfPoints()
+        distance_min = 1e6
+        distances = numpy.zeros(POINT_COUNT)
+        
 
-            dist_threshold = 50.0
-            # fade out the scalar value as the distance increases
-            if distance < dist_threshold:
-                return math.exp(-distance / dist_threshold)
-            else:
-                return 0.0
-
-        poly_data = inmodel.GetPolyData()
-        scalar_values = poly_data.GetPointData().GetScalars()
-
-        if not scalar_values:
-            scalar_values = vtk.vtkDoubleArray()
-            scalar_values.SetNumberOfComponents(1)
-            scalar_values.SetName("MEPHeatMapScalars")
-        else:
-            print("scalar values already exist, adding new values ...")
-
-        for i in range(poly_data.GetNumberOfPoints()):
+        for i in range(POINT_COUNT):
             point = poly_data.GetPoint(i)
-            distance = vtk.vtkMath.Distance2BetweenPoints(
+            distance = math.sqrt(vtk.vtkMath.Distance2BetweenPoints(
                 (
                     targetPoseTransform.GetElement(0, 3),
                     targetPoseTransform.GetElement(1, 3),
                     targetPoseTransform.GetElement(2, 3),
                 ),
                 point,
-            )
-            # Map distance or any other metric to scalar values
-            scalar_value = computeScalarFromDistance(distance)
-            # scalar_value = math.exp(-distance / 100.0)
+            ))  # distance from target pose to point
 
-            if not scalar_values:
-                scalar_values.InsertNextValue(mep * scalar_value)
+            distances[i] = distance
 
-            elif scalar_values.GetNumberOfTuples() < i + 1:
-                scalar_values.InsertNextValue(mep * scalar_value)
-            else:
-                # add the new scalar value to the existing array
+            if distance < distance_min:
+                distance_min = distance
+
+            # # Map distance or any other metric to scalar values
+            # scalar_value = computeScalarFromDistance(distance)
+
+            # if not scalar_values:onPushModuleTargetViz
+            #     scalar_values.InsertNextValue(mep * scalar_value)
+
+            # elif scalar_values.GetNumberOfTuples() < i + 1:
+            #     scalar_values.InsertNextValue(mep * scalar_value)
+            # else:
+            #     # add the new scalar value to the existing array
+            #     curr_value = scalar_values.GetValue(i)onPushModuleTargetViz
+            #     scalar_values.SetValue(i, 0.5 * (curr_value + mep * scalar_value))
+
+        scalars = computeScalarFromDistance(distances, mep, MAX_MEP=1.0)
+
+        scalar_values = poly_data.GetPointData().GetScalars()
+
+        if not scalar_values:
+            scalar_values = vtk.vtkDoubleArray()
+            scalar_values.SetNumberOfComponents(1)
+            scalar_values.SetName("MEPHeatMapScalars")
+            scalar_values.SetNumberOfValues(POINT_COUNT)
+            
+            for i in range(POINT_COUNT): 
+                scalar_values.SetValue(i, scalars[i])
+
+        else:
+            print("scalar values already exist, adding new values ...")
+            for i in range(POINT_COUNT):
                 curr_value = scalar_values.GetValue(i)
-                scalar_values.SetValue(i, 0.5 * (curr_value + mep * scalar_value))
+                scalar_values.SetValue(i, max(curr_value, scalars[i])) # using max value logic
+                # but using average is also valid
 
-        poly_data.GetPointData().SetScalars(scalar_values)
+
+
+        # poly_data.GetPointData().SetScalars(scalar_values)
+        inmodel.GetPolyData().GetPointData().SetScalars(scalar_values)
         inmodel.GetDisplayNode().SetActiveScalarName("MEPHeatMapScalars")
         inmodel.GetDisplayNode().SetScalarVisibility(True)
         inmodel.GetDisplayNode().SetScalarRange(0.0, 1.0)
+
+        ColorNodeRainbow = slicer.util.getFirstNodeByName('ColdToHotRainbow')
+
+        inmodel.GetDisplayNode().SetAndObserveColorNodeID(ColorNodeRainbow.GetID())
+        colorLegendDisplayNode = slicer.modules.colors.logic().AddDefaultColorLegendDisplayNode(inmodel)
+        colorLegendDisplayNode.SetLabelFormat("%4.3f mV")
+
+        # These two lines are supposed to set the scalar range of the color legend, but it doesn't seem to work
+        colorLegendDisplayNode.AutoScalarRangeOff()
+        colorLegendDisplayNode.SetScalarRange(0.0, 1.0)
 
         # Update the model in the scene
         slicer.app.processEvents()
