@@ -1232,41 +1232,60 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         transformFilter.Update()
         poly_data = transformFilter.GetOutput()
 
+        # Create a OBB tree
+        obb_tree = vtk.vtkOBBTree()
+        obb_tree.SetDataSet(poly_data)
+        obb_tree.BuildLocator()
+
+        # Define the ray from the target pose with a length of 50 mm
+        ray_length = 50.0
+        ray_point1, ray_point2 = [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]
+        ray_point1[0], ray_point1[1], ray_point1[2] = (
+            targetPoseTransform.GetElement(0, 3),
+            targetPoseTransform.GetElement(1, 3),
+            targetPoseTransform.GetElement(2, 3),
+        )  # start point
+        ray_point2[0], ray_point2[1], ray_point2[2] = (
+            targetPoseTransform.GetElement(0, 3)
+            - ray_length * targetPoseTransform.GetElement(0, 2),
+            targetPoseTransform.GetElement(1, 3)
+            - ray_length * targetPoseTransform.GetElement(1, 2),
+            targetPoseTransform.GetElement(2, 3)
+            - ray_length * targetPoseTransform.GetElement(2, 2),
+        )  # end point
+
+        # Find the intersection point on the mesh to the ray
+        intersection_points = vtk.vtkPoints()
+        code = obb_tree.IntersectWithLine(
+            ray_point1, ray_point2, intersection_points, None
+        )
+        if code == 0:
+            slicer.util.errorDisplay("No intersection found!")
+            return
+        else:
+            closest_point = intersection_points.GetPoint(0)
+
         POINT_COUNT = poly_data.GetNumberOfPoints()
-        distance_min = 1e6
         distances = numpy.zeros(POINT_COUNT)
-        
 
         for i in range(POINT_COUNT):
-            point = poly_data.GetPoint(i)
-            distance = math.sqrt(vtk.vtkMath.Distance2BetweenPoints(
-                (
-                    targetPoseTransform.GetElement(0, 3),
-                    targetPoseTransform.GetElement(1, 3),
-                    targetPoseTransform.GetElement(2, 3),
-                ),
-                point,
-            ))  # distance from target pose to point
-
+            mesh_point = poly_data.GetPoint(i)
+            distance = math.sqrt(
+                vtk.vtkMath.Distance2BetweenPoints(
+                    closest_point,
+                    mesh_point,
+                )
+            )  # distance from target pose to point
             distances[i] = distance
 
-            if distance < distance_min:
-                distance_min = distance
-
-            # # Map distance or any other metric to scalar values
-            # scalar_value = computeScalarFromDistance(distance)
-
-            # if not scalar_values:onPushModuleTargetViz
-            #     scalar_values.InsertNextValue(mep * scalar_value)
-
-            # elif scalar_values.GetNumberOfTuples() < i + 1:
-            #     scalar_values.InsertNextValue(mep * scalar_value)
-            # else:
-            #     # add the new scalar value to the existing array
-            #     curr_value = scalar_values.GetValue(i)onPushModuleTargetViz
-            #     scalar_values.SetValue(i, 0.5 * (curr_value + mep * scalar_value))
+        # print the range of distances
 
         scalars = computeScalarFromDistance(distances, mep, MAX_MEP=1.0)
+
+        # print the scalars and its idx that are not zero
+        for i in range(len(scalars)):
+            if scalars[i] != 0.0:
+                print(i, scalars[i])
 
         scalar_values = poly_data.GetPointData().GetScalars()
 
@@ -1275,34 +1294,52 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             scalar_values.SetNumberOfComponents(1)
             scalar_values.SetName("MEPHeatMapScalars")
             scalar_values.SetNumberOfValues(POINT_COUNT)
-            
-            for i in range(POINT_COUNT): 
+
+            for i in range(POINT_COUNT):
                 scalar_values.SetValue(i, scalars[i])
 
         else:
             print("scalar values already exist, adding new values ...")
             for i in range(POINT_COUNT):
                 curr_value = scalar_values.GetValue(i)
-                scalar_values.SetValue(i, max(curr_value, scalars[i])) # using max value logic
+                scalar_values.SetValue(
+                    i, max(curr_value, scalars[i])
+                )  # using max value logic
                 # but using average is also valid
-
-
 
         # poly_data.GetPointData().SetScalars(scalar_values)
         inmodel.GetPolyData().GetPointData().SetScalars(scalar_values)
         inmodel.GetDisplayNode().SetActiveScalarName("MEPHeatMapScalars")
         inmodel.GetDisplayNode().SetScalarVisibility(True)
+        inmodel.GetDisplayNode().AutoScalarRangeOn()
+
+        inmodel.GetDisplayNode().AutoScalarRangeOff()
         inmodel.GetDisplayNode().SetScalarRange(0.0, 1.0)
 
-        ColorNodeRainbow = slicer.util.getFirstNodeByName('ColdToHotRainbow')
+        ColorNodeRainbow = slicer.util.getFirstNodeByName("ColdToHotRainbow")
 
         inmodel.GetDisplayNode().SetAndObserveColorNodeID(ColorNodeRainbow.GetID())
-        colorLegendDisplayNode = slicer.modules.colors.logic().AddDefaultColorLegendDisplayNode(inmodel)
+        colorLegendDisplayNode = (
+            slicer.modules.colors.logic().AddDefaultColorLegendDisplayNode(inmodel)
+        )
         colorLegendDisplayNode.SetLabelFormat("%4.3f mV")
+        colorLegendDisplayNode.SetTitleText("MEP Responses")
 
-        # These two lines are supposed to set the scalar range of the color legend, but it doesn't seem to work
-        colorLegendDisplayNode.AutoScalarRangeOff()
-        colorLegendDisplayNode.SetScalarRange(0.0, 1.0)
+        titleProperties = colorLegendDisplayNode.GetTitleTextProperty()
+        titleProperties.SetFontSize(20)
+        titleProperties.SetColor(1, 1, 1)
+        titleProperties.SetBold(True)
+        titleProperties.SetItalic(True)
+        titleProperties.SetShadow(True)
+        titleProperties.SetFontFamilyToArial()
+
+        LabelProperties = colorLegendDisplayNode.GetLabelTextProperty()
+        LabelProperties.SetFontSize(18)
+        LabelProperties.SetColor(1, 1, 1)
+        LabelProperties.SetBold(True)
+        LabelProperties.SetItalic(True)
+        LabelProperties.SetShadow(True)
+        LabelProperties.SetFontFamilyToArial()
 
         # Update the model in the scene
         slicer.app.processEvents()

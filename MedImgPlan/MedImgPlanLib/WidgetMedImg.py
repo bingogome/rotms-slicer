@@ -630,6 +630,7 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         print("Target pose transform: ")
         self._parameterNode.GetNodeReference(
             "TargetPoseTransform"
+            # "TargetPoseTransformCortex"
         ).GetMatrixTransformToParent(targetPoseTransform)
         print(targetPoseTransform)
         if not self._parameterNode.GetNodeReference("InputMeshBrain"):
