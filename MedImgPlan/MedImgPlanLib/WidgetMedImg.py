@@ -187,6 +187,8 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         )
         self.ui.pushOverlayHeatMap.connect("clicked(bool)", self.onPushOverlayHeatMap)
 
+        self.ui.pushResetCortex.connect("clicked(bool)", self.onPushResetCortex)
+
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
 
@@ -639,3 +641,7 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         inmodel = self._parameterNode.GetNodeReference("InputMeshBrain")
 
         self.logic.processHeatMapOnBrain(mep, targetPoseTransform, inmodel)
+
+    def onPushResetCortex(self):
+        inmodel = self._parameterNode.GetNodeReference("InputMeshBrain")
+        self.logic.processResetCortex(inmodel)

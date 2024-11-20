@@ -1281,12 +1281,6 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         # print the range of distances
 
         scalars = computeScalarFromDistance(distances, mep, MAX_MEP=1.0)
-
-        # print the scalars and its idx that are not zero
-        for i in range(len(scalars)):
-            if scalars[i] != 0.0:
-                print(i, scalars[i])
-
         scalar_values = poly_data.GetPointData().GetScalars()
 
         if not scalar_values:
@@ -1294,7 +1288,6 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             scalar_values.SetNumberOfComponents(1)
             scalar_values.SetName("MEPHeatMapScalars")
             scalar_values.SetNumberOfValues(POINT_COUNT)
-
             for i in range(POINT_COUNT):
                 scalar_values.SetValue(i, scalars[i])
 
@@ -1326,21 +1319,35 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         colorLegendDisplayNode.SetTitleText("MEP Responses")
 
         titleProperties = colorLegendDisplayNode.GetTitleTextProperty()
-        titleProperties.SetFontSize(20)
+        titleProperties.SetFontSize(24)
         titleProperties.SetColor(1, 1, 1)
         titleProperties.SetBold(True)
         titleProperties.SetItalic(True)
         titleProperties.SetShadow(True)
         titleProperties.SetFontFamilyToArial()
 
-        LabelProperties = colorLegendDisplayNode.GetLabelTextProperty()
-        LabelProperties.SetFontSize(18)
-        LabelProperties.SetColor(1, 1, 1)
-        LabelProperties.SetBold(True)
-        LabelProperties.SetItalic(True)
-        LabelProperties.SetShadow(True)
-        LabelProperties.SetFontFamilyToArial()
+        labelProperties = colorLegendDisplayNode.GetLabelTextProperty()
+        labelProperties.SetFontSize(18)
+        labelProperties.SetColor(1, 1, 1)
+        labelProperties.SetBold(True)
+        labelProperties.SetItalic(True)
+        labelProperties.SetShadow(True)
+        labelProperties.SetFontFamilyToArial()
 
         # Update the model in the scene
         slicer.app.processEvents()
         slicer.util.setSliceViewerLayers(background=inmodel)
+
+    def processResetCortex(self, cortex_model):
+        scalar_values = cortex_model.GetPolyData().GetPointData().GetScalars()
+        POINT_COUNT = cortex_model.GetPolyData().GetNumberOfPoints()
+        for i in range(POINT_COUNT):
+            scalar_values.SetValue(i, 0.0)
+
+        cortex_model.GetPolyData().GetPointData().SetScalars(scalar_values)
+        cortex_model.GetDisplayNode().AutoScalarRangeOn()
+        cortex_model.GetDisplayNode().ScalarVisibilityOff()
+        
+        slicer.app.processEvents()
+        slicer.util.setSliceViewerLayers(background=cortex_model)
+        

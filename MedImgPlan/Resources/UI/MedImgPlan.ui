@@ -918,20 +918,88 @@
       <string>Data Inspection</string>
      </property>
      <property name="collapsed">
-      <bool>true</bool>
+      <bool>false</bool>
+     </property>
+     <property name="flat">
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_15">
-      <item row="1" column="0" colspan="2">
-       <widget class="QPushButton" name="pushRetrieveToolPose">
-        <property name="text">
-         <string>Retrieve Tool Pose</string>
-        </property>
-       </widget>
+      <item row="0" column="1">
+       <widget class="ctkPathLineEdit" name="pathToolPose"/>
       </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_10">
+      <item row="5" column="0" colspan="2">
+       <widget class="QPushButton" name="pushResetCortex">
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <italic>false</italic>
+          <bold>false</bold>
+          <underline>false</underline>
+          <strikeout>false</strikeout>
+         </font>
+        </property>
+        <property name="mouseTracking">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Wipe out the current overlay and paint the cortex with uniform color&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="whatsThis">
+         <string/>
+        </property>
+        <property name="autoFillBackground">
+         <bool>false</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton#pushResetCortex {
+	background-color: none;
+	border-style: outset;
+	border-width: 1.2px;
+	border-radius: 10px;
+	border-color: black;
+	min-width: 8em;
+	padding: 3px;
+}
+QPushButton#pushResetCortex:hover {
+	background-color: rgb(85, 255, 127);
+	border-style: outset;
+	border-width: 1.2px;
+	border-radius: 10px;
+	border-color: black;
+	min-width: 8em;
+	padding: 3px;
+}
+
+QPushButton#pushResetCortex:hover:pressed{
+	background-color: rgb(0, 255, 0);
+	border-style: outset;
+	border-width: 1.2px;
+	border-radius: 10px;
+	border-color: black;
+	min-width: 8em;
+	padding: 3px;
+}</string>
+        </property>
         <property name="text">
-         <string>Tool Pose Data Path:</string>
+         <string>Reset Cortex</string>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>16</width>
+          <height>16</height>
+         </size>
+        </property>
+        <property name="checkable">
+         <bool>false</bool>
+        </property>
+        <property name="autoDefault">
+         <bool>true</bool>
+        </property>
+        <property name="default">
+         <bool>false</bool>
+        </property>
+        <property name="flat">
+         <bool>false</bool>
         </property>
        </widget>
       </item>
@@ -942,16 +1010,6 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="ctkPathLineEdit" name="pathToolPose"/>
-      </item>
-      <item row="5" column="0" colspan="2">
-       <widget class="QPushButton" name="pushOverlayHeatMap">
-        <property name="text">
-         <string>Overlay</string>
-        </property>
-       </widget>
-      </item>
       <item row="3" column="0">
        <widget class="QLabel" name="label_13">
         <property name="text">
@@ -959,8 +1017,29 @@
         </property>
        </widget>
       </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="QPushButton" name="pushRetrieveToolPose">
+        <property name="text">
+         <string>Retrieve Tool Pose</string>
+        </property>
+       </widget>
+      </item>
       <item row="3" column="1">
        <widget class="QLineEdit" name="textMEPValueHeatMapOverlay"/>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_10">
+        <property name="text">
+         <string>Tool Pose Data Path:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0" colspan="2">
+       <widget class="QPushButton" name="pushOverlayHeatMap">
+        <property name="text">
+         <string>Overlay</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
