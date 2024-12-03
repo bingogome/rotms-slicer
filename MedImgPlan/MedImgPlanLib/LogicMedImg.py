@@ -1263,7 +1263,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             slicer.util.errorDisplay("No intersection found!")
             return
         else:
-            closest_point = intersection_points.GetPoint(0)
+            closest_point = intersection_points.GetPoint(0) # Pick the intersection point with minimum distance
 
         POINT_COUNT = poly_data.GetNumberOfPoints()
         distances = numpy.zeros(POINT_COUNT)
@@ -1309,9 +1309,29 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         inmodel.GetDisplayNode().AutoScalarRangeOff()
         inmodel.GetDisplayNode().SetScalarRange(0.0, 1.0)
 
-        ColorNodeRainbow = slicer.util.getFirstNodeByName("ColdToHotRainbow")
+        # ColorNodeRainbow = slicer.util.getFirstNodeByName("ColdToHotRainbow") # Get the rainbow color node
+        # Create a custom color node, the zeros scalars will be white
+        # values that are non-zero will follow the rainbow color scheme
+        colorNodeCustom = slicer.mrmlScene.CreateNodeByClass(
+            "vtkMRMLProceduralColorNode"
+        )
+        colorNodeCustom.UnRegister(None)
+        colorNodeCustom.SetName(
+            slicer.mrmlScene.GenerateUniqueName("MEPHeatMapColorNode")
+        )
+        colorNodeCustom.SetAttribute("Category", "HeatMap")
+        colorNodeCustom.SetHideFromEditors(False)
+        slicer.mrmlScene.AddNode(colorNodeCustom)
 
-        inmodel.GetDisplayNode().SetAndObserveColorNodeID(ColorNodeRainbow.GetID())
+        # Create a lookup table to map scalar values to colors
+        colorMapCustom = colorNodeCustom.GetColorTransferFunction()
+        colorMapCustom.RemoveAllPoints()
+        colorMapCustom.AddRGBPoint(0.0, 1.0, 1.0, 1.0)
+        colorMapCustom.AddRGBPoint(1e-6, 0.0, 0.0, 1.0)
+        colorMapCustom.AddRGBPoint(0.5, 0.0, 1.0, 0.0)
+        colorMapCustom.AddRGBPoint(1.0, 1.0, 0.0, 0.0)
+
+        inmodel.GetDisplayNode().SetAndObserveColorNodeID(colorNodeCustom.GetID())
         colorLegendDisplayNode = (
             slicer.modules.colors.logic().AddDefaultColorLegendDisplayNode(inmodel)
         )
@@ -1320,7 +1340,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
 
         titleProperties = colorLegendDisplayNode.GetTitleTextProperty()
         titleProperties.SetFontSize(24)
-        titleProperties.SetColor(1, 1, 1)
+        titleProperties.SetColor(0, 0, 0)
         titleProperties.SetBold(True)
         titleProperties.SetItalic(True)
         titleProperties.SetShadow(True)
@@ -1328,7 +1348,7 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
 
         labelProperties = colorLegendDisplayNode.GetLabelTextProperty()
         labelProperties.SetFontSize(18)
-        labelProperties.SetColor(1, 1, 1)
+        labelProperties.SetColor(0, 0, 0)
         labelProperties.SetBold(True)
         labelProperties.SetItalic(True)
         labelProperties.SetShadow(True)
@@ -1347,7 +1367,23 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         cortex_model.GetPolyData().GetPointData().SetScalars(scalar_values)
         cortex_model.GetDisplayNode().AutoScalarRangeOn()
         cortex_model.GetDisplayNode().ScalarVisibilityOff()
-        
+
         slicer.app.processEvents()
         slicer.util.setSliceViewerLayers(background=cortex_model)
-        
+
+    def processUniformColoring(self, cortex_model):   
+        # calculate the tool pose from the given grid     
+        if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
+            slicer.util.errorDisplay("Please plan tool pose first!")
+            raise ValueError("Please plan tool pose first!")
+
+        numOfGrid = int(float(self._parameterNode.GetParameter("GridPlanNum")))
+        if numOfGrid > 1:
+
+            if self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true":
+                coor = self.processGenerateGridCoordinateArr(numOfGrid)
+
+        for point in coor:
+            p, mat = getRotAndPFromMatrix(point)
+
+
