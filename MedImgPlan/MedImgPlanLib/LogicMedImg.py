@@ -1263,7 +1263,9 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             slicer.util.errorDisplay("No intersection found!")
             return
         else:
-            closest_point = intersection_points.GetPoint(0) # Pick the intersection point with minimum distance
+            closest_point = intersection_points.GetPoint(
+                0
+            )  # Pick the intersection point with minimum distance
 
         POINT_COUNT = poly_data.GetNumberOfPoints()
         distances = numpy.zeros(POINT_COUNT)
@@ -1279,7 +1281,6 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             distances[i] = distance
 
         # print the range of distances
-
         scalars = computeScalarFromDistance(distances, mep, MAX_MEP=1.0)
         scalar_values = poly_data.GetPointData().GetScalars()
 
@@ -1358,21 +1359,21 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         slicer.app.processEvents()
         slicer.util.setSliceViewerLayers(background=inmodel)
 
-    def processResetCortex(self, cortex_model):
-        scalar_values = cortex_model.GetPolyData().GetPointData().GetScalars()
-        POINT_COUNT = cortex_model.GetPolyData().GetNumberOfPoints()
+    def processResetCortex(self, inModel):
+        scalar_values = inModel.GetPolyData().GetPointData().GetScalars()
+        POINT_COUNT = inModel.GetPolyData().GetNumberOfPoints()
         for i in range(POINT_COUNT):
             scalar_values.SetValue(i, 0.0)
 
-        cortex_model.GetPolyData().GetPointData().SetScalars(scalar_values)
-        cortex_model.GetDisplayNode().AutoScalarRangeOn()
-        cortex_model.GetDisplayNode().ScalarVisibilityOff()
+        inModel.GetPolyData().GetPointData().SetScalars(scalar_values)
+        inModel.GetDisplayNode().AutoScalarRangeOn()
+        inModel.GetDisplayNode().ScalarVisibilityOff()
 
         slicer.app.processEvents()
-        slicer.util.setSliceViewerLayers(background=cortex_model)
+        slicer.util.setSliceViewerLayers(background=inModel)
 
-    def processUniformColoring(self, cortex_model):   
-        # calculate the tool pose from the given grid     
+    def processUniformColoring(self, inModel):
+        # calculate the tool pose from the given grid
         if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
             slicer.util.errorDisplay("Please plan tool pose first!")
             raise ValueError("Please plan tool pose first!")
@@ -1383,7 +1384,56 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             if self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true":
                 coor = self.processGenerateGridCoordinateArr(numOfGrid)
 
+        # Obtain the brain model and adjust it by default transformation
+        self._parameterNode.SetNodeReferenceID(
+            "BrainMeshOffsetTransform", inModel.GetParentTransformNode().GetID()
+        )
+        transformFilter = vtk.vtkTransformPolyDataFilter()
+        transformFilterTransform = vtk.vtkTransform()
+        transformFilterTransform.SetMatrix(
+            self._parameterNode.GetNodeReference(
+                "BrainMeshOffsetTransform"
+            ).GetMatrixTransformToParent()
+        )
+        transformFilter.SetTransform(transformFilterTransform)
+        transformFilter.SetInputData(inModel.GetPolyData())
+        transformFilter.Update()
+        poly_data = transformFilter.GetOutput()
+
+        # Create a OBB tree object for closest point detection
+        obb_tree = vtk.vtkOBBTree()
+        obb_tree.SetDataSet(poly_data)
+        obb_tree.BuildLocator()
+
+        ids = []
+
         for point in coor:
             p, mat = getRotAndPFromMatrix(point)
+            ray_length = 50.0
+            ray_point1, ray_point2 = [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]
+            ray_point1[0], ray_point1[1], ray_point1[2] = (
+                p[0] + ray_length * mat[0][2],
+                p[1] + ray_length * mat[1][2],
+                p[2] + ray_length * mat[2][2],
+            )
 
+            ray_point2[0], ray_point2[1], ray_point2[2] = (
+                p[0] - ray_length * mat[0][2],
+                p[1] - ray_length * mat[1][2],
+                p[2] - ray_length * mat[2][2],
+            )
 
+            intersection_points = vtk.vtkPoints()
+            code = obb_tree.IntersectWithLine(
+                ray_point1, ray_point2, intersection_points, None
+            )
+            if code == 0:
+                slicer.util.errorDisplay("No intersection found!")
+                return
+            else:
+                closest_point = intersection_points.GetPoint(0)
+                # get the id of the closest point as well
+                ids.append(poly_data.FindPoint(closest_point))
+
+        # retrieve the scalar corresponds to the ids
+        scalar_values = poly_data.GetPointData().GetScalars()
