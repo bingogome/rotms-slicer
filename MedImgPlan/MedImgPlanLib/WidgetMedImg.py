@@ -181,13 +181,15 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
         self.ui.pushGridSetNext.connect("clicked(bool)", self.onPushGridSetNext)
         self.ui.pushGridClear.connect("clicked(bool)", self.onPushGridClear)
 
-        # Data inspection
+        # MEP Visualization
         self.ui.pushRetrieveToolPose.connect(
             "clicked(bool)", self.onPushRetrieveToolPose
         )
         self.ui.pushOverlayHeatMap.connect("clicked(bool)", self.onPushOverlayHeatMap)
-
         self.ui.pushResetCortex.connect("clicked(bool)", self.onPushResetCortex)
+        self.ui.pushUniformColoring.connect("clicked(bool)", self.onPushUniformColoring)
+
+
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
@@ -645,3 +647,7 @@ class MedImgPlanWidget(MedImgPlanWidgetBase):
     def onPushResetCortex(self):
         inmodel = self._parameterNode.GetNodeReference("InputMeshBrain")
         self.logic.processResetCortex(inmodel)
+
+    def onPushUniformColoring(self):
+        inmodel = self._parameterNode.GetNodeReference("InputMeshBrain")
+        self.logic.processUniformColoring(inmodel)

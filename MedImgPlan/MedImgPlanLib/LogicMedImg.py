@@ -1306,10 +1306,14 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         inmodel.GetDisplayNode().SetActiveScalarName("MEPHeatMapScalars")
         inmodel.GetDisplayNode().SetScalarVisibility(True)
         inmodel.GetDisplayNode().AutoScalarRangeOn()
-
+        
         inmodel.GetDisplayNode().AutoScalarRangeOff()
         inmodel.GetDisplayNode().SetScalarRange(0.0, 1.0)
-
+        self.processConfigModelLegend(inmodel)
+        slicer.app.processEvents()
+        slicer.util.setSliceViewerLayers(background=inmodel)
+    
+    def processConfigModelLegend(self, inModel):
         # ColorNodeRainbow = slicer.util.getFirstNodeByName("ColdToHotRainbow") # Get the rainbow color node
         # Create a custom color node, the zeros scalars will be white
         # values that are non-zero will follow the rainbow color scheme
@@ -1332,9 +1336,9 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         colorMapCustom.AddRGBPoint(0.5, 0.0, 1.0, 0.0)
         colorMapCustom.AddRGBPoint(1.0, 1.0, 0.0, 0.0)
 
-        inmodel.GetDisplayNode().SetAndObserveColorNodeID(colorNodeCustom.GetID())
+        inModel.GetDisplayNode().SetAndObserveColorNodeID(colorNodeCustom.GetID())
         colorLegendDisplayNode = (
-            slicer.modules.colors.logic().AddDefaultColorLegendDisplayNode(inmodel)
+            slicer.modules.colors.logic().AddDefaultColorLegendDisplayNode(inModel)
         )
         colorLegendDisplayNode.SetLabelFormat("%4.3f mV")
         colorLegendDisplayNode.SetTitleText("MEP Responses")
@@ -1354,10 +1358,6 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         labelProperties.SetItalic(True)
         labelProperties.SetShadow(True)
         labelProperties.SetFontFamilyToArial()
-
-        # Update the model in the scene
-        slicer.app.processEvents()
-        slicer.util.setSliceViewerLayers(background=inmodel)
 
     def processResetCortex(self, inModel):
         scalar_values = inModel.GetPolyData().GetPointData().GetScalars()
@@ -1405,7 +1405,8 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         obb_tree.SetDataSet(poly_data)
         obb_tree.BuildLocator()
 
-        ids = []
+        closest_points = []
+        indices = []
 
         for point in coor:
             p, mat = getRotAndPFromMatrix(point)
@@ -1431,9 +1432,40 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 slicer.util.errorDisplay("No intersection found!")
                 return
             else:
-                closest_point = intersection_points.GetPoint(0)
-                # get the id of the closest point as well
-                ids.append(poly_data.FindPoint(closest_point))
+                closest_points.append(intersection_points.GetPoint(0))
+                indices.append(poly_data.FindPoint(closest_points[-1]))
 
-        # retrieve the scalar corresponds to the ids
+
+        # use pointlocator to find the neighbors of the closest points on the brain
+        point_locator = vtk.vtkPointLocator()
+        point_locator.SetDataSet(poly_data)
+        point_locator.BuildLocator()
+
+        # get the neighbors of the closest points
+        neighbors = {}
+        search_radius = 2.0 # [Feature Requested]: A value that can be loaded from the config
+
+        for i in range(len(closest_points)):
+            closestIDs = vtk.vtkIdList()
+            point_locator.FindPointsWithinRadius(search_radius, closest_points[i], closestIDs)
+            neighbors[indices[i]] = [closestIDs.GetId(j) for j in range(closestIDs.GetNumberOfIds())]
+        
+        grid_neighbor = set()
+        for value in neighbors.values():
+            grid_neighbor.update(value)
+        
         scalar_values = poly_data.GetPointData().GetScalars()
+        for scalar_id in range(poly_data.GetNumberOfPoints()):
+            if scalar_id in grid_neighbor:
+                matching_keys = [key for key, value in neighbors.items() if scalar_id in value]
+                scalar_values.SetValue(scalar_id,numpy.mean([scalar_values.GetValue(key) for key in matching_keys]))
+            else:
+                scalar_values.SetValue(scalar_id, 0.0)
+
+        inModel.GetPolyData().GetPointData().SetScalars(scalar_values)
+        inModel.GetDisplayNode().AutoScalarRangeOn()
+        inModel.GetDisplayNode().AutoScalarRangeOff()
+        inModel.GetDisplayNode().SetScalarRange(0.0, 1.0)
+            
+        slicer.app.processEvents()
+        slicer.util.setSliceViewerLayers(background=inModel)
