@@ -10,6 +10,12 @@
     <height>1187</height>
    </rect>
   </property>
+  <property name="minimumSize">
+   <size>
+    <width>23</width>
+    <height>0</height>
+   </size>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="ctkCollapsibleButton" name="collapOtherModule">
@@ -86,6 +92,9 @@
     <widget class="ctkCollapsibleButton" name="collapRegistration">
      <property name="enabled">
       <bool>true</bool>
+     </property>
+     <property name="acceptDrops">
+      <bool>false</bool>
      </property>
      <property name="text">
       <string>Registration</string>
@@ -915,13 +924,118 @@
    <item>
     <widget class="ctkCollapsibleButton" name="collapDataInspect">
      <property name="text">
-      <string>Data Inspection</string>
+      <string>MEP Visualization</string>
      </property>
      <property name="collapsed">
-      <bool>true</bool>
+      <bool>false</bool>
+     </property>
+     <property name="flat">
+      <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="gridLayout_15">
-      <item row="1" column="0" colspan="2">
+      <item row="13" column="0" colspan="4">
+       <widget class="QPushButton" name="pushResetCortex">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>128</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="font">
+         <font>
+          <weight>50</weight>
+          <italic>false</italic>
+          <bold>false</bold>
+          <underline>false</underline>
+          <strikeout>false</strikeout>
+         </font>
+        </property>
+        <property name="mouseTracking">
+         <bool>true</bool>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Wipe out the current overlay and paint the cortex with uniform color&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="whatsThis">
+         <string/>
+        </property>
+        <property name="autoFillBackground">
+         <bool>false</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton#pushResetCortex {
+	background-color: rgba(85, 255, 127, 150);
+	border-style: outset;
+	border-width: 1.2px;
+	border-radius: 3px;
+	min-width: 8em;
+	border-color: black;
+	padding: 3px;
+}
+QPushButton#pushResetCortex:hover {
+	background-color: rgb(85, 255, 127);
+	border-style: outset;
+	border-width: 1.2px;
+	border-radius: 3px;
+	min-width: 8em;
+	border-color: black;
+	padding: 3px;
+}
+
+QPushButton#pushResetCortex:hover:pressed{
+	background-color: rgb(0, 255, 0);
+	border-style: outset;
+	border-width: 1.2px;
+	border-radius: 3px;	
+	border-color: black;
+	min-width: 8em;
+	padding: 3px;
+}</string>
+        </property>
+        <property name="text">
+         <string>Reset Cortex</string>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>16</width>
+          <height>16</height>
+         </size>
+        </property>
+        <property name="checkable">
+         <bool>false</bool>
+        </property>
+        <property name="autoDefault">
+         <bool>true</bool>
+        </property>
+        <property name="default">
+         <bool>false</bool>
+        </property>
+        <property name="flat">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="label_13">
+        <property name="text">
+         <string>MEP Value</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="3">
+       <widget class="QPushButton" name="pushOverlayHeatMap">
+        <property name="text">
+         <string>Overlay</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="4">
        <widget class="QPushButton" name="pushRetrieveToolPose">
         <property name="text">
          <string>Retrieve Tool Pose</string>
@@ -935,32 +1049,58 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0" colspan="2">
+      <item row="4" column="0" colspan="4">
+       <widget class="QPushButton" name="pushUniformColoring">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>16777215</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="baseSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Switch to Uniform Color Rendering</string>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>16</width>
+          <height>16</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="4">
        <widget class="QLabel" name="label_12">
         <property name="text">
          <string>Overlay Heatmap on Planned Pose</string>
         </property>
        </widget>
       </item>
-      <item row="0" column="1">
-       <widget class="ctkPathLineEdit" name="pathToolPose"/>
-      </item>
-      <item row="5" column="0" colspan="2">
-       <widget class="QPushButton" name="pushOverlayHeatMap">
-        <property name="text">
-         <string>Overlay</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="label_13">
-        <property name="text">
-         <string>MEP Value</string>
-        </property>
-       </widget>
-      </item>
       <item row="3" column="1">
        <widget class="QLineEdit" name="textMEPValueHeatMapOverlay"/>
+      </item>
+      <item row="0" column="1" colspan="3">
+       <widget class="ctkPathLineEdit" name="pathToolPose"/>
       </item>
      </layout>
     </widget>

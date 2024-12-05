@@ -1232,42 +1232,56 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         transformFilter.Update()
         poly_data = transformFilter.GetOutput()
 
+        # Create a OBB tree
+        obb_tree = vtk.vtkOBBTree()
+        obb_tree.SetDataSet(poly_data)
+        obb_tree.BuildLocator()
+
+        # Define the ray from the target pose with a length of 50 mm
+        ray_length = 50.0
+        ray_point1, ray_point2 = [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]
+        ray_point1[0], ray_point1[1], ray_point1[2] = (
+            targetPoseTransform.GetElement(0, 3),
+            targetPoseTransform.GetElement(1, 3),
+            targetPoseTransform.GetElement(2, 3),
+        )  # start point
+        ray_point2[0], ray_point2[1], ray_point2[2] = (
+            targetPoseTransform.GetElement(0, 3)
+            - ray_length * targetPoseTransform.GetElement(0, 2),
+            targetPoseTransform.GetElement(1, 3)
+            - ray_length * targetPoseTransform.GetElement(1, 2),
+            targetPoseTransform.GetElement(2, 3)
+            - ray_length * targetPoseTransform.GetElement(2, 2),
+        )  # end point
+
+        # Find the intersection point on the mesh to the ray
+        intersection_points = vtk.vtkPoints()
+        code = obb_tree.IntersectWithLine(
+            ray_point1, ray_point2, intersection_points, None
+        )
+        if code == 0:
+            slicer.util.errorDisplay("No intersection found!")
+            return
+        else:
+            closest_point = intersection_points.GetPoint(
+                0
+            )  # Pick the intersection point with minimum distance
+
         POINT_COUNT = poly_data.GetNumberOfPoints()
-        distance_min = 1e6
         distances = numpy.zeros(POINT_COUNT)
-        
 
         for i in range(POINT_COUNT):
-            point = poly_data.GetPoint(i)
-            distance = math.sqrt(vtk.vtkMath.Distance2BetweenPoints(
-                (
-                    targetPoseTransform.GetElement(0, 3),
-                    targetPoseTransform.GetElement(1, 3),
-                    targetPoseTransform.GetElement(2, 3),
-                ),
-                point,
-            ))  # distance from target pose to point
-
+            mesh_point = poly_data.GetPoint(i)
+            distance = math.sqrt(
+                vtk.vtkMath.Distance2BetweenPoints(
+                    closest_point,
+                    mesh_point,
+                )
+            )  # distance from target pose to point
             distances[i] = distance
 
-            if distance < distance_min:
-                distance_min = distance
-
-            # # Map distance or any other metric to scalar values
-            # scalar_value = computeScalarFromDistance(distance)
-
-            # if not scalar_values:onPushModuleTargetViz
-            #     scalar_values.InsertNextValue(mep * scalar_value)
-
-            # elif scalar_values.GetNumberOfTuples() < i + 1:
-            #     scalar_values.InsertNextValue(mep * scalar_value)
-            # else:
-            #     # add the new scalar value to the existing array
-            #     curr_value = scalar_values.GetValue(i)onPushModuleTargetViz
-            #     scalar_values.SetValue(i, 0.5 * (curr_value + mep * scalar_value))
-
+        # print the range of distances
         scalars = computeScalarFromDistance(distances, mep, MAX_MEP=1.0)
-
         scalar_values = poly_data.GetPointData().GetScalars()
 
         if not scalar_values:
@@ -1275,35 +1289,183 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             scalar_values.SetNumberOfComponents(1)
             scalar_values.SetName("MEPHeatMapScalars")
             scalar_values.SetNumberOfValues(POINT_COUNT)
-            
-            for i in range(POINT_COUNT): 
+            for i in range(POINT_COUNT):
                 scalar_values.SetValue(i, scalars[i])
 
         else:
             print("scalar values already exist, adding new values ...")
             for i in range(POINT_COUNT):
                 curr_value = scalar_values.GetValue(i)
-                scalar_values.SetValue(i, max(curr_value, scalars[i])) # using max value logic
+                scalar_values.SetValue(
+                    i, max(curr_value, scalars[i])
+                )  # using max value logic
                 # but using average is also valid
-
-
 
         # poly_data.GetPointData().SetScalars(scalar_values)
         inmodel.GetPolyData().GetPointData().SetScalars(scalar_values)
         inmodel.GetDisplayNode().SetActiveScalarName("MEPHeatMapScalars")
         inmodel.GetDisplayNode().SetScalarVisibility(True)
+        inmodel.GetDisplayNode().AutoScalarRangeOn()
+        
+        inmodel.GetDisplayNode().AutoScalarRangeOff()
         inmodel.GetDisplayNode().SetScalarRange(0.0, 1.0)
-
-        ColorNodeRainbow = slicer.util.getFirstNodeByName('ColdToHotRainbow')
-
-        inmodel.GetDisplayNode().SetAndObserveColorNodeID(ColorNodeRainbow.GetID())
-        colorLegendDisplayNode = slicer.modules.colors.logic().AddDefaultColorLegendDisplayNode(inmodel)
-        colorLegendDisplayNode.SetLabelFormat("%4.3f mV")
-
-        # These two lines are supposed to set the scalar range of the color legend, but it doesn't seem to work
-        colorLegendDisplayNode.AutoScalarRangeOff()
-        colorLegendDisplayNode.SetScalarRange(0.0, 1.0)
-
-        # Update the model in the scene
+        self.processConfigModelLegend(inmodel)
         slicer.app.processEvents()
         slicer.util.setSliceViewerLayers(background=inmodel)
+    
+    def processConfigModelLegend(self, inModel):
+        # ColorNodeRainbow = slicer.util.getFirstNodeByName("ColdToHotRainbow") # Get the rainbow color node
+        # Create a custom color node, the zeros scalars will be white
+        # values that are non-zero will follow the rainbow color scheme
+        colorNodeCustom = slicer.mrmlScene.CreateNodeByClass(
+            "vtkMRMLProceduralColorNode"
+        )
+        colorNodeCustom.UnRegister(None)
+        colorNodeCustom.SetName(
+            slicer.mrmlScene.GenerateUniqueName("MEPHeatMapColorNode")
+        )
+        colorNodeCustom.SetAttribute("Category", "HeatMap")
+        colorNodeCustom.SetHideFromEditors(False)
+        slicer.mrmlScene.AddNode(colorNodeCustom)
+
+        # Create a lookup table to map scalar values to colors
+        colorMapCustom = colorNodeCustom.GetColorTransferFunction()
+        colorMapCustom.RemoveAllPoints()
+        colorMapCustom.AddRGBPoint(0.0, 1.0, 1.0, 1.0)
+        colorMapCustom.AddRGBPoint(1e-6, 0.0, 0.0, 1.0)
+        colorMapCustom.AddRGBPoint(0.5, 0.0, 1.0, 0.0)
+        colorMapCustom.AddRGBPoint(1.0, 1.0, 0.0, 0.0)
+
+        inModel.GetDisplayNode().SetAndObserveColorNodeID(colorNodeCustom.GetID())
+        colorLegendDisplayNode = (
+            slicer.modules.colors.logic().AddDefaultColorLegendDisplayNode(inModel)
+        )
+        colorLegendDisplayNode.SetLabelFormat("%4.3f mV")
+        colorLegendDisplayNode.SetTitleText("MEP Responses")
+
+        titleProperties = colorLegendDisplayNode.GetTitleTextProperty()
+        titleProperties.SetFontSize(24)
+        titleProperties.SetColor(0, 0, 0)
+        titleProperties.SetBold(True)
+        titleProperties.SetItalic(True)
+        titleProperties.SetShadow(True)
+        titleProperties.SetFontFamilyToArial()
+
+        labelProperties = colorLegendDisplayNode.GetLabelTextProperty()
+        labelProperties.SetFontSize(18)
+        labelProperties.SetColor(0, 0, 0)
+        labelProperties.SetBold(True)
+        labelProperties.SetItalic(True)
+        labelProperties.SetShadow(True)
+        labelProperties.SetFontFamilyToArial()
+
+    def processResetCortex(self, inModel):
+        scalar_values = inModel.GetPolyData().GetPointData().GetScalars()
+        POINT_COUNT = inModel.GetPolyData().GetNumberOfPoints()
+        for i in range(POINT_COUNT):
+            scalar_values.SetValue(i, 0.0)
+
+        inModel.GetPolyData().GetPointData().SetScalars(scalar_values)
+        inModel.GetDisplayNode().AutoScalarRangeOn()
+        inModel.GetDisplayNode().ScalarVisibilityOff()
+
+        slicer.app.processEvents()
+        slicer.util.setSliceViewerLayers(background=inModel)
+
+    def processUniformColoring(self, inModel):
+        # calculate the tool pose from the given grid
+        if not self._parameterNode.GetNodeReference("TargetPoseTransform"):
+            slicer.util.errorDisplay("Please plan tool pose first!")
+            raise ValueError("Please plan tool pose first!")
+
+        numOfGrid = int(float(self._parameterNode.GetParameter("GridPlanNum")))
+        if numOfGrid > 1:
+
+            if self._parameterNode.GetParameter("PlanGridOnPerspPlane") == "true":
+                coor = self.processGenerateGridCoordinateArr(numOfGrid)
+
+        # Obtain the brain model and adjust it by default transformation
+        self._parameterNode.SetNodeReferenceID(
+            "BrainMeshOffsetTransform", inModel.GetParentTransformNode().GetID()
+        )
+        transformFilter = vtk.vtkTransformPolyDataFilter()
+        transformFilterTransform = vtk.vtkTransform()
+        transformFilterTransform.SetMatrix(
+            self._parameterNode.GetNodeReference(
+                "BrainMeshOffsetTransform"
+            ).GetMatrixTransformToParent()
+        )
+        transformFilter.SetTransform(transformFilterTransform)
+        transformFilter.SetInputData(inModel.GetPolyData())
+        transformFilter.Update()
+        poly_data = transformFilter.GetOutput()
+
+        # Create a OBB tree object for closest point detection
+        obb_tree = vtk.vtkOBBTree()
+        obb_tree.SetDataSet(poly_data)
+        obb_tree.BuildLocator()
+
+        closest_points = []
+        indices = []
+
+        for point in coor:
+            p, mat = getRotAndPFromMatrix(point)
+            ray_length = 50.0
+            ray_point1, ray_point2 = [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]
+            ray_point1[0], ray_point1[1], ray_point1[2] = (
+                p[0] + ray_length * mat[0][2],
+                p[1] + ray_length * mat[1][2],
+                p[2] + ray_length * mat[2][2],
+            )
+
+            ray_point2[0], ray_point2[1], ray_point2[2] = (
+                p[0] - ray_length * mat[0][2],
+                p[1] - ray_length * mat[1][2],
+                p[2] - ray_length * mat[2][2],
+            )
+
+            intersection_points = vtk.vtkPoints()
+            code = obb_tree.IntersectWithLine(
+                ray_point1, ray_point2, intersection_points, None
+            )
+            if code == 0:
+                slicer.util.errorDisplay("No intersection found!")
+                return
+            else:
+                closest_points.append(intersection_points.GetPoint(0))
+                indices.append(poly_data.FindPoint(closest_points[-1]))
+
+
+        # use pointlocator to find the neighbors of the closest points on the brain
+        point_locator = vtk.vtkPointLocator()
+        point_locator.SetDataSet(poly_data)
+        point_locator.BuildLocator()
+
+        # get the neighbors of the closest points
+        neighbors = {}
+        search_radius = 2.0 # [Feature Requested]: A value that can be loaded from the config
+
+        for i in range(len(closest_points)):
+            closestIDs = vtk.vtkIdList()
+            point_locator.FindPointsWithinRadius(search_radius, closest_points[i], closestIDs)
+            neighbors[indices[i]] = [closestIDs.GetId(j) for j in range(closestIDs.GetNumberOfIds())]
+        
+        grid_neighbor = set()
+        for value in neighbors.values():
+            grid_neighbor.update(value)
+        
+        scalar_values = poly_data.GetPointData().GetScalars()
+        for scalar_id in range(poly_data.GetNumberOfPoints()):
+            if scalar_id in grid_neighbor:
+                matching_keys = [key for key, value in neighbors.items() if scalar_id in value]
+                scalar_values.SetValue(scalar_id,numpy.mean([scalar_values.GetValue(key) for key in matching_keys]))
+            else:
+                scalar_values.SetValue(scalar_id, 0.0)
+
+        inModel.GetPolyData().GetPointData().SetScalars(scalar_values)
+        inModel.GetDisplayNode().AutoScalarRangeOn()
+        inModel.GetDisplayNode().AutoScalarRangeOff()
+        inModel.GetDisplayNode().SetScalarRange(0.0, 1.0)
+            
+        slicer.app.processEvents()
+        slicer.util.setSliceViewerLayers(background=inModel)
