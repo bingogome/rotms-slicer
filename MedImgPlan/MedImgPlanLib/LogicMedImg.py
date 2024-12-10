@@ -1267,6 +1267,21 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
                 0
             )  # Pick the intersection point with minimum distance
 
+        # insert this closest point to the parameter node named "TargetPointOnCortex"
+        # this node a vtkPoints node
+        if not self._parameterNode.GetNodeReference("TargetPointOnCortex"):
+            targetPointOnCortex = slicer.mrmlScene.AddNewNodeByClass(
+                "vtkMRMLMarkupsFiducialNode", "TargetPointOnCortex"
+            )
+            self._parameterNode.SetNodeReferenceID(
+                "TargetPointOnCortex", targetPointOnCortex.GetID()
+            )
+        else:
+            targetPointOnCortex = self._parameterNode.GetNodeReference("TargetPointOnCortex")
+
+        targetPointOnCortex.InsertControlPoint(0, closest_point)
+        targetPointOnCortex.SetNthControlPointVisibility(0, False)
+
         POINT_COUNT = poly_data.GetNumberOfPoints()
         distances = numpy.zeros(POINT_COUNT)
 
@@ -1313,28 +1328,31 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         slicer.app.processEvents()
         slicer.util.setSliceViewerLayers(background=inmodel)
     
-    def processConfigModelLegend(self, inModel):
+    def processConfigModelLegend(self, inModel, useBuiltInPalette=True):
         # ColorNodeRainbow = slicer.util.getFirstNodeByName("ColdToHotRainbow") # Get the rainbow color node
-        # Create a custom color node, the zeros scalars will be white
-        # values that are non-zero will follow the rainbow color scheme
-        colorNodeCustom = slicer.mrmlScene.CreateNodeByClass(
-            "vtkMRMLProceduralColorNode"
-        )
-        colorNodeCustom.UnRegister(None)
-        colorNodeCustom.SetName(
-            slicer.mrmlScene.GenerateUniqueName("MEPHeatMapColorNode")
-        )
-        colorNodeCustom.SetAttribute("Category", "HeatMap")
-        colorNodeCustom.SetHideFromEditors(False)
-        slicer.mrmlScene.AddNode(colorNodeCustom)
+        if useBuiltInPalette:
+            colorNodeCustom = slicer.util.getFirstNodeByName("ColdToHotRainbow")
+            # set the color of zero as white
+            colorNodeCustom.SetColor(0, 1.0, 1.0, 1.0)
+        else:
+            colorNodeCustom = slicer.mrmlScene.CreateNodeByClass(
+                "vtkMRMLProceduralColorNode"
+            )
+            colorNodeCustom.UnRegister(None)
+            colorNodeCustom.SetName("MEPHeatMapColorNode")
+            colorNodeCustom.SetAttribute("Category", "HeatMap")
+            colorNodeCustom.SetHideFromEditors(False)
+            slicer.mrmlScene.AddNode(colorNodeCustom)
 
-        # Create a lookup table to map scalar values to colors
-        colorMapCustom = colorNodeCustom.GetColorTransferFunction()
-        colorMapCustom.RemoveAllPoints()
-        colorMapCustom.AddRGBPoint(0.0, 1.0, 1.0, 1.0)
-        colorMapCustom.AddRGBPoint(1e-6, 0.0, 0.0, 1.0)
-        colorMapCustom.AddRGBPoint(0.5, 0.0, 1.0, 0.0)
-        colorMapCustom.AddRGBPoint(1.0, 1.0, 0.0, 0.0)
+            # Create a lookup table to map scalar values to colors
+            
+            colorMapCustom = colorNodeCustom.GetColorTransferFunction()
+            colorMapCustom.RemoveAllPoints()
+            colorMapCustom.AddRGBPoint(0.0, 1.0, 1.0, 1.0)
+
+            # The color range is from yellow to red
+            colorMapCustom.AddRGBPoint(1e-6, 1.0, 1.0, 0.0)
+            colorMapCustom.AddRGBPoint(1.0, 1.0, 0.0, 0.0)
 
         inModel.GetDisplayNode().SetAndObserveColorNodeID(colorNodeCustom.GetID())
         colorLegendDisplayNode = (
@@ -1344,18 +1362,18 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         colorLegendDisplayNode.SetTitleText("MEP Responses")
 
         titleProperties = colorLegendDisplayNode.GetTitleTextProperty()
-        titleProperties.SetFontSize(24)
+        titleProperties.SetFontSize(32)
         titleProperties.SetColor(0, 0, 0)
         titleProperties.SetBold(True)
-        titleProperties.SetItalic(True)
+        # titleProperties.SetItalic(True)
         titleProperties.SetShadow(True)
         titleProperties.SetFontFamilyToArial()
 
         labelProperties = colorLegendDisplayNode.GetLabelTextProperty()
-        labelProperties.SetFontSize(18)
+        labelProperties.SetFontSize(16)
         labelProperties.SetColor(0, 0, 0)
         labelProperties.SetBold(True)
-        labelProperties.SetItalic(True)
+        # labelProperties.SetItalic(True)
         labelProperties.SetShadow(True)
         labelProperties.SetFontFamilyToArial()
 
@@ -1368,6 +1386,10 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         inModel.GetPolyData().GetPointData().SetScalars(scalar_values)
         inModel.GetDisplayNode().AutoScalarRangeOn()
         inModel.GetDisplayNode().ScalarVisibilityOff()
+
+        # destory the target point on cortex node
+        targetPointOnCortex = self._parameterNode.GetNodeReference("TargetPointOnCortex")
+        targetPointOnCortex.RemoveAllMarkups()
 
         slicer.app.processEvents()
         slicer.util.setSliceViewerLayers(background=inModel)
@@ -1400,50 +1422,24 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
         transformFilter.Update()
         poly_data = transformFilter.GetOutput()
 
-        # Create a OBB tree object for closest point detection
-        obb_tree = vtk.vtkOBBTree()
-        obb_tree.SetDataSet(poly_data)
-        obb_tree.BuildLocator()
-
-        closest_points = []
-        indices = []
-
-        for point in coor:
-            p, mat = getRotAndPFromMatrix(point)
-            ray_length = 50.0
-            ray_point1, ray_point2 = [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]
-            ray_point1[0], ray_point1[1], ray_point1[2] = (
-                p[0] + ray_length * mat[0][2],
-                p[1] + ray_length * mat[1][2],
-                p[2] + ray_length * mat[2][2],
-            )
-
-            ray_point2[0], ray_point2[1], ray_point2[2] = (
-                p[0] - ray_length * mat[0][2],
-                p[1] - ray_length * mat[1][2],
-                p[2] - ray_length * mat[2][2],
-            )
-
-            intersection_points = vtk.vtkPoints()
-            code = obb_tree.IntersectWithLine(
-                ray_point1, ray_point2, intersection_points, None
-            )
-            if code == 0:
-                slicer.util.errorDisplay("No intersection found!")
-                return
-            else:
-                closest_points.append(intersection_points.GetPoint(0))
-                indices.append(poly_data.FindPoint(closest_points[-1]))
-
-
-        # use pointlocator to find the neighbors of the closest points on the brain
-        point_locator = vtk.vtkPointLocator()
+        point_locator = vtk.vtkPointLocator() # Point locator object for finding closest points
         point_locator.SetDataSet(poly_data)
         point_locator.BuildLocator()
 
+        closest_points = []
+        indices = []
+        targetPointOnCortex = self._parameterNode.GetNodeReference("TargetPointOnCortex")
+        for i in range(targetPointOnCortex.GetNumberOfFiducials()):
+            ras = [0, 0, 0]
+            targetPointOnCortex.GetNthFiducialPosition(i, ras)
+            closest_id = point_locator.FindClosestPoint(ras)
+            closest_point = poly_data.GetPoint(closest_id)
+            closest_points.append(closest_point)
+            indices.append(closest_id)
+
         # get the neighbors of the closest points
         neighbors = {}
-        search_radius = 2.0 # [Feature Requested]: A value that can be loaded from the config
+        search_radius = 2.5 # [Feature Requested]: A value that can be loaded from the config
 
         for i in range(len(closest_points)):
             closestIDs = vtk.vtkIdList()
@@ -1455,12 +1451,17 @@ class MedImgPlanLogic(ScriptedLoadableModuleLogic):
             grid_neighbor.update(value)
         
         scalar_values = poly_data.GetPointData().GetScalars()
+        grid_points_values = [scalar_values.GetValue(i) for i in indices]
+
         for scalar_id in range(poly_data.GetNumberOfPoints()):
             if scalar_id in grid_neighbor:
                 matching_keys = [key for key, value in neighbors.items() if scalar_id in value]
                 scalar_values.SetValue(scalar_id,numpy.mean([scalar_values.GetValue(key) for key in matching_keys]))
             else:
                 scalar_values.SetValue(scalar_id, 0.0)
+        
+        for grid_point_id, scalar in zip(indices, grid_points_values):
+            scalar_values.SetValue(grid_point_id, scalar)
 
         inModel.GetPolyData().GetPointData().SetScalars(scalar_values)
         inModel.GetDisplayNode().AutoScalarRangeOn()

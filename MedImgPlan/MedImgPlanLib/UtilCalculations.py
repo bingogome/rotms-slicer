@@ -170,7 +170,7 @@ def computeScalarFromDistance(distances, mep, MAX_MEP):
     ---
     scalars (numpy.ndarray): The normalized scalar values.
     """
-    cutoff_distance = 3.0  # set a cutoff distance as 5 mm above the minimum distance
+    cutoff_distance = 3.8  # set a cutoff distance as 5 mm above the minimum distance
     distances = distances - numpy.min(distances)
 
     scalars = (mep / MAX_MEP) * numpy.exp(
