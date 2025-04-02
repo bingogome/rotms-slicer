@@ -38,3 +38,6 @@ A slicer script module for robot controlling commands.
   - The commands should not exceed 256 chars (receiving side buffer)
 
 # TargetVisualization
+
+# Installation
+For fresh-installation, you need to install "PyYAML" package to 3D Slicer first in order to load `MedImgPlan` Module
