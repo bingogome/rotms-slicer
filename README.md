@@ -2,7 +2,7 @@
 
 This extension enables planning and visualization for Robotic Transcranial Magnetic Stimulation (RoTMS) procedures in 3D Slicer.
 
-![plan](https://github.com/bingogome/documents/blob/main/rotms-slicer/preopplan.png)
+![plan](https://github.com/bingogome/rotms-slicer/blob/main/preopplan.png)
 
 ## Overview
 
